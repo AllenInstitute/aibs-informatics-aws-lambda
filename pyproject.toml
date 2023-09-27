@@ -8,15 +8,37 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = ""
-description = ""
-version = "0.0.1"
+name = "aibs-informatics-aws-lambda"
+description = "aibs informatics lambda functions"
 requires-python = ">=3.9"
-dependencies = []
+dynamic = [
+    "version",
+]
+dependencies = [
+    "aws-lambda-powertools[all]>=2.0.0",
+    "aws-lambda-typing",
+    "aibs-informatics-aws-utils",
+    "aibs-informatics-core",
+    # Right now we need to pin cryptography to avoid AWS Lambda import errors
+    # https://cryptography.io/en/latest/faq/#i-m-getting-errors-installing-or-importing-cryptography-on-aws-lambda
+    # https://github.com/pyca/cryptography/issues/6390
+    # https://github.com/pyca/cryptography/issues/6391
+    # https://github.com/pyca/cryptography/issues/6481
+    "cryptography==3.4.8",
+]
 
 [project.optional-dependencies]
-dev = []
+dev = [
+    "aibs-informatics-test-resources",
+    "boto3-stubs[athena,ecs,essential,sns,stepfunctions]",
+    "moto[ec2,ecs]",
+]
 
+[project.scripts]
+handle-lambda-request = "aibs_informatics_aws_lambda.main:handle_cli"
+
+[tool.setuptools.dynamic]
+version = {attr = "aibs_informatics_aws_lambda.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -91,7 +113,8 @@ cache_dir = "build/.pytest_cache"
 
 [tool.mypy]
 exclude = '''(?x)(
-    build/
+    assets/
+    | build/
     | build_tools
     | setup.py$
     | test/

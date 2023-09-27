@@ -72,7 +72,7 @@ $(PYTHON):
 
 install: $(INSTALL_STAMP) ## Installs package dependencies
 $(INSTALL_STAMP): $(PYTHON) $(DEP_FILES)
-	make unlink-packages
+	@make unlink-packages
 	@source $(VENV_BIN)/activate;\
 	if [ -f requirements-dev.txt ]; then\
 		$(PIP) install -r requirements-dev.txt --config-settings editable_mode=strict;\
