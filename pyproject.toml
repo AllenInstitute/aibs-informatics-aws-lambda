@@ -31,7 +31,7 @@ dependencies = [
 dev = [
     "aibs-informatics-test-resources",
     "boto3-stubs[athena,ecs,essential,sns,stepfunctions]",
-    "moto[ec2,ecs]",
+    "moto[lambda,stepfunctions,sts]",
 ]
 
 [project.scripts]

@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 
 from aibs_informatics_aws_utils.sns import PublishInputRequestTypeDef, publish_to_topic
+
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.base import BasePublisher
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.model import (
     PublishRequest,

@@ -7,9 +7,13 @@ from aibs_informatics_aws_utils.batch import (
     VolumeTypeDef,
 )
 from aibs_informatics_core.models.aws.batch import ResourceRequirements
-from aibs_informatics_core.models.base import custom_field
-from aibs_informatics_core.models.base import DictField, ListField, UnionField
-from aibs_informatics_core.models.base import SchemaModel
+from aibs_informatics_core.models.base import (
+    DictField,
+    ListField,
+    SchemaModel,
+    UnionField,
+    custom_field,
+)
 
 
 @dataclass

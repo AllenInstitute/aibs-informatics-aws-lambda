@@ -1,3 +1,4 @@
+import os
 from contextlib import nullcontext as does_not_raise
 from typing import Optional
 
@@ -20,3 +21,14 @@ class BaseTest(_BaseTest):
 
     def set_env_base_env_var(self, env_base: Optional[EnvBase] = None):
         self.set_env_vars((ENV_BASE_KEY, env_base or self.env_base))
+
+    def set_aws_credentials(self):
+        self.set_env_vars(
+            ("AWS_ACCESS_KEY_ID", "testing"),
+            ("AWS_SECRET_ACCESS_KEY", "testing"),
+            ("AWS_SECURITY_TOKEN", "testing"),
+            ("AWS_SESSION_TOKEN", "testing"),
+            ("AWS_DEFAULT_REGION", "us-west-2"),
+            ("AWS_REGION", "us-west-2"),
+            ("ACCOUNT", "123456789012"),
+        )

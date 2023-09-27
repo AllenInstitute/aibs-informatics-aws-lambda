@@ -44,14 +44,22 @@ class TestMain(BaseTest):
 
     def test__handle_cli__succeeds__resolves_args_from_env__no_response(self):
         self.set_env_vars(
-            (AWS_LAMBDA_FUNCTION_HANDLER_KEY, "test.aibs_informatics_aws_lambda.test_main.mock_handler")
+            (
+                AWS_LAMBDA_FUNCTION_HANDLER_KEY,
+                "test.aibs_informatics_aws_lambda.test_main.mock_handler",
+            )
         )
         self.set_env_vars((AWS_LAMBDA_EVENT_PAYLOAD_KEY, "{}"))
         handle_cli([])
 
     def test__handle_cli__succeeds__resolves_args_from_arguments__no_response(self):
         handle_cli(
-            ["--handler", "test.aibs_informatics_aws_lambda.test_main.mock_handler", "--payload", "{}"]
+            [
+                "--handler",
+                "test.aibs_informatics_aws_lambda.test_main.mock_handler",
+                "--payload",
+                "{}",
+            ]
         )
 
     def test__handle_cli__fails__no_args_or_env_vars(self):

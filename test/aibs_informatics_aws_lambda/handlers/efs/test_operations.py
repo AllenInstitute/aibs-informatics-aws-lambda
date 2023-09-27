@@ -5,7 +5,8 @@ from time import sleep
 from typing import Tuple, Union
 
 from aibs_informatics_aws_utils.data_sync.file_system import LocalFileSystem, PathStats
-from aibs_informatics_aws_lambda.common.api_handler import LambdaHandlerType
+
+from aibs_informatics_aws_lambda.common.api.handler import LambdaHandlerType
 from aibs_informatics_aws_lambda.handlers.efs.model import (
     GetEFSPathStatsRequest,
     GetEFSPathStatsResponse,

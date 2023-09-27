@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 
 from aibs_informatics_aws_utils.ses import send_simple_email
+
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.base import BasePublisher
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.constants import SOURCE_EMAIL
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.model import (

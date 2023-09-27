@@ -3,14 +3,18 @@ from unittest import mock
 from aibs_informatics_aws_utils.sns import PublishInputRequestTypeDef
 from aibs_informatics_core.exceptions import ApplicationException
 from aibs_informatics_core.models.aws.sns import SNSTopicArn
-from aibs_informatics_aws_lambda.common.api_handler import LambdaHandlerType
+from aibs_informatics_test_resources import BaseTest
+
+from aibs_informatics_aws_lambda.common.handler import LambdaHandlerType
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.model import (
     PublishRequest,
     PublishRequestType,
     SNSRequest,
 )
-from aibs_informatics_aws_lambda.handlers.notifications.publishers.sns import PublishRequest, SNSPublisher
-from aibs_informatics_test_resources import BaseTest
+from aibs_informatics_aws_lambda.handlers.notifications.publishers.sns import (
+    PublishRequest,
+    SNSPublisher,
+)
 
 
 class SNSPublisherTest(BaseTest):

@@ -3,11 +3,13 @@ from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 from typing import Tuple, Union
 from unittest import mock
 
-from aibs_informatics_aws_utils.data_sync.file_system import Node
 from aibs_informatics_aws_utils.constants.efs import EFS_MOUNT_PATH_VAR
+from aibs_informatics_aws_utils.data_sync.file_system import Node
 from aibs_informatics_core.models.aws.s3 import S3URI
-from aibs_informatics_aws_lambda.common.api_handler import LambdaHandlerType
 from aibs_informatics_core.utils.time import BEGINNING_OF_TIME
+from pytest import mark, param, raises
+
+from aibs_informatics_aws_lambda.common.handler import LambdaHandlerType
 from aibs_informatics_aws_lambda.handlers.data_sync import (
     DEFAULT_BUCKET_NAME_ENV_VAR,
     BatchDataSyncRequest,
@@ -22,7 +24,6 @@ from aibs_informatics_aws_lambda.handlers.data_sync import (
     PutJSONToFileRequest,
     PutJSONToFileResponse,
 )
-from pytest import mark, param, raises
 
 
 class GetJSONFromFileHandlerTests(LambdaHandlerTestCase):
@@ -73,7 +74,7 @@ class GetJSONFromFileHandlerTests(LambdaHandlerTestCase):
 class PutJSONToFileHandlerTests(LambdaHandlerTestCase):
     def setUp(self) -> None:
         super().setUp()
-        
+
         self.mock_upload_content = self.create_patch(
             "aibs_informatics_aws_lambda.handlers.data_sync.upload_json"
         )
@@ -120,7 +121,9 @@ class PutJSONToFileHandlerTests(LambdaHandlerTestCase):
         self.mock_upload_content.assert_not_called()
 
     def test__handles__uploads_content_with_no_path_specified(self):
-        s3_path = S3URI("s3://some-bucket/scratch/12345678-1234-1234-1234-123456789012/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
+        s3_path = S3URI(
+            "s3://some-bucket/scratch/12345678-1234-1234-1234-123456789012/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        )
         content = "hello"
         request = PutJSONToFileRequest(content=content)
         response = PutJSONToFileResponse(path=s3_path)

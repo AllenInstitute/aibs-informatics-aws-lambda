@@ -2,13 +2,14 @@ from unittest import mock
 
 from aibs_informatics_core.exceptions import ApplicationException
 from aibs_informatics_core.models.email_address import EmailAddress
+from aibs_informatics_test_resources import BaseTest
+
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.model import (
     PublishRequest,
     PublishRequestType,
     SESRequest,
 )
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.ses import SESPublisher
-from aibs_informatics_test_resources import BaseTest
 
 
 class SESPublisherTest(BaseTest):

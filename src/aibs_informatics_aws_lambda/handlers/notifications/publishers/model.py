@@ -3,19 +3,21 @@ from enum import Enum
 from typing import Any, Dict, List, TypeVar, Union
 
 import marshmallow as mm
-from aibs_informatics_core.utils.json import JSON
 from aibs_informatics_core.models.aws.sns import SNSTopicArn
-from aibs_informatics_core.models.base import ModelProtocol, SchemaModel, custom_field
 from aibs_informatics_core.models.base import (
     BooleanField,
     CustomStringField,
     EnumField,
     ListField,
+    ModelProtocol,
     RawField,
+    SchemaModel,
     StringField,
     UnionField,
+    custom_field,
 )
 from aibs_informatics_core.models.email_address import EmailAddress
+from aibs_informatics_core.utils.json import JSON
 
 NOTIFICATION_EVENT = TypeVar("NOTIFICATION_EVENT", bound=ModelProtocol)
 

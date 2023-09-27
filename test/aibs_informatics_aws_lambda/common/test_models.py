@@ -3,9 +3,10 @@ from typing import Optional
 
 from aibs_informatics_core.utils.json import JSON
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from pytest import mark, param, raises
+
 from aibs_informatics_aws_lambda.common.handler import LambdaEvent
 from aibs_informatics_aws_lambda.common.models import LambdaHandlerRequest
-from pytest import mark, param, raises
 
 
 def mock_handler(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:

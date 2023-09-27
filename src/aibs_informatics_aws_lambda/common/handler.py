@@ -137,7 +137,7 @@ class LambdaHandler(
             lambda_handler.log = logger
             lambda_handler.add_logger_to_root()
 
-            request = lambda_handler.deserialize_request(json.loads(record["body"]))
+            request = lambda_handler.deserialize_sqs_record(record)
             response = lambda_handler.handle(request=request)
             if response:
                 lambda_handler.log.info("Sending Response")
@@ -182,7 +182,7 @@ class LambdaHandler(
         Returns:
             REQUEST: Expected Request object
         """
-        raise NotImplementedError(
+        raise NotImplementedError(  # pragma: no cover
             "You must implement this method if processing dynamoDB stream events"
         )
 

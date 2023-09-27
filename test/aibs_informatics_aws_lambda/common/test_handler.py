@@ -2,8 +2,13 @@ from dataclasses import dataclass
 from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase, LambdaHandlerType
 
 from aibs_informatics_core.env import ENV_BASE_KEY
-from aibs_informatics_core.models.base import SchemaModel, IntegerField, custom_field
-from aibs_informatics_aws_lambda.common.handler import LambdaHandler
+from aibs_informatics_core.models.base import IntegerField, SchemaModel, custom_field
+from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import (
+    DynamoDBRecordEventName,
+)
+from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
+
+from aibs_informatics_aws_lambda.common.handler import DynamoDBRecord, LambdaHandler, SQSRecord
 
 
 @dataclass
@@ -28,13 +33,31 @@ class CounterHandler_ReqResp(LambdaHandler[CounterRequest, CounterResponse]):
         self.log.info(f"Hey look the count is now {response.count}")
         return response
 
+    @classmethod
+    def deserialize_dynamodb_record(cls, record: DynamoDBRecord) -> CounterRequest:
+        assert record.dynamodb and record.dynamodb.new_image
+        return CounterRequest.from_dict(record.dynamodb.new_image)
+
 
 class CounterHandler_ReqNoResp(LambdaHandler[CounterRequest, NoResponse]):
     def handle(self, request: CounterRequest) -> None:
         self.log.info(f"Hey look the count is {request.count}")
 
+    @classmethod
+    def should_process_sqs_record(cls, record: SQSRecord) -> bool:
+        return True if record.json_body and record.json_body.get("count") != 0 else False
 
-class GCSLambdaHandlerTests(LambdaHandlerTestCase):
+    @classmethod
+    def should_process_dynamodb_record(cls, record: DynamoDBRecord) -> bool:
+        return True if record.event_name == DynamoDBRecordEventName.INSERT else False
+
+    @classmethod
+    def deserialize_dynamodb_record(cls, record: DynamoDBRecord) -> CounterRequest:
+        assert record.dynamodb and record.dynamodb.new_image
+        return CounterRequest.from_dict(record.dynamodb.new_image)
+
+
+class LambdaHandlerTests(LambdaHandlerTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.set_env_vars((ENV_BASE_KEY, self.env_base))
@@ -97,4 +120,49 @@ class CounterHandler_ReqResp_Tests(LambdaHandlerTestCase):
 
     def test__sqs_handler__handles_stuffs(self):
         handler = CounterHandler_ReqResp.get_sqs_batch_handler()
-        self.assertHandles(handler, {"Records": []}, {"batchItemFailures": []})
+        event = {
+            "Records": [
+                {"body": CounterRequest(1).to_json()},
+                {"body": CounterRequest(0).to_json()},
+            ]
+        }
+        self.assertHandles(handler, event, {"batchItemFailures": []})
+
+        no_resp_handler = CounterHandler_ReqNoResp.get_sqs_batch_handler()
+        self.assertHandles(no_resp_handler, event, {"batchItemFailures": []})
+
+    def test__dynamo_handler__handles_stuffs(self):
+        handler = CounterHandler_ReqResp.get_dynamodb_stream_handler()
+        type_serializer = TypeSerializer()
+
+        event = {
+            "Records": [
+                {
+                    "eventID": "1",
+                    "eventVersion": "1.0",
+                    "dynamodb": {
+                        "NewImage": {
+                            k: type_serializer.serialize(v)
+                            for k, v in CounterRequest(1).to_dict().items()
+                        },
+                    },
+                    "eventName": "INSERT",
+                },
+                {
+                    "eventID": "1",
+                    "eventVersion": "1.0",
+                    "dynamodb": {
+                        "NewImage": {
+                            k: type_serializer.serialize(v)
+                            for k, v in CounterRequest(1).to_dict().items()
+                        },
+                    },
+                    "eventName": "MODIFY",
+                },
+            ]
+        }
+
+        self.assertHandles(handler, event, {"batchItemFailures": []})
+
+        no_resp_handler = CounterHandler_ReqNoResp.get_dynamodb_stream_handler()
+        self.assertHandles(no_resp_handler, event, {"batchItemFailures": []})

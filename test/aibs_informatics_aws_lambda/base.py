@@ -11,7 +11,7 @@ from aws_lambda_powertools.utilities.typing.lambda_client_context_mobile_client 
 )
 from aws_lambda_powertools.utilities.typing.lambda_cognito_identity import LambdaCognitoIdentity
 
-from aibs_informatics_aws_lambda.common.api_handler import LambdaEvent
+from aibs_informatics_aws_lambda.common.api.handler import LambdaEvent
 
 
 class MockLambdaContext(LambdaContext):

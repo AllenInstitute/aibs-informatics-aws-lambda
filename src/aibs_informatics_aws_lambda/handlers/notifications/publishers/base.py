@@ -5,6 +5,7 @@ from functools import cached_property
 from typing import Generic, Optional, Type
 
 from aibs_informatics_core.utils.logging import get_logger
+
 from aibs_informatics_aws_lambda.handlers.notifications.publishers.model import (
     PublishRequest,
     PublishResponse,

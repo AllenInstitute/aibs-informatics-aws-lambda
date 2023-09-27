@@ -1,12 +1,19 @@
+__all__ = [
+    "ApiLambdaHandler",
+]
+
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, Generic, Optional, Type, TypeVar, Union, cast
+from types import ModuleType
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
 
 from aibs_informatics_core.models.api.http_parameters import HTTPParameters
 from aibs_informatics_core.models.api.route import ApiRoute
 from aibs_informatics_core.models.base import ModelProtocol
 from aibs_informatics_core.utils.json import JSON
+from aibs_informatics_core.utils.modules import get_all_subclasses, load_all_modules_from_pkg
+from aws_lambda_powertools.event_handler import APIGatewayRestResolver, content_types
 from aws_lambda_powertools.event_handler.api_gateway import BaseRouter
 from aws_lambda_powertools.logging import Logger
 from aws_lambda_powertools.metrics import EphemeralMetrics, Metrics
@@ -21,7 +28,11 @@ from aws_lambda_powertools.utilities.data_classes.common import (
 )
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
+from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
+from aibs_informatics_aws_lambda.common.logging import LoggingMixins
+from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
+from aibs_informatics_aws_lambda.common.tracing import TracingMixins
 
 LambdaEvent = Union[JSON]  # type: ignore  # https://github.com/python/mypy/issues/7866
 
@@ -101,8 +112,6 @@ class ApiLambdaHandler(
 
                 logger.info(f"Handling {router.current_event.raw_event} event.")
 
-                cls._parse_event_headers(router.current_event, logger)
-
                 request = cls._parse_event(router.current_event, route_parameters, logger)
 
                 logger.debug(f"Getting dict from {request}")
@@ -153,17 +162,7 @@ class ApiLambdaHandler(
         request = cls.get_request_from_http_parameters(http_parameters)
         return request
 
-    @classmethod
-    def _parse_event_headers(cls, event: BaseProxyEvent, logger: logging.Logger):
-        logger.info("Parsing and validating event headers")
-        cls.validate_headers(event.headers)
-        config = cls.resolve_request_config(event.headers)
-        try:
-            if config.service_log_level:
-                logger.info(f"Setting log level to {config.service_log_level}")
-                logger.setLevel(config.service_log_level)
-        except Exception as e:
-            logger.warning(f"Failed to set log level to {config.service_log_level}: {e}")
-
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(env_base={self.env_base})"
+        return (
+            f"{self.__class__.__name__}(route={self.route_rule()}, method={self.route_method()})"
+        )

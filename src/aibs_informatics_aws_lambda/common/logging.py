@@ -26,13 +26,15 @@ class LoggingMixins(HandlerMixins):
 
     @property
     def logger(self) -> Logger:
-        if not hasattr(self, LOGGING_ATTR):
-            setattr(self, LOGGING_ATTR, self.get_logger(self.service_name()))
-        return getattr(self, LOGGING_ATTR)
+        try:
+            return self._logger
+        except AttributeError:
+            self.logger = self.get_logger(self.service_name())
+        return self.logger
 
     @logger.setter
     def logger(self, value: Logger):
-        setattr(self, LOGGING_ATTR, value)
+        self._logger = value
 
     @classmethod
     def get_logger(cls, service: Optional[str] = None, add_to_root: bool = False) -> Logger:

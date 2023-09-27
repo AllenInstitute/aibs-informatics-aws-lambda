@@ -59,14 +59,15 @@ class EnhancedMetrics(Metrics):
 class MetricsMixins(HandlerMixins):
     @property
     def metrics(self) -> EnhancedMetrics:
-        if not hasattr(self, METRICS_ATTR):
-            metrics = self.get_metrics(handler_name=self.handler_name())
-            self.metrics = metrics
-        return getattr(self, METRICS_ATTR)
+        try:
+            return self._metrics
+        except AttributeError:
+            self.metrics = self.get_metrics(handler_name=self.handler_name())
+        return self.metrics
 
     @metrics.setter
     def metrics(self, value: EnhancedMetrics):
-        setattr(self, METRICS_ATTR, value)
+        self._metrics = value
 
     @classmethod
     def get_metrics(
