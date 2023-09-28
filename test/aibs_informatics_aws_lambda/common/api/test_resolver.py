@@ -1,10 +1,8 @@
 from test.base import BaseTest
 from typing import Optional
 
-import pytest
-from aibs_informatics_core.env import EnvBase
 from aws_lambda_powertools.event_handler.api_gateway import Router
-from aws_lambda_powertools.shared.constants import METRICS_NAMESPACE_ENV, SERVICE_NAME_ENV
+from aws_lambda_powertools.shared.constants import METRICS_NAMESPACE_ENV
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
 from moto import mock_sts
 

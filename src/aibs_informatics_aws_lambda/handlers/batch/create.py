@@ -9,7 +9,7 @@ from aibs_informatics_aws_utils.ecr import resolve_image_uri
 from aibs_informatics_core.utils.hashing import uuid_str
 
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
-from aibs_informatics_aws_lambda.handlers.batch_job.model import (
+from aibs_informatics_aws_lambda.handlers.batch.model import (
     CreateDefinitionAndPrepareArgsRequest,
     CreateDefinitionAndPrepareArgsResponse,
 )

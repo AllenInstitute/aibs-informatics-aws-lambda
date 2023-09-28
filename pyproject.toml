@@ -30,7 +30,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "aibs-informatics-test-resources",
-    "boto3-stubs[athena,ecs,essential,sns,stepfunctions]",
+    "boto3-stubs[athena,batch,ecs,essential,sns,stepfunctions]",
     "moto[lambda,stepfunctions,sts]",
 ]
 

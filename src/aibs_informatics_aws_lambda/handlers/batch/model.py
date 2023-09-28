@@ -1,11 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from aibs_informatics_aws_utils.batch import (
-    MountPointTypeDef,
-    ResourceRequirementTypeDef,
-    VolumeTypeDef,
-)
 from aibs_informatics_core.models.aws.batch import ResourceRequirements
 from aibs_informatics_core.models.base import (
     DictField,
@@ -14,6 +9,17 @@ from aibs_informatics_core.models.base import (
     UnionField,
     custom_field,
 )
+
+if TYPE_CHECKING:  # pragma: no cover
+    from mypy_boto3_batch.type_defs import (
+        MountPointTypeDef,
+        ResourceRequirementTypeDef,
+        VolumeTypeDef,
+    )
+else:
+    MountPointTypeDef = dict
+    ResourceRequirementTypeDef = dict
+    VolumeTypeDef = dict
 
 
 @dataclass
