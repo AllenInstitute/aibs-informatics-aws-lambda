@@ -26,7 +26,7 @@ from aibs_informatics_core.models.unique_ids import UniqueID
 from aibs_informatics_core.utils.hashing import sha256_hexdigest
 from aibs_informatics_core.utils.json import JSON, load_json
 from aibs_informatics_core.utils.os_operations import get_env_var
-from aibs_informatics_core.utils.tools.string_helpers import removeprefix
+from aibs_informatics_core.utils.tools.strtools import removeprefix
 from aibs_informatics_core.utils.units import BYTES_PER_GIBIBYTE
 
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
