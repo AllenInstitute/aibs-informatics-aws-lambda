@@ -25,24 +25,20 @@ RUN unzip /tmp/awscli-exe-linux-x86_64.zip -d /tmp \
     && rm /tmp/awscli-exe-linux-x86_64.zip \
     && /tmp/aws/install
 
-ENV REPO_ROOT=/asset-input
+COPY . /asset-input
 
-COPY . ${REPO_ROOT}
-
-RUN --mount=type=ssh export PACKAGE_ROOT=${REPO_ROOT}/aibs-informatics-lambda-functions \
-    && cd ${PACKAGE_ROOT} \
+RUN --mount=type=ssh cd /asset-input \
     && python3 -m pip install --upgrade pip \
-    && pip3 install \
+    && pip3 install .[lambda] \
         --no-cache-dir \
-        --requirement requirements-docker.txt \
         --target "${LAMBDA_TASK_ROOT}" \
-    && cp $PACKAGE_ROOT/docker/docker-entrypoint.sh ${LAMBDA_TASK_ROOT}/docker-entrypoint.sh \
+    && cp docker/docker-entrypoint.sh ${LAMBDA_TASK_ROOT}/docker-entrypoint.sh \
     && chmod +x ${LAMBDA_TASK_ROOT}/docker-entrypoint.sh
 
 ENV PYTHONPATH="${LAMBDA_TASK_ROOT}:${PYTHONPATH}"
 ENV PATH="${LAMBDA_TASK_ROOT}/bin:${PATH}"
 
-RUN rm -rf ${REPO_ROOT}
+RUN rm -rf /asset-input
 
 ENTRYPOINT [ "bash", "-c", "${LAMBDA_TASK_ROOT}/docker-entrypoint.sh" ]
 

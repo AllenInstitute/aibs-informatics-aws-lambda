@@ -17,8 +17,8 @@ dynamic = [
 dependencies = [
     "aws-lambda-powertools[all]>=2.0.0",
     "aws-lambda-typing",
-    "aibs-informatics-aws-utils",
-    "aibs-informatics-core",
+    "aibs-informatics-aws-utils @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-aws-utils.git@main",
+    "aibs-informatics-core @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-core.git@main",
     # Right now we need to pin cryptography to avoid AWS Lambda import errors
     # https://cryptography.io/en/latest/faq/#i-m-getting-errors-installing-or-importing-cryptography-on-aws-lambda
     # https://github.com/pyca/cryptography/issues/6390
@@ -29,9 +29,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "aibs-informatics-test-resources",
+    "aibs-informatics-test-resources @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-test-resources.git@main",
     "boto3-stubs[athena,batch,ecs,essential,sns,stepfunctions]",
     "moto[lambda,stepfunctions,sts]",
+]
+
+docker = [
+    "awslambdaric",
 ]
 
 [project.scripts]

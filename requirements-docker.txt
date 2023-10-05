@@ -1,3 +1,0 @@
-# AWS Lambda RIE needs the aws-lambda-runtime-interface-client pypi package
-awslambdaric
--r requirements-lambda.txt
