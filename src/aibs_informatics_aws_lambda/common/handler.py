@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Generic, Optional, TypeVar, Union
 
-from aibs_informatics_aws_utils.s3 import download_to_json_object
+from aibs_informatics_aws_utils.s3 import download_to_json_object, upload_json
 from aibs_informatics_core.executors.base import BaseExecutor
 from aibs_informatics_core.models.aws.s3 import S3URI
 from aibs_informatics_core.models.base import ModelProtocol
@@ -40,9 +40,12 @@ class LambdaHandler(
         super().__post_init__()
 
     @classmethod
-    def deserialize_request__s3(cls, request_path: S3URI) -> REQUEST:
-        request_dict = download_to_json_object(request_path)
-        return cls.deserialize_request__dict(request_dict)
+    def load_input__remote(cls, remote_path: S3URI) -> JSON:
+        return download_to_json_object(remote_path)
+
+    @classmethod
+    def write_output__remote(cls, output: JSON, remote_path: S3URI) -> None:
+        return upload_json(output, remote_path)
 
     # --------------------------------------------------------------------
     # Handler provider methods
