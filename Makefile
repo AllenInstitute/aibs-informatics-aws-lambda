@@ -163,6 +163,18 @@ coverage-server: $(INSTALL_STAMP) ## Run coverage server
 
 
 #####################
+##@ Docker Commands
+#####################
+
+docker-build: ## Build docker image
+	@docker build 									\
+		--ssh default 								\
+		--platform linux/amd64  					\
+		--tag aibs-informatics-aws-lambda:latest	\
+		--file $(PACKAGE_DIR)/docker/Dockerfile		\
+		$(PACKAGE_DIR)
+
+#####################
 ##@ Release Commands
 #####################
 
