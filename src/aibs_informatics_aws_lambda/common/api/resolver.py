@@ -124,7 +124,6 @@ class ApiResolverBuilder(
             raise e
 
     def get_lambda_handler(self, *args, **kwargs) -> LambdaHandlerType:
-
         lambda_handler = self.handle
 
         lambda_handler = self.tracer.capture_lambda_handler(lambda_handler)

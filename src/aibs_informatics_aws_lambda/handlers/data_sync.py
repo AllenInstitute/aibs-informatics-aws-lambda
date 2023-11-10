@@ -159,7 +159,6 @@ class PrepareBatchDataSyncHandler(
         for node_batch in self.build_node_batches(nodes, batch_size_bytes_limit):
             data_sync_requests: List[DataSyncRequest] = []
             for node in sorted(node_batch):
-
                 data_sync_requests.append(
                     DataSyncRequest(
                         source_path=self.build_source_path(request, node),

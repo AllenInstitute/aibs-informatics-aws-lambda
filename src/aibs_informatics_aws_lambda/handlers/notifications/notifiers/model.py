@@ -54,7 +54,6 @@ class NotificationContent(SchemaModel):
 # Publisher Request
 # ----------------------------------------------------------
 class NotifierType(str, Enum):
-
     SES = "SES"
     SNS = "SNS"
 
@@ -78,11 +77,9 @@ class SESEmailTarget(NotifierTarget):
     @classmethod
     @mm.pre_load
     def _parse_recipient_fields(cls, data: Dict[str, Any], **kwargs) -> Dict[str, Any]:
-
         recipients = []
 
         for key_alias in ["recipients", "recipient", "addresses", "address"]:
-
             if (value_list := data.pop(key_alias, None)) is not None:
                 if isinstance(value_list, str):
                     recipients.append(value_list)

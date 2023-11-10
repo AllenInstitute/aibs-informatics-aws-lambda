@@ -33,7 +33,6 @@ class ApiResolverBuilderTests(BaseTest):
         assert self.builder.app._route_keys == ["GET/health", "GET/get"]
 
     def test__add_handlers__adds_module_and_pkg(self):
-
         from .handlers import module as handlers_module
         from .handlers import pkg as handlers_pkg
 
@@ -50,7 +49,6 @@ class ApiResolverBuilderTests(BaseTest):
         ]
 
     def test__add_handlers__collisions_are_silently_handled(self):
-
         from .handlers import module as handlers_module
         from .handlers import pkg as handlers_pkg
 

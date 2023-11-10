@@ -139,7 +139,6 @@ class ApiLambdaHandler(
     def _parse_event(
         cls, event: BaseProxyEvent, route_parameters: Dict[str, Any], logger: logging.Logger
     ) -> API_REQUEST:
-
         logger.info(f"parsing event.")
         stringified_route_params = route_parameters
         stringified_query_params = event.query_string_parameters

@@ -20,7 +20,6 @@ DEFAULT_SOURCE_EMAIL_ADDRESS = "marmotdev@alleninstitute.org"
 class SESNotifier(Notifier[SESEmailTarget]):
     def notify(self, content: NotificationContent, target: SESEmailTarget) -> NotifierResult:
         try:
-
             source = EmailAddress(
                 get_env_var(
                     SOURCE_EMAIL_ADDRESS_ENV_VAR, default_value=DEFAULT_SOURCE_EMAIL_ADDRESS

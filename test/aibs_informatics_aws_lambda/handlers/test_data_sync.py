@@ -169,7 +169,6 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         self.assertEqual(expected_node_batches, node_batches)
 
     def test__handle__prepare_local_to_s3__simple(self):
-
         fs = self.setUpLocalFS(
             ("a", 1),
             ("b", 1),
@@ -201,7 +200,6 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         self.assertHandles(self.handler, request.to_dict(), expected.to_dict())
 
     def test__handle__prepare_local_to_s3__complex(self):
-
         fs = self.setUpLocalFS(
             ("a", 3),
             ("b", 7),
@@ -249,7 +247,6 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         self.assertHandles(self.handler, request.to_dict(), expected.to_dict())
 
     def test__handle__prepare_local_to_local__complex(self):
-
         fs = self.setUpLocalFS(
             ("src/a", 3),
             ("src/b", 7),
@@ -406,7 +403,6 @@ def test__PrepareBatchDataSyncHandler_build_destination_path(
     node: Node,
     expected: Union[Path, S3URI],
 ):
-
     actual = PrepareBatchDataSyncHandler.build_destination_path(request_obj, node)
 
     assert actual == expected
