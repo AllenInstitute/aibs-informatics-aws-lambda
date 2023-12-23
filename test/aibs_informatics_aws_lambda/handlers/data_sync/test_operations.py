@@ -3,14 +3,13 @@ from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 from typing import Tuple, Union
 from unittest import mock
 
-from aibs_informatics_aws_utils.constants.efs import EFS_MOUNT_PATH_VAR
 from aibs_informatics_aws_utils.data_sync.file_system import Node
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.utils.time import BEGINNING_OF_TIME
-from pytest import mark, param, raises
+from pytest import mark, param
 
 from aibs_informatics_aws_lambda.common.handler import LambdaHandlerType
-from aibs_informatics_aws_lambda.handlers.data_sync import (
+from aibs_informatics_aws_lambda.handlers.data_sync.operations import (
     DEFAULT_BUCKET_NAME_ENV_VAR,
     BatchDataSyncRequest,
     DataSyncRequest,
@@ -30,7 +29,7 @@ class GetJSONFromFileHandlerTests(LambdaHandlerTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.mock_download_content = self.create_patch(
-            "aibs_informatics_aws_lambda.handlers.data_sync.download_to_json"
+            "aibs_informatics_aws_lambda.handlers.data_sync.operations.download_to_json"
         )
 
     @property
@@ -38,7 +37,7 @@ class GetJSONFromFileHandlerTests(LambdaHandlerTestCase):
         return GetJSONFromFileHandler.get_handler()
 
     def test__handles__valid_s3_path(self):
-        s3_path = S3URI("s3://some-bucket/some-key")
+        s3_path = S3Path("s3://some-bucket/some-key")
         content = "hello"
 
         self.mock_download_content.return_value = content
@@ -59,7 +58,7 @@ class GetJSONFromFileHandlerTests(LambdaHandlerTestCase):
         self.mock_download_content.assert_not_called()
 
     def test__handles__fails_on_download_error_thrown(self):
-        s3_path = S3URI("s3://some-bucket/some-key")
+        s3_path = S3Path("s3://some-bucket/some-key")
         content = "hello"
 
         self.mock_download_content.side_effect = ValueError("blah")
@@ -76,7 +75,7 @@ class PutJSONToFileHandlerTests(LambdaHandlerTestCase):
         super().setUp()
 
         self.mock_upload_content = self.create_patch(
-            "aibs_informatics_aws_lambda.handlers.data_sync.upload_json"
+            "aibs_informatics_aws_lambda.handlers.data_sync.operations.upload_json"
         )
 
     @property
@@ -84,7 +83,7 @@ class PutJSONToFileHandlerTests(LambdaHandlerTestCase):
         return PutJSONToFileHandler.get_handler()
 
     def test__handles__puts_content_with_s3_path_specified(self):
-        s3_path = S3URI("s3://some-bucket/some-key")
+        s3_path = S3Path("s3://some-bucket/some-key")
         content = "hello"
 
         request = PutJSONToFileRequest(content=content, path=s3_path)
@@ -112,7 +111,7 @@ class PutJSONToFileHandlerTests(LambdaHandlerTestCase):
         self.mock_upload_content.assert_not_called()
 
     def test__handles__fails_if_no_path_provided_and_env_var_not_set(self):
-        s3_path = S3URI("s3://some-bucket/some-key")
+        s3_path = S3Path("s3://some-bucket/some-key")
         content = "hello"
         request = PutJSONToFileRequest(content=content)
 
@@ -121,7 +120,7 @@ class PutJSONToFileHandlerTests(LambdaHandlerTestCase):
         self.mock_upload_content.assert_not_called()
 
     def test__handles__uploads_content_with_no_path_specified(self):
-        s3_path = S3URI(
+        s3_path = S3Path(
             "s3://some-bucket/scratch/12345678-1234-1234-1234-123456789012/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
         )
         content = "hello"
@@ -175,7 +174,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
             ("c", 1),
         )
         source_path = fs
-        destination_path = S3URI.build(bucket_name="bucket", key="key/")
+        destination_path = S3Path.build(bucket_name="bucket", key="key/")
         request = PrepareBatchDataSyncRequest(
             source_path=source_path,
             destination_path=destination_path,
@@ -206,7 +205,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
             ("c", 10),
         )
         source_path = fs
-        destination_path = S3URI.build(bucket_name="bucket", key="key/")
+        destination_path = S3Path.build(bucket_name="bucket", key="key/")
         request = PrepareBatchDataSyncRequest(
             source_path=source_path,
             destination_path=destination_path,
@@ -297,7 +296,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
     def test__build__build_destination_path__s3_to_s3__single_folder(self):
         request = PrepareBatchDataSyncRequest(
             source_path=Path("/scratch/dir"),
-            destination_path=S3URI("s3://bucket2/scratch/dir"),
+            destination_path=S3Path("s3://bucket2/scratch/dir"),
             batch_size_bytes_limit=10,
             max_concurrency=10,
             retain_source_data=True,
@@ -310,7 +309,6 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
 
     def setUpLocalFS(self, *paths: Tuple[Union[Path, str], int]) -> Path:
         root_file_system = self.tmp_path()
-        self.set_env_vars((EFS_MOUNT_PATH_VAR, str(root_file_system)))
         for relative_path, size in paths:
             full_path = root_file_system / relative_path
             full_path.parent.mkdir(parents=True, exist_ok=True)
@@ -327,51 +325,51 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         param(
             PrepareBatchDataSyncRequest(
                 source_path=Path("/scratch/dir"),
-                destination_path=S3URI("s3://bucket2/prefix"),
+                destination_path=S3Path("s3://bucket2/prefix"),
             ),
             Node("/scratch/dir", children={"a": Node("a")}),
-            S3URI("s3://bucket2/prefix/"),
+            S3Path("s3://bucket2/prefix/"),
             id="local to s3 root node as folder adds separator",
         ),
         param(
             PrepareBatchDataSyncRequest(
                 source_path=Path("/scratch/dir"),
-                destination_path=S3URI("s3://bucket2/prefix/"),
+                destination_path=S3Path("s3://bucket2/prefix/"),
             ),
             Node("/scratch/dir", children={"a": Node("a")}),
-            S3URI("s3://bucket2/prefix/"),
+            S3Path("s3://bucket2/prefix/"),
             id="local to s3 root node as folder does not add separator when prefix has it",
         ),
         param(
             PrepareBatchDataSyncRequest(
                 source_path=Path("/scratch/obj"),
-                destination_path=S3URI("s3://bucket2/prefix"),
+                destination_path=S3Path("s3://bucket2/prefix"),
             ),
             Node("/scratch/obj"),
-            S3URI("s3://bucket2/prefix"),
+            S3Path("s3://bucket2/prefix"),
             id="local to s3 root node as file does not add separator",
         ),
         param(
             PrepareBatchDataSyncRequest(
-                source_path=S3URI("s3://bucket/scratch/dir"),
-                destination_path=S3URI("s3://bucket2/prefix"),
+                source_path=S3Path("s3://bucket/scratch/dir"),
+                destination_path=S3Path("s3://bucket2/prefix"),
             ),
             Node("scratch/dir", children={"a": Node("a")}),
-            S3URI("s3://bucket2/prefix/"),
+            S3Path("s3://bucket2/prefix/"),
             id="s3 to s3 root node as folder",
         ),
         param(
             PrepareBatchDataSyncRequest(
-                source_path=S3URI("s3://bucket/scratch/obj"),
-                destination_path=S3URI("s3://bucket2/prefix"),
+                source_path=S3Path("s3://bucket/scratch/obj"),
+                destination_path=S3Path("s3://bucket2/prefix"),
             ),
             Node("scratch/obj"),
-            S3URI("s3://bucket2/prefix"),
+            S3Path("s3://bucket2/prefix"),
             id="s3 to s3 root node as file",
         ),
         param(
             PrepareBatchDataSyncRequest(
-                source_path=S3URI("s3://bucket/scratch/obj"),
+                source_path=S3Path("s3://bucket/scratch/obj"),
                 destination_path=Path("/scratch/abc"),
             ),
             Node("scratch/obj"),
@@ -380,7 +378,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         ),
         param(
             PrepareBatchDataSyncRequest(
-                source_path=S3URI("s3://bucket/scratch/dir"),
+                source_path=S3Path("s3://bucket/scratch/dir"),
                 destination_path=Path("/scratch/abc"),
             ),
             Node("scratch/dir", children={"a": Node("a")}),
@@ -389,7 +387,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         ),
         param(
             PrepareBatchDataSyncRequest(
-                source_path=S3URI("s3://bucket/scratch/dir/"),
+                source_path=S3Path("s3://bucket/scratch/dir/"),
                 destination_path=Path("/scratch/abc"),
             ),
             Node("scratch/dir/", children={"a": Node("a")}),
@@ -401,7 +399,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
 def test__PrepareBatchDataSyncHandler_build_destination_path(
     request_obj: PrepareBatchDataSyncRequest,
     node: Node,
-    expected: Union[Path, S3URI],
+    expected: Union[Path, S3Path],
 ):
     actual = PrepareBatchDataSyncHandler.build_destination_path(request_obj, node)
 

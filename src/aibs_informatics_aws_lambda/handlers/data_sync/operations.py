@@ -253,10 +253,3 @@ class PrepareBatchDataSyncHandler(
                 node_batches.append([node])
 
         return node_batches
-
-
-get_json_from_file_handler = GetJSONFromFileHandler.get_handler()
-put_json_to_file_handler = PutJSONToFileHandler.get_handler()
-data_sync_handler = DataSyncHandler.get_handler()
-batch_data_sync_handler = BatchDataSyncHandler.get_handler()
-prep_batch_data_sync_handler = PrepareBatchDataSyncHandler.get_handler()
