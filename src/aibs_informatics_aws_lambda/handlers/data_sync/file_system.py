@@ -120,7 +120,7 @@ class RemoveDataPathsHandler(LambdaHandler[RemoveDataPathsRequest, RemoveDataPat
                 if isinstance(path, EFSPath):
                     self.logger.info(f"Converting EFSPath ({path}) to local path")
                     if mount_points is None:
-                        mount_points = detect_mount_points(path)
+                        mount_points = detect_mount_points()
                     path = get_local_path(efs_path=path, mount_points=mount_points)
                 try:
                     size_bytes = get_path_size_bytes(path)

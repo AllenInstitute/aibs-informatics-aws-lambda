@@ -21,7 +21,11 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.typing.lambda_client_context import LambdaClientContext
 from aws_lambda_powertools.utilities.typing.lambda_cognito_identity import LambdaCognitoIdentity
 
-from aibs_informatics_aws_lambda.common.handler import LambdaEvent, LambdaHandlerType
+from aibs_informatics_aws_lambda.common.handler import (
+    LambdaEvent,
+    LambdaHandler,
+    LambdaHandlerType,
+)
 from aibs_informatics_aws_lambda.common.logging import get_service_logger
 
 logger = get_service_logger(__name__)
@@ -85,12 +89,19 @@ def deserialize_handler(handler: str) -> LambdaHandlerType:
     handler_components = handler.split(".")
 
     handler_module = as_module_type(".".join(handler_components[:-1]))
-    handler_function_name = handler_components[-1]
+    handler_name = handler_components[-1]
 
-    handler_function = getattr(handler_module, handler_function_name)
-    assert inspect.isfunction(handler_function)
-    # TODO: need to better valdate this function
-    return cast(LambdaHandlerType, handler_function)
+    handler_code = getattr(handler_module, handler_name)
+    if inspect.isfunction(handler_code):
+        return cast(LambdaHandlerType, handler_code)
+    elif inspect.isclass(handler_code) and issubclass(handler_code, LambdaHandler):
+        logger.debug(f"Handler code is a class: {handler_code}. Calling `get_handler`...")
+        return handler_code.get_handler()
+    else:
+        raise ValueError(
+            f"Unable to deserialize handler: {handler}. "
+            "It is not a function or a subclass of LambdaHandler."
+        )
 
 
 @dataclass
