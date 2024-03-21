@@ -42,7 +42,7 @@ docker = [
 handle-lambda-request = "aibs_informatics_aws_lambda.main:handle_cli"
 
 [tool.setuptools.dynamic]
-version = {attr = "aibs_informatics_aws_lambda.__version__"}
+version = {attr = "aibs_informatics_aws_lambda._version.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
