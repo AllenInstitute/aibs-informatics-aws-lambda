@@ -32,7 +32,6 @@ from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
-from aibs_informatics_aws_lambda.common.tracing import TracingMixins
 
 LambdaEvent = Union[JSON]  # type: ignore  # https://github.com/python/mypy/issues/7866
 
@@ -92,17 +91,14 @@ class ApiLambdaHandler(
         *args,
         logger: Optional[Logger] = None,
         metrics: Optional[Union[EphemeralMetrics, Metrics]] = None,
-        tracer: Optional[Tracer] = None,
         **kwargs,
     ) -> Callable:
         logger = logger or cls.get_logger(service=cls.service_name())
-        tracer = tracer or cls.get_tracer(service=cls.service_name())
         metrics = metrics or cls.get_metrics()
 
         # TODO: remove args once https://github.com/python/mypy/pull/15133 is released (should be mypy 1.2.1)
         @metrics.log_metrics
         @router.route(rule=cls.route_rule(), method=cls.route_method())
-        @tracer.capture_method
         def gateway_handler(logger=logger, metrics=metrics, **route_parameters) -> Any:
             """Generic gateway handler"""
             start = datetime.now()
