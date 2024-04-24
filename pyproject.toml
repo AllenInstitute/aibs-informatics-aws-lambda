@@ -15,7 +15,7 @@ dynamic = [
     "version",
 ]
 dependencies = [
-    "aws-lambda-powertools~=2.35",
+    "aws-lambda-powertools[parser]~=2.35",
     "aws-lambda-typing",
     "aibs-informatics-aws-utils @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-aws-utils.git@main",
     "aibs-informatics-core @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-core.git@main",

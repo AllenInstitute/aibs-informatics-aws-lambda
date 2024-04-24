@@ -16,7 +16,6 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
-from aibs_informatics_aws_lambda.common.tracing import TracingMixins
 
 LambdaEvent = Union[JSON]  # type: ignore # https://github.com/python/mypy/issues/7866
 LambdaHandlerType = Callable[[JSON, LambdaContext], Optional[JSON]]
@@ -30,7 +29,6 @@ RESPONSE = TypeVar("RESPONSE", bound=ModelProtocol)
 class LambdaHandler(
     LoggingMixins,
     MetricsMixins,
-    TracingMixins,
     HandlerMixins,
     BaseExecutor[REQUEST, RESPONSE],
     Generic[REQUEST, RESPONSE],
@@ -128,10 +126,8 @@ class LambdaHandler(
         """
         processor = BatchProcessor(event_type=EventType.SQS)
         logger = cls.get_logger(cls.service_name())
-        tracer = cls.get_tracer(service=cls.service_name())
 
         # Create a record handler for each record in batch.
-        @tracer.capture_method
         def record_handler(record: SQSRecord) -> Optional[JSON]:
             if not cls.should_process_sqs_record(record):
                 logger.info(f"SQS record {record} elected not to be processed.")
@@ -150,7 +146,6 @@ class LambdaHandler(
 
         # Now create top-level handler
         @logger.inject_lambda_context(log_event=True)
-        @tracer.capture_lambda_handler
         @batch_processor(record_handler=record_handler, processor=processor)  # type: ignore
         def handler(event, context: LambdaContext):
             return processor.response()
@@ -200,10 +195,8 @@ class LambdaHandler(
         """
         processor = BatchProcessor(event_type=EventType.DynamoDBStreams)
         logger = cls.get_logger(cls.service_name())
-        tracer = cls.get_tracer(service=cls.service_name())
 
         # Create a record handler for each record in batch.
-        @tracer.capture_method
         def record_handler(record: DynamoDBRecord) -> Optional[JSON]:
             if not cls.should_process_dynamodb_record(record):
                 logger.info(f"DynamoDB record {record} will not be processed.")
@@ -222,7 +215,6 @@ class LambdaHandler(
 
         # Now create top-level handler
         @logger.inject_lambda_context(log_event=True)
-        @tracer.capture_lambda_handler
         @batch_processor(record_handler=record_handler, processor=processor)  # type: ignore
         def handler(event, context: LambdaContext):
             return processor.response()

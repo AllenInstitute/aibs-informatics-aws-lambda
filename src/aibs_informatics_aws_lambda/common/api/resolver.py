@@ -25,7 +25,6 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from aibs_informatics_aws_lambda.common.api.handler import ApiLambdaHandler
 from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
-from aibs_informatics_aws_lambda.common.tracing import TracingMixins
 
 LambdaEvent = Union[JSON]  # type: ignore  # https://github.com/python/mypy/issues/7866
 
@@ -33,12 +32,7 @@ LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], JSONObject]
 
 
 @dataclass
-class ApiResolverBuilder(
-    LoggingMixins,
-    MetricsMixins,
-    TracingMixins,
-    PostInitMixin,
-):
+class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
     app: APIGatewayRestResolver = field(default_factory=APIGatewayRestResolver)
 
     metric_name_prefix: ClassVar[str] = "ApiResolver"
@@ -124,7 +118,6 @@ class ApiResolverBuilder(
     def get_lambda_handler(self, *args, **kwargs) -> LambdaHandlerType:
         lambda_handler = self.handle
 
-        lambda_handler = self.tracer.capture_lambda_handler(lambda_handler)
         lambda_handler = self.logger.inject_lambda_context(correlation_id_path=API_GATEWAY_REST)(
             lambda_handler
         )
@@ -142,7 +135,6 @@ class ApiResolverBuilder(
 
         Args:
             router (BaseRouter): The router to which handlers add a route
-            tracer (Tracer): Tracer used
             root_mod_or_pkg (ModuleType): the root package or module under which are the
                 targeted handler classes to add to this router.
         """
@@ -157,7 +149,6 @@ class ApiResolverBuilder(
             target_module=target_module,
             logger=self.logger,
             metrics=self.metrics,
-            tracer=self.tracer,
         )
 
         if isinstance(router, Router):
@@ -169,13 +160,12 @@ def add_handlers_to_router(
     target_module: ModuleType,
     metrics: Optional[Union[EphemeralMetrics, Metrics]] = None,
     logger: Optional[Logger] = None,
-    tracer: Optional[Tracer] = None,
 ):
     target_api_handler_classes = get_target_handler_classes(target_module)
 
     # Add each lambda handler to the route.
     for api_handler_class in target_api_handler_classes:
-        api_handler_class.add_to_router(router, logger=logger, metrics=metrics, tracer=tracer)
+        api_handler_class.add_to_router(router, logger=logger, metrics=metrics)
 
 
 def get_target_handler_classes(target_module: ModuleType) -> List[ApiLambdaHandler]:
