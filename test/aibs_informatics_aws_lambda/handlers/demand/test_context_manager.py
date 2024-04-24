@@ -434,7 +434,11 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             "destination_path": f"{self.gwo_file_system_id}:/shared/558ca1533e03aaea2e3fb825be29124c1648046a2893052d1a1df0059becbf4f",
         }
         self.assertTrue(len(actual) == 1)
-        self.assertDictContainsSubset(expected, actual[0].to_dict())
+        actual_dict = actual[0].to_dict()
+
+        self.assertEqual(expected["source_path"], actual_dict.get("source_path"))
+        self.assertEqual(expected["destination_path"], actual_dict.get("destination_path"))
+        self.assertEqual(expected["retain_source_data"], actual_dict.get("retain_source_data"))
 
     def test__post_execution_data_sync_requests__no_outputs_generate_empty_list(self):
         demand_execution = get_any_demand_execution(
@@ -460,7 +464,10 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             "destination_path": f"{S3_URI}/outs",
         }
         self.assertTrue(len(actual) == 1)
-        self.assertDictContainsSubset(expected, actual[0].to_dict())
+        actual_dict = actual[0].to_dict()
+        self.assertEqual(expected["source_path"], actual_dict.get("source_path"))
+        self.assertEqual(expected["destination_path"], actual_dict.get("destination_path"))
+        self.assertEqual(expected["retain_source_data"], actual_dict.get("retain_source_data"))
 
     def test__batch_job_queue_name__works_for_valid_demand_execution(self):
         demand_execution = get_any_demand_execution(
