@@ -150,7 +150,7 @@ class LambdaHandler(
         def handler(event, context: LambdaContext):
             return processor.response()
 
-        return handler
+        return handler  # type: ignore
 
     @classmethod
     def should_process_dynamodb_record(cls, record: DynamoDBRecord) -> bool:
@@ -219,7 +219,7 @@ class LambdaHandler(
         def handler(event, context: LambdaContext):
             return processor.response()
 
-        return handler
+        return handler  # type: ignore
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(request: {self.get_request_cls()}, response: {self.get_response_cls()})"
