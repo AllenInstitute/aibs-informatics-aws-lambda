@@ -20,12 +20,6 @@ dependencies = [
     "aws-lambda-typing",
     "aibs-informatics-aws-utils @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-aws-utils.git@main",
     "aibs-informatics-core @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-core.git@main",
-    # Right now we need to pin cryptography to avoid AWS Lambda import errors
-    # https://cryptography.io/en/latest/faq/#i-m-getting-errors-installing-or-importing-cryptography-on-aws-lambda
-    # https://github.com/pyca/cryptography/issues/6390
-    # https://github.com/pyca/cryptography/issues/6391
-    # https://github.com/pyca/cryptography/issues/6481
-    "cryptography==3.4.8",
 ]
 
 [project.optional-dependencies]
