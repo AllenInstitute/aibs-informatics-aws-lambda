@@ -60,7 +60,7 @@ def add_handler_to_logger(
 
     if target_logger is None or isinstance(target_logger, str):
         target_logger = logging.getLogger(target_logger)
-        log_level = min(source_logger.getEffectiveLevel(), target_logger.getEffectiveLevel())
+        log_level = min(source_logger.log_level, target_logger.getEffectiveLevel())
         target_logger.setLevel(log_level)
     target_logger_handlers = get_all_handlers(target_logger)
 

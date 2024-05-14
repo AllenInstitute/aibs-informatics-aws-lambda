@@ -26,14 +26,14 @@ def add_duration_metric(
     )
 
 
-def add_success_metric(name: str, metrics: Optional[Union[EphemeralMetrics, Metrics]] = None):
+def add_success_metric(name: str = "", metrics: Optional[Union[EphemeralMetrics, Metrics]] = None):
     if metrics is None:
         metrics = EphemeralMetrics()
     metrics.add_metric(name=f"{name}Success", unit=MetricUnit.Count, value=1)
     metrics.add_metric(name=f"{name}Failure", unit=MetricUnit.Count, value=0)
 
 
-def add_failure_metric(name: str, metrics: Optional[Union[EphemeralMetrics, Metrics]] = None):
+def add_failure_metric(name: str = "", metrics: Optional[Union[EphemeralMetrics, Metrics]] = None):
     if metrics is None:
         metrics = EphemeralMetrics()
     metrics.add_metric(name=f"{name}Success", unit=MetricUnit.Count, value=0)

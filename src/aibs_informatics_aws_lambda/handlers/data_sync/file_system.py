@@ -31,7 +31,7 @@ class GetDataPathStatsHandler(LambdaHandler[GetDataPathStatsRequest, GetDataPath
         root = get_file_system(request.path)
         node = root.node
         return GetDataPathStatsResponse(
-            path=node.path,
+            path=node.path,  # type: ignore
             path_stats=node.path_stats,
             children={
                 child_path: child_node.path_stats
@@ -44,7 +44,7 @@ class ListDataPathsHandler(LambdaHandler[ListDataPathsRequest, ListDataPathsResp
     def handle(self, request: ListDataPathsRequest) -> ListDataPathsResponse:
         root = get_file_system(request.path)
         return ListDataPathsResponse(
-            paths=sorted([n.path for n in root.node.list_nodes()]),
+            paths=sorted([n.path for n in root.node.list_nodes()]),  # type: ignore
         )
 
 
@@ -98,7 +98,7 @@ class OutdatedDataPathScannerHandler(
             current_efs_size_bytes -= node.size_bytes
 
         return OutdatedDataPathScannerResponse(
-            paths=sorted(paths_to_delete),
+            paths=sorted(paths_to_delete),  # type: ignore
         )
 
 

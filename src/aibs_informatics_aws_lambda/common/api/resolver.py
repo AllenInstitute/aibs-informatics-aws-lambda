@@ -121,7 +121,7 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
         lambda_handler = self.logger.inject_lambda_context(correlation_id_path=API_GATEWAY_REST)(
             lambda_handler
         )
-        lambda_handler = self.metrics.log_metrics(capture_cold_start_metric=True)(lambda_handler)
+        lambda_handler = self.metrics.log_metrics(capture_cold_start_metric=True)(lambda_handler)  # type: ignore
 
         return lambda_handler
 
@@ -141,7 +141,7 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
 
         if not router and not prefix:
             router = self.app
-        elif not router and prefix:
+        elif not router:
             router = Router()
 
         add_handlers_to_router(
