@@ -31,7 +31,12 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 from aibs_informatics_aws_lambda.common.logging import LoggingMixins
-from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
+from aibs_informatics_aws_lambda.common.metrics import (
+    MetricsMixins,
+    add_duration_metric,
+    add_failure_metric,
+    add_success_metric,
+)
 
 LambdaEvent = Union[JSON]  # type: ignore  # https://github.com/python/mypy/issues/7866
 
@@ -108,7 +113,9 @@ class ApiLambdaHandler(
 
                 logger.info(f"Handling {router.current_event.raw_event} event.")
 
-                request = cls._parse_event(router.current_event, route_parameters, logger)
+                request = cls._parse_event(
+                    router.current_event, route_parameters, cast(logging.Logger, logger)
+                )
 
                 logger.debug(f"Getting dict from {request}")
                 event = request.to_dict()
@@ -121,12 +128,12 @@ class ApiLambdaHandler(
 
                 logger.info(f"Route handler method constructed. Invoking")
                 response = lambda_handler(event, router.lambda_context)
-                metrics.add_success_metric()
-                metrics.add_duration_metric(start=start)
+                add_success_metric(metrics=metrics)
+                add_duration_metric(start=start, metrics=metrics)
                 return response
             except Exception as e:
-                metrics.add_failure_metric()
-                metrics.add_duration_metric(start=start)
+                add_failure_metric(metrics=metrics)
+                add_duration_metric(start=start, metrics=metrics)
                 raise e
 
         return gateway_handler

@@ -4,8 +4,7 @@ from typing import List, TypeVar
 
 from aibs_informatics_aws_utils.data_sync.file_system import BaseFileSystem, Node, get_file_system
 from aibs_informatics_aws_utils.efs import detect_mount_points, get_local_path
-from aibs_informatics_aws_utils.s3 import delete_s3_path, get_s3_path_stats
-from aibs_informatics_core.models.aws.efs import EFSPath
+from aibs_informatics_core.models.aws.efs import EFSPath, Path
 from aibs_informatics_core.models.aws.s3 import S3URI
 from aibs_informatics_core.utils.file_operations import get_path_size_bytes, remove_path
 
@@ -122,6 +121,8 @@ class RemoveDataPathsHandler(LambdaHandler[RemoveDataPathsRequest, RemoveDataPat
                     if mount_points is None:
                         mount_points = detect_mount_points()
                     path = get_local_path(efs_path=path, mount_points=mount_points)
+                elif not isinstance(path, Path):
+                    path = Path(path)
                 try:
                     size_bytes = get_path_size_bytes(path)
                     self.logger.info(f"Removing {path} (size {size_bytes} bytes)")

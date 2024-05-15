@@ -20,7 +20,7 @@ from aibs_informatics_core.models.base import (
 )
 from aibs_informatics_core.utils.time import get_current_time
 
-DataPath = Union[S3Path, EFSPath, Path]
+DataPath = Union[S3Path, EFSPath, Path, str]
 DataPathField = lambda *args, **kwargs: UnionField(
     [
         (S3Path, S3Path.as_mm_field()),
