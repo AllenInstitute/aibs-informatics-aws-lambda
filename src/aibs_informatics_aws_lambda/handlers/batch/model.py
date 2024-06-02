@@ -14,11 +14,13 @@ if TYPE_CHECKING:  # pragma: no cover
     from mypy_boto3_batch.type_defs import (
         MountPointTypeDef,
         ResourceRequirementTypeDef,
+        RetryStrategyTypeDef,
         VolumeTypeDef,
     )
 else:
     MountPointTypeDef = dict
     ResourceRequirementTypeDef = dict
+    RetryStrategyTypeDef = dict
     VolumeTypeDef = dict
 
 
@@ -26,13 +28,13 @@ else:
 class CreateDefinitionAndPrepareArgsRequest(SchemaModel):
     image: str = custom_field()
     job_definition_name: str = custom_field()
+    job_queue_name: str = custom_field()
     job_name: Optional[str] = custom_field(default=None)
-    job_queue_name: Optional[str] = custom_field(default=None)
     command: List[str] = custom_field(default_factory=list)
     environment: Dict[str, str] = custom_field(default_factory=dict)
     job_definition_tags: Dict[str, str] = custom_field(default_factory=dict)
-    resource_requirements: List[
-        Union[ResourceRequirementTypeDef, ResourceRequirements]
+    resource_requirements: Union[
+        List[ResourceRequirementTypeDef], ResourceRequirements
     ] = custom_field(
         default_factory=list,
         mm_field=UnionField(
@@ -44,6 +46,7 @@ class CreateDefinitionAndPrepareArgsRequest(SchemaModel):
     )
     mount_points: List[MountPointTypeDef] = custom_field(default_factory=list)
     volumes: List[VolumeTypeDef] = custom_field(default_factory=list)
+    retry_strategy: Optional[RetryStrategyTypeDef] = custom_field(default=None)
 
 
 @dataclass
