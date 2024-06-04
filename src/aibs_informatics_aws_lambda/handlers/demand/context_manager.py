@@ -4,7 +4,7 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from aibs_informatics_aws_utils.batch import (
     BatchJobBuilder,
@@ -30,8 +30,6 @@ from aibs_informatics_core.models.aws.efs import EFSPath
 from aibs_informatics_core.models.aws.s3 import S3URI
 from aibs_informatics_core.models.data_sync import PrepareBatchDataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
-
-# from aibs_informatics_core.models.demand_priority import DemandPriority
 from aibs_informatics_core.models.demand_execution.resolvables import Resolvable, Uploadable
 from aibs_informatics_core.utils.hashing import sha256_hexdigest
 from aibs_informatics_core.utils.os_operations import write_env_file
@@ -377,12 +375,21 @@ def get_batch_efs_configuration(
     # TODO: add support for file_system_name (learn how to resolve file system name)
     if file_system_name:
         file_system_name = env_base.get_resource_name(file_system_name)
-
-    file_system = get_efs_file_system(name=file_system_name)
-    logger.info(f"Using file system {file_system}")
+        file_system = get_efs_file_system(name=file_system_name, tags={"env_base": env_base})
+        file_system_id = file_system["FileSystemId"]
+        logger.info(
+            f"Using file system {file_system_id} with name {file_system_name}. "
+            f"Will search for access point {access_point_name}."
+        )
+    else:
+        logger.info(
+            f"No file system name provided. "
+            f"Will search for access point {access_point_name} directly."
+        )
+        file_system_id = None
 
     access_point = get_efs_access_point(
-        file_system_id=file_system["FileSystemId"],
+        file_system_id=file_system_id,
         access_point_name=access_point_name,
         access_point_tags={"env_base": env_base},
     )
