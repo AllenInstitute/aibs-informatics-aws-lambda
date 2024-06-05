@@ -1,13 +1,32 @@
 from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 
 from aibs_informatics_core.utils.hashing import uuid_str
+from pytest import mark
 
 from aibs_informatics_aws_lambda.common.api.handler import LambdaHandlerType
-from aibs_informatics_aws_lambda.handlers.batch.create import CreateDefinitionAndPrepareArgsHandler
+from aibs_informatics_aws_lambda.handlers.batch.create import (
+    CreateDefinitionAndPrepareArgsHandler,
+    DockerImageUri,
+)
 from aibs_informatics_aws_lambda.handlers.batch.model import (
     CreateDefinitionAndPrepareArgsRequest,
     CreateDefinitionAndPrepareArgsResponse,
 )
+
+
+@mark.parametrize(
+    "image, , is_valid",
+    [
+        ("docker.io/my-image:latest", True),
+        (f"docker.io/my-image@sha256:{'a' * 64}", True),
+        ("my-image:latest", False),
+        ("public.ecr.aws/my-image:latest", True),
+        ("ghcr.io/my-image:latest", True),
+        ("123456789012.dkr.ecr.us-west-2.amazonaws.com/my-image:latest", True),
+    ],
+)
+def test__DockerImageUri__is_valid(image, is_valid):
+    assert DockerImageUri.is_valid(image) == is_valid
 
 
 class CreateDefinitionAndPrepareArgsHandlerTests(LambdaHandlerTestCase):

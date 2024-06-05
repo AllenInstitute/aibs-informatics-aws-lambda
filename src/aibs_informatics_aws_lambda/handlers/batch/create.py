@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar, Optional
 
 from aibs_informatics_aws_utils.batch import (
     BatchJobBuilder,
@@ -16,11 +17,30 @@ from aibs_informatics_aws_lambda.handlers.batch.model import (
     CreateDefinitionAndPrepareArgsResponse,
 )
 
+REGISTRY = r"(docker\.io|public\.ecr\.aws|ghcr\.io|(?:[\d]{12}).dkr.ecr.(?:[\w-]*).amazonaws.com)"
+REPO_NAME = r"([a-z0-9]+(?:[-_\.\/][a-z0-9]+)*)"
+IMAGE_TAG_OR_SHA = r"(?::([\w.\-_]{1,127})|@sha256:([A-Fa-f0-9]{64}))"
 
-def is_valid_docker_uri(uri):
-    pattern = r"^(docker\.io|public\.ecr\.aws)\/([a-z0-9]+([-_\.\/][a-z0-9]+)*)(:[a-z0-9]+([-_\.][a-z0-9]+)*)?$"
-    match = re.match(pattern, uri)
-    return match is not None
+
+# TODO: move to aibs-informatics-core once this is stable
+class DockerImageUri(ValidatedStr):
+    regex_pattern: ClassVar[re.Pattern] = re.compile(f"^{REGISTRY}/{REPO_NAME}{IMAGE_TAG_OR_SHA}?")
+
+    @property
+    def registry(self) -> str:
+        return self.get_match_groups()[0]
+
+    @property
+    def repo_name(self) -> str:
+        return self.get_match_groups()[1]
+
+    @property
+    def tag(self) -> Optional[str]:
+        return self.get_match_groups()[2]
+
+    @property
+    def sha256(self) -> Optional[str]:
+        return self.get_match_groups()[3]
 
 
 @dataclass
@@ -32,7 +52,7 @@ class CreateDefinitionAndPrepareArgsHandler(
     ) -> CreateDefinitionAndPrepareArgsResponse:
         job_def_builder = BatchJobBuilder(
             image=request.image
-            if is_valid_docker_uri(request.image)
+            if DockerImageUri.is_valid(request.image)
             else resolve_image_uri(request.image),
             job_definition_name=request.job_definition_name,
             job_name=request.job_name or f"{request.job_definition_name}-{uuid_str()}",
