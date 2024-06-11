@@ -99,6 +99,7 @@ class DemandExecutionContextManager:
     demand_execution: DemandExecution
     scratch_vol_configuration: BatchEFSConfiguration
     shared_vol_configuration: BatchEFSConfiguration
+    tmp_vol_configuration: Optional[BatchEFSConfiguration] = None
     env_base: EnvBase = field(default_factory=EnvBase.from_env)
 
     def __post_init__(self):
@@ -136,6 +137,8 @@ class DemandExecutionContextManager:
         Returns:
             Path: container path for tmp volume
         """
+        if self.tmp_vol_configuration:
+            return self.tmp_vol_configuration.mount_point_config.mount_point
         return self.scratch_vol_configuration.mount_point_config.as_mounted_path("tmp")
 
     @property
@@ -193,10 +196,13 @@ class DemandExecutionContextManager:
         Returns:
             List[MountPointConfiguration]: list of mount point configurations
         """
-        return [
+        mpcs = [
             self.scratch_vol_configuration.mount_point_config,
             self.shared_vol_configuration.mount_point_config,
         ]
+        if self.tmp_vol_configuration:
+            mpcs.append(self.tmp_vol_configuration.mount_point_config)
+        return mpcs
 
     @property
     def batch_job_builder(self) -> BatchJobBuilder:
@@ -259,12 +265,14 @@ class DemandExecutionContextManager:
             access_point_name=EFS_SHARED_ACCESS_POINT_NAME,
             read_only=True,
         )
+        tmp_vol_configuration = None
 
         logger.info(f"Using following efs configuration: {vol_configuration}")
         return DemandExecutionContextManager(
             demand_execution=demand_execution,
             scratch_vol_configuration=vol_configuration,
             shared_vol_configuration=shared_vol_configuration,
+            tmp_vol_configuration=tmp_vol_configuration,
             env_base=env_base,
         )
 
@@ -310,6 +318,7 @@ def update_demand_execution_parameter_inputs(
 
     demand_execution = demand_execution.copy()
     execution_params = demand_execution.execution_parameters
+    # TODO: we should allow for the ability to specify the local path for the input
     updated_params = {
         param.name: Resolvable(
             local=(container_shared_path / sha256_hexdigest(param.remote_value)).as_posix(),
@@ -403,16 +412,19 @@ def get_batch_efs_configuration(
 
 def generate_batch_job_builder(
     demand_execution: DemandExecution,
+    env_base: EnvBase,
     working_path: EFSPath,
     tmp_path: EFSPath,
     scratch_mount_point: MountPointConfiguration,
     shared_mount_point: MountPointConfiguration,
-    env_base: EnvBase,
+    tmp_mount_point: Optional[MountPointConfiguration] = None,
 ) -> BatchJobBuilder:
     logger.info(f"Constructing BatchJobBuilder instance")
 
     demand_execution = demand_execution.copy()
     efs_mount_points = [scratch_mount_point, shared_mount_point]
+    if tmp_mount_point:
+        efs_mount_points.append(tmp_mount_point)
     logger.info(f"Resolving local paths of working dir = {working_path} and tmp dir = {tmp_path}")
     container_working_path = get_local_path(working_path, mount_points=efs_mount_points)
     container_tmp_path = get_local_path(tmp_path, mount_points=efs_mount_points)

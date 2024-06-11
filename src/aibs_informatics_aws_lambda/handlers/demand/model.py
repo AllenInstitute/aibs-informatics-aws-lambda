@@ -33,6 +33,9 @@ class DemandFileSystemConfigurations(SchemaModel):
     scratch: FileSystemConfiguration = custom_field(
         mm_field=FileSystemConfiguration.as_mm_field(), default_factory=FileSystemConfiguration
     )
+    tmp: Optional[FileSystemConfiguration] = custom_field(
+        mm_field=FileSystemConfiguration.as_mm_field(), default=None
+    )
 
 
 @dataclass
