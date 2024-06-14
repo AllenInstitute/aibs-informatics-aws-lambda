@@ -8,6 +8,8 @@ from aibs_informatics_aws_utils.constants.efs import (
     EFS_SCRATCH_PATH,
     EFS_SHARED_ACCESS_POINT_NAME,
     EFS_SHARED_PATH,
+    EFS_TMP_ACCESS_POINT_NAME,
+    EFS_TMP_PATH,
 )
 from aibs_informatics_aws_utils.efs import MountPointConfiguration
 from aibs_informatics_core.env import EnvBase
@@ -56,13 +58,28 @@ class PrepareDemandScaffoldingHandler(
             read_only=True,
         )
 
+        if request.file_system_configurations.tmp is not None:
+            tmp_vol_configuration = construct_batch_efs_configuration(
+                env_base=self.env_base,
+                file_system=request.file_system_configurations.tmp.file_system,
+                access_point=request.file_system_configurations.tmp.access_point
+                if request.file_system_configurations.tmp.access_point
+                else EFS_TMP_ACCESS_POINT_NAME,
+                container_path=request.file_system_configurations.tmp.container_path
+                if request.file_system_configurations.tmp.container_path
+                else f"/opt/efs{EFS_TMP_PATH}",
+                read_only=False,
+            )
+        else:
+            tmp_vol_configuration = None
+
         context_manager = DemandExecutionContextManager(
             demand_execution=request.demand_execution,
             scratch_vol_configuration=scratch_vol_configuration,
             shared_vol_configuration=shared_vol_configuration,
+            tmp_vol_configuration=tmp_vol_configuration,
             env_base=self.env_base,
         )
-
         batch_job_builder = context_manager.batch_job_builder
 
         self.setup_file_system(context_manager)

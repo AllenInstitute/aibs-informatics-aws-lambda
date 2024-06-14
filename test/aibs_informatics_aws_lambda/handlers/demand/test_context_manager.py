@@ -41,6 +41,10 @@ from aibs_informatics_aws_lambda.handlers.demand.context_manager import (
     get_batch_job_queue_name,
     update_demand_execution_parameter_inputs,
 )
+from aibs_informatics_aws_lambda.handlers.demand.model import (
+    ContextManagerConfiguration,
+    EnvFileWriteMode,
+)
 
 ENV_BASE = EnvBase("dev-marmotdev")
 DEMAND_ID = UniqueID.create()
@@ -150,13 +154,53 @@ def test__update_demand_execution_parameter_inputs__works(
     )
 
     demand_execution = update_demand_execution_parameter_inputs(
-        demand_execution, efs_mount_point_config.mount_point
+        demand_execution=demand_execution,
+        container_shared_path=efs_mount_point_config.mount_point,
+        container_scratch_path=efs_mount_point_config.mount_point,
     )
 
     job_inputs = demand_execution.execution_parameters.job_param_inputs
 
     assert len(job_inputs) == 1
     assert job_inputs[0].value.startswith(efs_mount_point_config.mount_point.as_posix())
+
+
+def test__update_demand_execution_parameter_inputs__isolates_inputs(
+    get_or_create_file_system, create_access_point
+):
+    fs_id = get_or_create_file_system("fs")
+    ap_id = create_access_point(fs_id, "ap", "/opt/efs")
+
+    efs_mount_point_config = MountPointConfiguration.build(
+        "/mnt/efs", file_system=fs_id, access_point=ap_id
+    )
+
+    demand_execution = get_any_demand_execution(
+        execution_parameters=DemandExecutionParameters(
+            command=["cmd"],
+            inputs=["X"],
+            params={
+                "X": {
+                    "local": "X",
+                    "remote": S3_URI / "in",
+                }
+            },
+            output_s3_prefix=S3_URI,
+        )
+    )
+
+    demand_execution = update_demand_execution_parameter_inputs(
+        demand_execution,
+        container_shared_path=efs_mount_point_config.mount_point,
+        container_scratch_path=Path("/opt/tmp/"),
+        isolate_inputs=True,
+    )
+
+    job_inputs = demand_execution.execution_parameters.job_param_inputs
+
+    assert len(job_inputs) == 1
+    assert job_inputs[0].value.startswith("/opt/tmp")
+    assert job_inputs[0].value.endswith(f"/{DEMAND_ID}/X")
 
 
 def test__BatchEFSConfiguration__build__works(get_or_create_file_system, create_access_point):
@@ -300,9 +344,17 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             self.gwo_file_system_id,
             tags={self.env_base.ENV_BASE_KEY: self.env_base},
         )
+        # HACK: on macos, /tmp is a symlink to /private/tmp. This causes problems in the
+        #       resolution and mapping of mounted paths to efs paths because we use the
+        #       `pathlib,Path.resolve` to get the real path. This method will resolve the
+        #       symlink to the real path. This is not what we want. We want to keep the
+        #       symlink in the path. But there is no other method in `pathlib.Path` that
+        #       will normalize the path.
+        #       Solution here is to make tmp -> tmpdir. This is a hack and should not be
+        #       a problem in linux based machines in production.
         self.access_point_id__tmp = self.create_access_point(
             EFS_TMP_ACCESS_POINT_NAME,
-            f"{EFS_TMP_PATH}",
+            f"{EFS_TMP_PATH}dir",
             self.gwo_file_system_id,
             tags={self.env_base.ENV_BASE_KEY: self.env_base},
         )
@@ -356,6 +408,50 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         )
         return response["AccessPointId"]
 
+    def test__init__with_tmp_vol_configuration(self):
+        demand_execution = get_any_demand_execution(
+            execution_id=(demand_id := uuid_str("123")),
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd"],
+            ),
+        )
+
+        vol_configuration = get_batch_efs_configuration(
+            env_base=self.env_base,
+            container_path=f"/opt/efs{EFS_SCRATCH_PATH}",
+            access_point_name=EFS_SCRATCH_ACCESS_POINT_NAME,
+            read_only=False,
+        )
+        shared_vol_configuration = get_batch_efs_configuration(
+            env_base=self.env_base,
+            container_path=f"/opt/efs{EFS_SHARED_PATH}",
+            access_point_name=EFS_SHARED_ACCESS_POINT_NAME,
+            read_only=True,
+        )
+        tmp_vol_configuration = get_batch_efs_configuration(
+            env_base=self.env_base,
+            container_path=f"/opt/efs{EFS_TMP_PATH}dir",
+            access_point_name=EFS_TMP_ACCESS_POINT_NAME,
+            read_only=False,
+        )
+
+        decm = DemandExecutionContextManager(
+            demand_execution=demand_execution,
+            scratch_vol_configuration=vol_configuration,
+            shared_vol_configuration=shared_vol_configuration,
+            tmp_vol_configuration=tmp_vol_configuration,
+            configuration=ContextManagerConfiguration(),
+            env_base=self.env_base,
+        )
+
+        self.assertEqual(len(decm.efs_mount_points), 3)
+        self.assertEqual(decm.container_shared_path, Path("/opt/efs/shared"))
+        self.assertEqual(decm.container_working_path, Path(f"/opt/efs/scratch/{demand_id}"))
+        self.assertEqual(decm.container_tmp_path, Path("/opt/efs/tmpdir"))
+
+        bjb = decm.batch_job_builder
+        self.assertEqual(len(bjb.mount_points), 3)
+
     def test__container_and_efs_path_properties__are_as_expected(self):
         demand_execution = get_any_demand_execution(
             execution_id=(demand_id := uuid_str("123")),
@@ -374,7 +470,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         )
         self.assertEqual(decm.efs_tmp_path, EFSPath(f"{self.gwo_file_system_id}:/scratch/tmp"))
 
-    def test__batch_job_builder(self):
+    def test__batch_job_builder__always_write_mode(self):
         demand_execution = get_any_demand_execution(
             execution_id=uuid_str("123"),
             execution_parameters=DemandExecutionParameters(
@@ -382,7 +478,11 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
                 params={"A": "a", "B": "b", "C": "c"},
             ),
         )
-        decm = DemandExecutionContextManager.from_demand_execution(demand_execution, self.env_base)
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            configuration=ContextManagerConfiguration(env_file_write_mode=EnvFileWriteMode.ALWAYS),
+        )
         actual = decm.batch_job_builder
         self.assertEqual(actual.image, demand_execution.execution_image)
         self.assertStringPattern("dev-marmotdev-custom-[a-f0-9]{64}", actual.job_definition_name)
@@ -398,7 +498,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         assert actual.environment == {
             "ENV_BASE": "dev-marmotdev",
             "AWS_REGION": "us-west-2",
-            "ENVIRONMENT_FILE": f"/opt/efs/scratch/{demand_execution.execution_id}/.demand.env",
+            "_ENVIRONMENT_FILE": f"/opt/efs/scratch/{demand_execution.execution_id}/.demand.env",
             "WORKING_DIR": f"/opt/efs/scratch/{demand_execution.execution_id}",
             "TMPDIR": "/opt/efs/scratch/tmp",
             "A": "a",
@@ -407,7 +507,130 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         assert actual.command == [
             "/bin/bash",
             "-c",
-            "mkdir -p ${WORKING_DIR} && mkdir -p ${TMPDIR} && cd ${WORKING_DIR} && . ${ENVIRONMENT_FILE} && cmd ${ENV_BASE} ${A}/${B}",
+            "mkdir -p ${WORKING_DIR} && mkdir -p ${TMPDIR} && cd ${WORKING_DIR} && . ${_ENVIRONMENT_FILE} && cmd ${ENV_BASE} ${A}/${B}",
+        ]
+
+    def test__batch_job_builder__never_write_mode(self):
+        demand_execution = get_any_demand_execution(
+            execution_id=uuid_str("123"),
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd", "${ENV_BASE}", "${A}/${B}"],
+                params={"A": "a", "B": "b", "C": "c"},
+            ),
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            configuration=ContextManagerConfiguration(env_file_write_mode=EnvFileWriteMode.NEVER),
+        )
+        actual = decm.batch_job_builder
+        self.assertEqual(actual.image, demand_execution.execution_image)
+        self.assertStringPattern("dev-marmotdev-custom-[a-f0-9]{64}", actual.job_definition_name)
+
+        # Assert environment and environment file are as expected
+        env_file = (
+            self.root_mount_point / "scratch" / demand_execution.execution_id / ".demand.env"
+        )
+        assert not env_file.exists()
+        assert actual.environment == {
+            "ENV_BASE": "dev-marmotdev",
+            "AWS_REGION": "us-west-2",
+            "WORKING_DIR": f"/opt/efs/scratch/{demand_execution.execution_id}",
+            "TMPDIR": "/opt/efs/scratch/tmp",
+            "EXECUTION_ID": demand_execution.execution_id,
+            "A": "a",
+            "B": "b",
+            "C": "c",
+        }
+        assert actual.command == [
+            "/bin/bash",
+            "-c",
+            "mkdir -p ${WORKING_DIR} && mkdir -p ${TMPDIR} && cd ${WORKING_DIR} && cmd ${ENV_BASE} ${A}/${B}",
+        ]
+
+    def test__batch_job_builder__conditional_write_mode__not_required(self):
+        demand_execution = get_any_demand_execution(
+            execution_id=uuid_str("123"),
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd", "${ENV_BASE}", "${A}/${B}"],
+                params={"A": "a", "B": "b", "C": "c"},
+            ),
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            configuration=ContextManagerConfiguration(
+                env_file_write_mode=EnvFileWriteMode.IF_REQUIRED
+            ),
+        )
+        actual = decm.batch_job_builder
+        self.assertEqual(actual.image, demand_execution.execution_image)
+        self.assertStringPattern("dev-marmotdev-custom-[a-f0-9]{64}", actual.job_definition_name)
+
+        # Assert environment and environment file are as expected
+        env_file = (
+            self.root_mount_point / "scratch" / demand_execution.execution_id / ".demand.env"
+        )
+        assert not env_file.exists()
+        assert actual.environment == {
+            "ENV_BASE": "dev-marmotdev",
+            "AWS_REGION": "us-west-2",
+            "WORKING_DIR": f"/opt/efs/scratch/{demand_execution.execution_id}",
+            "TMPDIR": "/opt/efs/scratch/tmp",
+            "EXECUTION_ID": demand_execution.execution_id,
+            "A": "a",
+            "B": "b",
+            "C": "c",
+        }
+        assert actual.command == [
+            "/bin/bash",
+            "-c",
+            "mkdir -p ${WORKING_DIR} && mkdir -p ${TMPDIR} && cd ${WORKING_DIR} && cmd ${ENV_BASE} ${A}/${B}",
+        ]
+
+    def test__batch_job_builder__conditional_write_mode__required(self):
+        demand_execution = get_any_demand_execution(
+            execution_id=uuid_str("123"),
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd", "${ENV_BASE}"],
+                params={
+                    # This should be greater than 8192
+                    f"VAR_{i}": f"VAL_{i}"
+                    for i in range(1000, 2000)
+                },
+            ),
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            configuration=ContextManagerConfiguration(
+                env_file_write_mode=EnvFileWriteMode.IF_REQUIRED
+            ),
+        )
+        actual = decm.batch_job_builder
+        self.assertEqual(actual.image, demand_execution.execution_image)
+        self.assertStringPattern("dev-marmotdev-custom-[a-f0-9]{64}", actual.job_definition_name)
+
+        # Assert environment and environment file are as expected
+        env_file = (
+            self.root_mount_point / "scratch" / demand_execution.execution_id / ".demand.env"
+        )
+        assert env_file.exists()
+        assert env_file.read_text() == (
+            f'export EXECUTION_ID="{demand_execution.execution_id}"\n'
+            + "\n".join([f'export VAR_{i}="VAL_{i}"' for i in range(1000, 2000)])
+        )
+        assert actual.environment == {
+            "ENV_BASE": "dev-marmotdev",
+            "AWS_REGION": "us-west-2",
+            "_ENVIRONMENT_FILE": f"/opt/efs/scratch/{demand_execution.execution_id}/.demand.env",
+            "WORKING_DIR": f"/opt/efs/scratch/{demand_execution.execution_id}",
+            "TMPDIR": "/opt/efs/scratch/tmp",
+        }
+        assert actual.command == [
+            "/bin/bash",
+            "-c",
+            "mkdir -p ${WORKING_DIR} && mkdir -p ${TMPDIR} && cd ${WORKING_DIR} && . ${_ENVIRONMENT_FILE} && cmd ${ENV_BASE}",
         ]
 
     def test__pre_execution_data_sync_requests__no_inputs_generate_empty_list(self):

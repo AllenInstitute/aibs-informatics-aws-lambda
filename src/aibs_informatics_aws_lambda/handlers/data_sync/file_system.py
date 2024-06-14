@@ -1,10 +1,11 @@
 import logging
 from datetime import timedelta
+from pathlib import Path
 from typing import List, TypeVar
 
 from aibs_informatics_aws_utils.data_sync.file_system import BaseFileSystem, Node, get_file_system
 from aibs_informatics_aws_utils.efs import detect_mount_points, get_local_path
-from aibs_informatics_core.models.aws.efs import EFSPath, Path
+from aibs_informatics_core.models.aws.efs import EFSPath
 from aibs_informatics_core.models.aws.s3 import S3URI
 from aibs_informatics_core.utils.file_operations import get_path_size_bytes, remove_path
 

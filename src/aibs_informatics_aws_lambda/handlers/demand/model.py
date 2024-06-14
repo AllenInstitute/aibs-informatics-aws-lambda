@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Literal, Optional
 
-from aibs_informatics_core.models.base import SchemaModel, custom_field
+from aibs_informatics_core.models.base import EnumField, SchemaModel, custom_field
 from aibs_informatics_core.models.data_sync import DataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
 
@@ -33,6 +34,26 @@ class DemandFileSystemConfigurations(SchemaModel):
     scratch: FileSystemConfiguration = custom_field(
         mm_field=FileSystemConfiguration.as_mm_field(), default_factory=FileSystemConfiguration
     )
+    tmp: Optional[FileSystemConfiguration] = custom_field(
+        mm_field=FileSystemConfiguration.as_mm_field(), default=None
+    )
+
+
+class EnvFileWriteMode(str, Enum):
+    NEVER = "NEVER"
+    ALWAYS = "ALWAYS"
+    IF_REQUIRED = "IF_REQUIRED"
+
+
+@dataclass
+class ContextManagerConfiguration(SchemaModel):
+    isolate_inputs: bool = custom_field(default=False)
+    env_file_write_mode: EnvFileWriteMode = custom_field(
+        mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.ALWAYS
+    )
+    # data sync configurations
+    force: bool = custom_field(default=False)
+    size_only: bool = custom_field(default=True)
 
 
 @dataclass
@@ -41,6 +62,10 @@ class PrepareDemandScaffoldingRequest(SchemaModel):
     file_system_configurations: DemandFileSystemConfigurations = custom_field(
         mm_field=DemandFileSystemConfigurations.as_mm_field(),
         default_factory=DemandFileSystemConfigurations,
+    )
+    context_manager_configuration: ContextManagerConfiguration = custom_field(
+        mm_field=ContextManagerConfiguration.as_mm_field(),
+        default_factory=ContextManagerConfiguration,
     )
 
 
