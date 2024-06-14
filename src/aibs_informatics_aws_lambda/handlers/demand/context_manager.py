@@ -1,6 +1,6 @@
 import logging
-import os
 import re
+import sys
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -34,6 +34,11 @@ from aibs_informatics_core.models.demand_execution.resolvables import Resolvable
 from aibs_informatics_core.utils.hashing import sha256_hexdigest
 from aibs_informatics_core.utils.os_operations import write_env_file
 from aibs_informatics_core.utils.units import BYTES_PER_GIBIBYTE
+
+from aibs_informatics_aws_lambda.handlers.demand.model import (
+    ContextManagerConfiguration,
+    EnvFileWriteMode,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from mypy_boto3_batch.type_defs import (
@@ -100,13 +105,14 @@ class DemandExecutionContextManager:
     scratch_vol_configuration: BatchEFSConfiguration
     shared_vol_configuration: BatchEFSConfiguration
     tmp_vol_configuration: Optional[BatchEFSConfiguration] = None
+    configuration: ContextManagerConfiguration = field(default_factory=ContextManagerConfiguration)
     env_base: EnvBase = field(default_factory=EnvBase.from_env)
 
     def __post_init__(self):
         self._batch_job_builder = None
 
         self.demand_execution = update_demand_execution_parameter_inputs(
-            self.demand_execution, self.container_shared_path
+            self.demand_execution, self.container_shared_path, self.configuration.isolate_inputs
         )
         self.demand_execution = update_demand_execution_parameter_outputs(
             self.demand_execution, self.container_working_path
@@ -213,7 +219,11 @@ class DemandExecutionContextManager:
                 tmp_path=self.efs_tmp_path,
                 scratch_mount_point=self.scratch_vol_configuration.mount_point_config,
                 shared_mount_point=self.shared_vol_configuration.mount_point_config,
+                tmp_mount_point=self.tmp_vol_configuration.mount_point_config
+                if self.tmp_vol_configuration
+                else None,
                 env_base=self.env_base,
+                env_file_write_mode=self.configuration.env_file_write_mode,
             )
         return self._batch_job_builder
 
@@ -234,6 +244,8 @@ class DemandExecutionContextManager:
                 retain_source_data=True,
                 require_lock=True,
                 batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
+                size_only=self.configuration.size_only,
+                force=self.configuration.force,
             )
             for param in self.demand_execution.execution_parameters.downloadable_job_param_inputs
         ]
@@ -247,12 +259,19 @@ class DemandExecutionContextManager:
                 retain_source_data=False,
                 require_lock=False,
                 batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
+                size_only=self.configuration.size_only,
+                force=self.configuration.force,
             )
             for param in self.demand_execution.execution_parameters.uploadable_job_param_outputs
         ]
 
     @classmethod
-    def from_demand_execution(cls, demand_execution: DemandExecution, env_base: EnvBase):
+    def from_demand_execution(
+        cls,
+        demand_execution: DemandExecution,
+        env_base: EnvBase,
+        configuration: Optional[ContextManagerConfiguration] = None,
+    ):
         vol_configuration = get_batch_efs_configuration(
             env_base=env_base,
             container_path=f"/opt/efs{EFS_SCRATCH_PATH}",
@@ -273,6 +292,7 @@ class DemandExecutionContextManager:
             scratch_vol_configuration=vol_configuration,
             shared_vol_configuration=shared_vol_configuration,
             tmp_vol_configuration=tmp_vol_configuration,
+            configuration=configuration or ContextManagerConfiguration(),
             env_base=env_base,
         )
 
@@ -283,7 +303,7 @@ class DemandExecutionContextManager:
 
 
 def update_demand_execution_parameter_inputs(
-    demand_execution: DemandExecution, container_shared_path: Path
+    demand_execution: DemandExecution, container_shared_path: Path, isolate_inputs: bool = False
 ) -> DemandExecution:
     """Modifies demand execution input destinations with the location of the volume configuration
 
@@ -311,6 +331,7 @@ def update_demand_execution_parameter_inputs(
     Args:
         demand_execution (DemandExecution): Demand execution object to modify (copied)
         vol_configuration (BatchEFSConfiguration): volume configuration
+        isolate_inputs (bool): flag to determine if inputs should be isolated
 
     Returns:
         DemandExecution: a demand execution with modified execution parameter inputs
@@ -319,13 +340,16 @@ def update_demand_execution_parameter_inputs(
     demand_execution = demand_execution.copy()
     execution_params = demand_execution.execution_parameters
     # TODO: we should allow for the ability to specify the local path for the input
-    updated_params = {
-        param.name: Resolvable(
-            local=(container_shared_path / sha256_hexdigest(param.remote_value)).as_posix(),
-            remote=param.remote_value,
-        )
-        for param in execution_params.downloadable_job_param_inputs
-    }
+    updated_params = {}
+    for param in execution_params.downloadable_job_param_inputs:
+        if isolate_inputs:
+            local = container_shared_path / demand_execution.execution_id / param.value
+        else:
+            local = container_shared_path / sha256_hexdigest(param.remote_value)
+
+        new_resolvable = Resolvable(local=local.as_posix(), remote=param.remote_value)
+        updated_params[param.name] = new_resolvable
+
     execution_params.update_params(**updated_params)
     return demand_execution
 
@@ -418,12 +442,13 @@ def generate_batch_job_builder(
     scratch_mount_point: MountPointConfiguration,
     shared_mount_point: MountPointConfiguration,
     tmp_mount_point: Optional[MountPointConfiguration] = None,
+    env_file_write_mode: EnvFileWriteMode = EnvFileWriteMode.ALWAYS,
 ) -> BatchJobBuilder:
     logger.info(f"Constructing BatchJobBuilder instance")
 
     demand_execution = demand_execution.copy()
     efs_mount_points = [scratch_mount_point, shared_mount_point]
-    if tmp_mount_point:
+    if tmp_mount_point is not None:
         efs_mount_points.append(tmp_mount_point)
     logger.info(f"Resolving local paths of working dir = {working_path} and tmp dir = {tmp_path}")
     container_working_path = get_local_path(working_path, mount_points=efs_mount_points)
@@ -485,42 +510,64 @@ def generate_batch_job_builder(
 
     # If the local environment file is not None, then the file is writable from this local machine
     # We will now write a portion of environment variables to files that can be written.
-    if local_environment_file is not None:
-        # Steps for writing environment variables to file:
-        #   1. Identify all environment variables that are not referenced in the command
-        #       if not referenced, then add to environment file.
-        #   2. Write environment file
-        #   3. Add environment file to command
-        ENVIRONMENT_FILE_VAR = "ENVIRONMENT_FILE"
-
-        # Step 1:, split environment variables based on reference are referenced in the command
-        writable_environment = environment.copy()
-        required_environment: Dict[str, str] = {}
-        for arg in command + [_ for c in pre_commands for _ in c]:
-            for match in re.findall(r"\$\{?([\w]+)\}?", arg):
-                if match in writable_environment:
-                    required_environment[match] = writable_environment.pop(match)
-
-        # Add the environment file variable to the required environment variables
-        environment = required_environment.copy()
-        environment[ENVIRONMENT_FILE_VAR] = container_environment_file.as_posix()
-
-        # Step 2: write to the environment file
-        local_environment_file.parent.mkdir(parents=True, exist_ok=True)
-        write_env_file(writable_environment, local_environment_file)
-
-        # Finally, add the environment file to the command
-        pre_commands.append(f". ${{{ENVIRONMENT_FILE_VAR}}}".split(" "))
-    else:
+    if local_environment_file is None or env_file_write_mode == EnvFileWriteMode.NEVER:
         # If the environment file cannot be written to, then the environment variables are
         # passed directly to the container. This is a fallback option and will fail if the
         # environment variables are too long.
+        if local_environment_file is None:
+            reason = f"Could not write environment variables to file {efs_environment_file_uri}."
+        else:
+            reason = "Environment file write mode set to NEVER."
+
         logger.warning(
-            f"Could not write environment variables to file {efs_environment_file_uri}."
-            "Environment variables will be passed directly to the container. "
+            f"{reason} Environment variables will be passed directly to the container. "
             "THIS MAY CAUSE THE CONTAINER TO FAIL IF THE ENVIRONMENT VARIABLES "
             "ARE LONGER THAN 8192 CHARACTERS!!!"
         )
+
+    else:
+        if env_file_write_mode == EnvFileWriteMode.IF_REQUIRED:
+            env_size = sum([sys.getsizeof(k) + sys.getsizeof(v) for k, v in environment.items()])
+
+            if env_size > 8192 * 0.9:
+                logger.info(
+                    f"Environment variables are too large to pass directly to container (> 90% of 8192). "
+                    f"Writing environment variables to file {efs_environment_file_uri}."
+                )
+                confirm_write = True
+            else:
+                confirm_write = False
+        elif env_file_write_mode == EnvFileWriteMode.ALWAYS:
+            logger.info(f"Writing environment variables to file {efs_environment_file_uri}.")
+            confirm_write = True
+
+        if confirm_write:
+            # Steps for writing environment variables to file:
+            #   1. Identify all environment variables that are not referenced in the command
+            #       if not referenced, then add to environment file.
+            #   2. Write environment file
+            #   3. Add environment file to command
+            ENVIRONMENT_FILE_VAR = "_ENVIRONMENT_FILE"
+
+            # Step 1:, split environment variables based on reference are referenced in the command
+            writable_environment = environment.copy()
+            required_environment: Dict[str, str] = {}
+            for arg in command + [_ for c in pre_commands for _ in c]:
+                for match in re.findall(r"\$\{?([\w]+)\}?", arg):
+                    if match in writable_environment:
+                        required_environment[match] = writable_environment.pop(match)
+
+            # Add the environment file variable to the required environment variables
+            environment = required_environment.copy()
+            environment[ENVIRONMENT_FILE_VAR] = container_environment_file.as_posix()
+
+            # Step 2: write to the environment file
+            local_environment_file.parent.mkdir(parents=True, exist_ok=True)
+            write_env_file(writable_environment, local_environment_file)
+
+            # Finally, add the environment file to the command
+            pre_commands.append(f". ${{{ENVIRONMENT_FILE_VAR}}}".split(" "))
+
     # ------------------------------------------------------------------
 
     command_string = " && ".join([" ".join(_) for _ in pre_commands + [command]])
@@ -529,6 +576,8 @@ def generate_batch_job_builder(
         BatchEFSConfiguration(scratch_mount_point, read_only=False),
         BatchEFSConfiguration(shared_mount_point, read_only=True),
     ]
+    if tmp_mount_point:
+        vol_configurations.append(BatchEFSConfiguration(tmp_mount_point, read_only=False))
     logger.info(f"Constructing BatchJobBuilder instance...")
     return BatchJobBuilder(
         image=demand_execution.execution_image,
