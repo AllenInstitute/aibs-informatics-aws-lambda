@@ -154,7 +154,9 @@ def test__update_demand_execution_parameter_inputs__works(
     )
 
     demand_execution = update_demand_execution_parameter_inputs(
-        demand_execution, efs_mount_point_config.mount_point
+        demand_execution=demand_execution,
+        container_shared_path=efs_mount_point_config.mount_point,
+        container_scratch_path=efs_mount_point_config.mount_point,
     )
 
     job_inputs = demand_execution.execution_parameters.job_param_inputs
@@ -188,13 +190,16 @@ def test__update_demand_execution_parameter_inputs__isolates_inputs(
     )
 
     demand_execution = update_demand_execution_parameter_inputs(
-        demand_execution, efs_mount_point_config.mount_point, isolate_inputs=True
+        demand_execution,
+        container_shared_path=efs_mount_point_config.mount_point,
+        container_scratch_path=Path("/opt/tmp/"),
+        isolate_inputs=True,
     )
 
     job_inputs = demand_execution.execution_parameters.job_param_inputs
 
     assert len(job_inputs) == 1
-    assert job_inputs[0].value.startswith(efs_mount_point_config.mount_point.as_posix())
+    assert job_inputs[0].value.startswith("/opt/tmp")
     assert job_inputs[0].value.endswith(f"/{DEMAND_ID}/X")
 
 

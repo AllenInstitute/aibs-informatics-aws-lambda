@@ -40,8 +40,8 @@ class DemandFileSystemConfigurations(SchemaModel):
 
 
 class EnvFileWriteMode(str, Enum):
-    NEVER = "never"
-    ALWAYS = "always"
+    NEVER = "NEVER"
+    ALWAYS = "ALWAYS"
     IF_REQUIRED = "IF_REQUIRED"
 
 
@@ -49,7 +49,7 @@ class EnvFileWriteMode(str, Enum):
 class ContextManagerConfiguration(SchemaModel):
     isolate_inputs: bool = custom_field(default=False)
     env_file_write_mode: EnvFileWriteMode = custom_field(
-        mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.IF_REQUIRED
+        mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.ALWAYS
     )
     # data sync configurations
     force: bool = custom_field(default=False)

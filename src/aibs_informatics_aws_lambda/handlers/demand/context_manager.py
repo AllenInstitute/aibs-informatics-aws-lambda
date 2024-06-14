@@ -112,7 +112,10 @@ class DemandExecutionContextManager:
         self._batch_job_builder = None
 
         self.demand_execution = update_demand_execution_parameter_inputs(
-            self.demand_execution, self.container_shared_path, self.configuration.isolate_inputs
+            self.demand_execution,
+            self.container_shared_path,
+            self.container_working_path,
+            self.configuration.isolate_inputs,
         )
         self.demand_execution = update_demand_execution_parameter_outputs(
             self.demand_execution, self.container_working_path
@@ -303,7 +306,10 @@ class DemandExecutionContextManager:
 
 
 def update_demand_execution_parameter_inputs(
-    demand_execution: DemandExecution, container_shared_path: Path, isolate_inputs: bool = False
+    demand_execution: DemandExecution,
+    container_shared_path: Path,
+    container_scratch_path: Path,
+    isolate_inputs: bool = False,
 ) -> DemandExecution:
     """Modifies demand execution input destinations with the location of the volume configuration
 
@@ -339,11 +345,10 @@ def update_demand_execution_parameter_inputs(
 
     demand_execution = demand_execution.copy()
     execution_params = demand_execution.execution_parameters
-    # TODO: we should allow for the ability to specify the local path for the input
     updated_params = {}
     for param in execution_params.downloadable_job_param_inputs:
         if isolate_inputs:
-            local = container_shared_path / demand_execution.execution_id / param.value
+            local = container_scratch_path / demand_execution.execution_id / param.value
         else:
             local = container_shared_path / sha256_hexdigest(param.remote_value)
 
