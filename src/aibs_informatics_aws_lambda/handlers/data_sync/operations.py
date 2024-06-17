@@ -152,11 +152,14 @@ class PrepareBatchDataSyncHandler(
         # https://en.wikipedia.org/wiki/Bin_packing_problem
 
         # Step 1A: Partition nodes s.t. we deal with fewer paths in total.
+        self.logger.info(f"Partitioning batch size bytes limit: {batch_size_bytes_limit}")
         nodes = root.partition(size_bytes_limit=batch_size_bytes_limit)
 
         batch_data_sync_requests: List[BatchDataSyncRequest] = []
 
-        for node_batch in self.build_node_batches(nodes, batch_size_bytes_limit):
+        node_batches = self.build_node_batches(nodes, batch_size_bytes_limit)
+        self.logger.info(f"Batched {len(nodes)} nodes into {len(node_batches)} batches")
+        for node_batch in node_batches:
             data_sync_requests: List[DataSyncRequest] = []
             for node in sorted(node_batch):
                 data_sync_requests.append(
