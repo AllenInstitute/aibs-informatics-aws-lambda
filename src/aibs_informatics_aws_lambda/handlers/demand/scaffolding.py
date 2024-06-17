@@ -78,6 +78,7 @@ class PrepareDemandScaffoldingHandler(
             scratch_vol_configuration=scratch_vol_configuration,
             shared_vol_configuration=shared_vol_configuration,
             tmp_vol_configuration=tmp_vol_configuration,
+            configuration=request.context_manager_configuration,
             env_base=self.env_base,
         )
         batch_job_builder = context_manager.batch_job_builder

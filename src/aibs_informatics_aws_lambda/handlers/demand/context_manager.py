@@ -110,12 +110,12 @@ class DemandExecutionContextManager:
 
     def __post_init__(self):
         self._batch_job_builder = None
-
+        logging.info(f"Creating DemandExecutionContextManager {self}")
         self.demand_execution = update_demand_execution_parameter_inputs(
-            self.demand_execution,
-            self.container_shared_path,
-            self.container_working_path,
-            self.configuration.isolate_inputs,
+            demand_execution=self.demand_execution,
+            container_shared_path=self.container_shared_path,
+            container_scratch_path=self.container_working_path,
+            isolate_inputs=self.configuration.isolate_inputs,
         )
         self.demand_execution = update_demand_execution_parameter_outputs(
             self.demand_execution, self.container_working_path
@@ -349,8 +349,10 @@ def update_demand_execution_parameter_inputs(
     for param in execution_params.downloadable_job_param_inputs:
         if isolate_inputs:
             local = container_scratch_path / demand_execution.execution_id / param.value
+            logger.info(f"Isolating input {param.name} from shared volume. Local path: {local}")
         else:
             local = container_shared_path / sha256_hexdigest(param.remote_value)
+            logger.info(f"Using shared volume for input {param.name}. Local path: {local}")
 
         new_resolvable = Resolvable(local=local.as_posix(), remote=param.remote_value)
         updated_params[param.name] = new_resolvable
