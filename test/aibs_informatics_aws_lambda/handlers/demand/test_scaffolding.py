@@ -1,5 +1,8 @@
 from pathlib import Path
 from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
+from test.aibs_informatics_aws_lambda.handlers.demand.test_context_manager import (
+    get_any_demand_execution,
+)
 from typing import Any, Dict
 from unittest import mock
 
@@ -11,8 +14,13 @@ from aibs_informatics_aws_lambda.common.handler import LambdaHandlerType
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
 from aibs_informatics_aws_lambda.handlers.demand.context_manager import BatchEFSConfiguration
 from aibs_informatics_aws_lambda.handlers.demand.model import (
+    ContextManagerConfiguration,
     DemandExecutionCleanupConfigs,
     DemandExecutionSetupConfigs,
+    DemandFileSystemConfigurations,
+    EnvFileWriteMode,
+    FileSystemConfiguration,
+    PrepareDemandScaffoldingRequest,
     PrepareDemandScaffoldingResponse,
 )
 from aibs_informatics_aws_lambda.handlers.demand.scaffolding import (
@@ -39,6 +47,56 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
     @property
     def handler(self) -> LambdaHandlerType:
         return PrepareDemandScaffoldingHandler.get_handler()
+
+    def test__PrepareDemandScaffoldingRequest__deserialize(self) -> None:
+        demand_execution = get_any_demand_execution()
+        request_json = {
+            "demand_execution": demand_execution.to_dict(),
+            "file_system_configurations": {
+                "scratch": {
+                    "file_system": "fs-123456789012",
+                    "access_point": "fsap-123456789012",
+                    "container_path": "/opt/efs/scratch",
+                },
+            },
+            "context_manager_configuration": {
+                "isolate_inputs": True,
+                "env_file_write_mode": "NEVER",
+                "force": False,
+                "size_only": True,
+            },
+        }
+
+        actual = PrepareDemandScaffoldingRequest.from_dict(request_json)
+        expected = PrepareDemandScaffoldingRequest(
+            demand_execution=demand_execution,
+            file_system_configurations=DemandFileSystemConfigurations(
+                scratch=FileSystemConfiguration(
+                    file_system="fs-123456789012",
+                    access_point="fsap-123456789012",
+                    container_path="/opt/efs/scratch",
+                ),
+            ),
+            context_manager_configuration=ContextManagerConfiguration(
+                isolate_inputs=True,
+                env_file_write_mode=EnvFileWriteMode.NEVER,
+                force=False,
+                size_only=True,
+            ),
+        )
+        assert actual == expected
+
+    def test__PrepareDemandScaffoldingRequest__deserialize_only_required(self) -> None:
+        demand_execution = get_any_demand_execution()
+        request_json = {
+            "demand_execution": demand_execution.to_dict(),
+        }
+
+        actual = PrepareDemandScaffoldingRequest.from_dict(request_json)
+        expected = PrepareDemandScaffoldingRequest(
+            demand_execution=demand_execution,
+        )
+        assert actual == expected
 
     def test__construct_batch_efs_configuration__works(self) -> None:
         # Arrange

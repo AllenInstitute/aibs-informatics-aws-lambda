@@ -42,6 +42,7 @@ class DemandFileSystemConfigurations(SchemaModel):
 class EnvFileWriteMode(str, Enum):
     NEVER = "NEVER"
     ALWAYS = "ALWAYS"
+    # TODO: revisit to see if IF_REQUIRED is really necessary or can be removed
     IF_REQUIRED = "IF_REQUIRED"
 
 
