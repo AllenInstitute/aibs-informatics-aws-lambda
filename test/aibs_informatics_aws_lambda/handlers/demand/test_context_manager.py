@@ -156,7 +156,7 @@ def test__update_demand_execution_parameter_inputs__works(
     demand_execution = update_demand_execution_parameter_inputs(
         demand_execution=demand_execution,
         container_shared_path=efs_mount_point_config.mount_point,
-        container_scratch_path=efs_mount_point_config.mount_point,
+        container_working_path=efs_mount_point_config.mount_point,
     )
 
     job_inputs = demand_execution.execution_parameters.job_param_inputs
@@ -192,7 +192,7 @@ def test__update_demand_execution_parameter_inputs__isolates_inputs(
     demand_execution = update_demand_execution_parameter_inputs(
         demand_execution,
         container_shared_path=efs_mount_point_config.mount_point,
-        container_scratch_path=Path("/opt/tmp/"),
+        container_working_path=Path(f"/opt/tmp/{demand_execution.execution_id}"),
         isolate_inputs=True,
     )
 

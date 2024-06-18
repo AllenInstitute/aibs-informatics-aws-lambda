@@ -114,7 +114,7 @@ class DemandExecutionContextManager:
         self.demand_execution = update_demand_execution_parameter_inputs(
             demand_execution=self.demand_execution,
             container_shared_path=self.container_shared_path,
-            container_scratch_path=self.container_working_path,
+            container_working_path=self.container_working_path,
             isolate_inputs=self.configuration.isolate_inputs,
         )
         self.demand_execution = update_demand_execution_parameter_outputs(
@@ -308,7 +308,7 @@ class DemandExecutionContextManager:
 def update_demand_execution_parameter_inputs(
     demand_execution: DemandExecution,
     container_shared_path: Path,
-    container_scratch_path: Path,
+    container_working_path: Path,
     isolate_inputs: bool = False,
 ) -> DemandExecution:
     """Modifies demand execution input destinations with the location of the volume configuration
@@ -348,7 +348,7 @@ def update_demand_execution_parameter_inputs(
     updated_params = {}
     for param in execution_params.downloadable_job_param_inputs:
         if isolate_inputs:
-            local = container_scratch_path / demand_execution.execution_id / param.value
+            local = container_working_path / param.value
             logger.info(f"Isolating input {param.name} from shared volume. Local path: {local}")
         else:
             local = container_shared_path / sha256_hexdigest(param.remote_value)
