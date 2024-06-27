@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from aibs_informatics_aws_utils.data_sync import (
     DataSyncOperations,
@@ -122,7 +122,15 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
     def handle(self, request: BatchDataSyncRequest) -> BatchDataSyncResponse:
         self.logger.info(f"Received {len(request.requests)} requests to transfer")
         responses = []
-        for _ in request.requests:
+        if isinstance(request.requests, S3URI):
+            self.logger.info(f"Request is stored at {request.requests}... fetching content.")
+            _ = download_to_json(request.requests)
+            assert isinstance(_, list)
+            batch_requests = [DataSyncRequest.from_dict(__) for __ in _]
+        else:
+            batch_requests = request.requests
+
+        for _ in batch_requests:
             sync_operations = DataSyncOperations(_)
             self.logger.info(f"Syncing content from {_.source_path} to {_.destination_path}")
             sync_operations.sync(
@@ -173,7 +181,20 @@ class PrepareBatchDataSyncHandler(
                     )
                 )
             batch_data_sync_requests.append(BatchDataSyncRequest(requests=data_sync_requests))
-        return PrepareBatchDataSyncResponse(requests=batch_data_sync_requests)
+
+        if request.intermediate_s3_path:
+            self.logger.info(f"Uploading batch requests to {request.intermediate_s3_path}")
+            new_batch_data_sync_requests = []
+
+            for i, batch_data_sync_request in enumerate(batch_data_sync_requests):
+                upload_json(
+                    [cast(DataSyncRequest, _).to_dict() for _ in batch_data_sync_request.requests],
+                    s3_path=(s3_path := request.intermediate_s3_path / f"request_{i}.json"),
+                )
+                new_batch_data_sync_requests.append(BatchDataSyncRequest(requests=s3_path))
+            return PrepareBatchDataSyncResponse(requests=new_batch_data_sync_requests)
+        else:
+            return PrepareBatchDataSyncResponse(requests=batch_data_sync_requests)
 
     @classmethod
     def build_source_path(
