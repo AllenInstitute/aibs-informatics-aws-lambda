@@ -15,7 +15,7 @@ from aibs_informatics_aws_utils.constants.efs import (
     EFS_TMP_ACCESS_POINT_NAME,
     EFS_TMP_PATH,
 )
-from aibs_informatics_aws_utils.efs import MountPointConfiguration
+from aibs_informatics_aws_utils.efs import MountPointConfiguration, detect_mount_points
 from aibs_informatics_core.env import EnvBase
 from aibs_informatics_core.models.aws.efs import EFSPath
 from aibs_informatics_core.models.aws.s3 import S3URI
@@ -316,6 +316,8 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         self.mock_efs.start()
         self.set_aws_credentials()
         self.setUpEFS()
+        # NOTE: detect_mount_points is cached. We need to clear the cache
+        detect_mount_points.cache_clear()
 
     def tearDown(self) -> None:
         self.mock_efs.stop()
@@ -590,7 +592,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
 
     def test__batch_job_builder__conditional_write_mode__required(self):
         demand_execution = get_any_demand_execution(
-            execution_id=uuid_str("123"),
+            execution_id=uuid_str("1234"),
             execution_parameters=DemandExecutionParameters(
                 command=["cmd", "${ENV_BASE}"],
                 params={
