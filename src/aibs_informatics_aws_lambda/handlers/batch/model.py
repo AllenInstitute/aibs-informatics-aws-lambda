@@ -47,6 +47,7 @@ class CreateDefinitionAndPrepareArgsRequest(SchemaModel):
     mount_points: List[MountPointTypeDef] = custom_field(default_factory=list)
     volumes: List[VolumeTypeDef] = custom_field(default_factory=list)
     retry_strategy: Optional[RetryStrategyTypeDef] = custom_field(default=None)
+    privileged: bool = custom_field(default=False)
 
 
 @dataclass

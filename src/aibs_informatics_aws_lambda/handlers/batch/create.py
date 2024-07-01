@@ -62,6 +62,7 @@ class CreateDefinitionAndPrepareArgsHandler(
             resource_requirements=request.resource_requirements,
             mount_points=request.mount_points,
             volumes=request.volumes,
+            privileged=request.privileged,
         )
 
         response = register_job_definition(

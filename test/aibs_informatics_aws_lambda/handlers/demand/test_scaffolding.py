@@ -190,6 +190,7 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         batch_job_builder.resource_requirements = []
         batch_job_builder.mount_points = []
         batch_job_builder.volumes = []
+        batch_job_builder.privileged = False
 
         expected = PrepareDemandScaffoldingResponse(
             demand_execution=self.demand_execution,
@@ -279,6 +280,7 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         batch_job_builder.resource_requirements = []
         batch_job_builder.mount_points = []
         batch_job_builder.volumes = []
+        batch_job_builder.privileged = False
 
         expected = PrepareDemandScaffoldingResponse(
             demand_execution=self.demand_execution,

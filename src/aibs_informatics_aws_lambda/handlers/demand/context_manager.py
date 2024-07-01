@@ -605,6 +605,8 @@ def generate_batch_job_builder(
         mount_points=[_.mount_point for _ in vol_configurations],
         volumes=[_.volume for _ in vol_configurations],
         env_base=env_base,
+        # TODO: need to make this configurable
+        privileged=True,
     )
 
 
