@@ -25,7 +25,7 @@ from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
 
 LambdaEvent = Union[JSON]  # type: ignore # https://github.com/python/mypy/issues/7866
-LambdaHandlerType = Callable[[JSON, LambdaContext], Optional[JSON]]
+LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], Optional[JSON]]
 logger = logging.getLogger(__name__)
 
 REQUEST = TypeVar("REQUEST", bound=ModelProtocol)
