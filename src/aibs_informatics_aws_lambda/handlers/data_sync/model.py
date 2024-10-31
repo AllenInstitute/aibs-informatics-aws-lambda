@@ -60,6 +60,20 @@ class WithDataPath(SchemaModel):
 
 @dataclass
 class ListDataPathsRequest(WithDataPath):
+    """List Data paths request
+
+    Args:
+        path (DataPath): path under which to list files
+        include (Optional[str|list[str]]): Optionally can specify regex patterns to filter on what
+            to include. If providing multiple options, a path is returned if it matches *any* of
+            the include patterns. Exclude patterns override include patterns.
+            Defaults to None
+        exclude (Optional[str|list[str]]): Optionally can specify regex patterns to filter on what
+            to exclude. If providing multiple options, a path is omitted if it matches *any* of
+            the exclude patterns. Exclude patterns override include patterns.
+            Defaults to None
+    """
+
     include: Optional[Union[str, List[str]]] = custom_field(
         default=None,
         mm_field=UnionField([(str, StringField()), (list, ListField(StringField()))]),
