@@ -1,6 +1,9 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 from pathlib import Path
+from re import Pattern
 from typing import Dict, List, Optional, Union
 
 from aibs_informatics_aws_utils.data_sync.file_system import PathStats
@@ -57,7 +60,42 @@ class WithDataPath(SchemaModel):
 
 @dataclass
 class ListDataPathsRequest(WithDataPath):
-    pass
+    """List Data paths request
+
+    Args:
+        path (DataPath): path under which to list files
+        include (Optional[str|list[str]]): Optionally can specify regex patterns to filter on what
+            to include. If providing multiple options, a path is returned if it matches *any* of
+            the include patterns. Exclude patterns override include patterns.
+            Defaults to None
+        exclude (Optional[str|list[str]]): Optionally can specify regex patterns to filter on what
+            to exclude. If providing multiple options, a path is omitted if it matches *any* of
+            the exclude patterns. Exclude patterns override include patterns.
+            Defaults to None
+    """
+
+    include: Optional[Union[str, List[str]]] = custom_field(
+        default=None,
+        mm_field=UnionField([(str, StringField()), (list, ListField(StringField()))]),
+    )
+    exclude: Optional[Union[str, List[str]]] = custom_field(
+        default=None,
+        mm_field=UnionField([(str, StringField()), (list, ListField(StringField()))]),
+    )
+
+    @cached_property
+    def include_patterns(self) -> Optional[List[Pattern]]:
+        return self._get_patterns(self.include)
+
+    @cached_property
+    def exclude_patterns(self) -> Optional[List[Pattern]]:
+        return self._get_patterns(self.exclude)
+
+    @staticmethod
+    def _get_patterns(value: Optional[Union[str, List[str]]]) -> Optional[List[Pattern]]:
+        if not value:
+            return None
+        return [re.compile(p) for p in ([value] if isinstance(value, str) else value)]
 
 
 @dataclass

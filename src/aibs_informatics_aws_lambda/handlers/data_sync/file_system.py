@@ -2,15 +2,21 @@ import logging
 from datetime import timedelta
 from pathlib import Path
 from typing import List, TypeVar
+from xml.etree.ElementInclude import include
 
 from aibs_informatics_aws_utils.data_sync.file_system import BaseFileSystem, Node, get_file_system
 from aibs_informatics_aws_utils.efs import detect_mount_points, get_local_path
 from aibs_informatics_core.models.aws.efs import EFSPath
 from aibs_informatics_core.models.aws.s3 import S3URI
-from aibs_informatics_core.utils.file_operations import get_path_size_bytes, remove_path
+from aibs_informatics_core.utils.file_operations import (
+    get_path_size_bytes,
+    remove_path,
+    strip_path_root,
+)
 
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 from aibs_informatics_aws_lambda.handlers.data_sync.model import (
+    DataPath,
     GetDataPathStatsRequest,
     GetDataPathStatsResponse,
     ListDataPathsRequest,
@@ -43,9 +49,21 @@ class GetDataPathStatsHandler(LambdaHandler[GetDataPathStatsRequest, GetDataPath
 class ListDataPathsHandler(LambdaHandler[ListDataPathsRequest, ListDataPathsResponse]):
     def handle(self, request: ListDataPathsRequest) -> ListDataPathsResponse:
         root = get_file_system(request.path)
-        return ListDataPathsResponse(
-            paths=sorted([n.path for n in root.node.list_nodes()]),
-        )
+        paths: List[DataPath] = sorted([n.path for n in root.node.list_nodes()])
+
+        if request.include_patterns or request.exclude_patterns:
+            new_paths = []
+            for path in paths:
+                rel_path = strip_path_root(path, root.node.path)
+                if request.include_patterns:
+                    if not any([i.match(rel_path) for i in request.include_patterns]):
+                        continue
+                if request.exclude_patterns:
+                    if any([i.match(rel_path) for i in request.exclude_patterns]):
+                        continue
+                new_paths.append(path)
+            paths = new_paths
+        return ListDataPathsResponse(paths=paths)
 
 
 class OutdatedDataPathScannerHandler(

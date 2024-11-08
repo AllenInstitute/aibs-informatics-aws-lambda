@@ -69,6 +69,7 @@ class ApiResolverBuilderTests(BaseTest):
 
         self.builder.add_handlers(target_module=handlers_module)
         event = self.create_event(path="/health", method="GET", body="{}")
+        event["headers"]["X-Client-Version"] = "1.0.0"
         context = DefaultLambdaContext()
         lambda_handler = self.builder.get_lambda_handler()
         response = lambda_handler(event, context)
@@ -90,6 +91,7 @@ class ApiResolverBuilderTests(BaseTest):
         self.builder.add_handlers(target_module=handlers_module)
         event = self.create_event(path="/health", method="GET", body="{}")
         event["headers"]["X-Log-Level"] = "DEBUG"
+        event["headers"]["X-Client-Version"] = "1.0.0"
         context = DefaultLambdaContext()
         lambda_handler = self.builder.get_lambda_handler()
         response = lambda_handler(event, context)
@@ -102,6 +104,7 @@ class ApiResolverBuilderTests(BaseTest):
         self.builder.add_handlers(target_module=handlers_module)
         event = self.create_event(path="/health", method="GET", body="{}")
         event["headers"]["X-Log-Level"] = "DOES_NOT_DEBUG"
+        event["headers"]["X-Client-Version"] = "1.0.0"
         context = DefaultLambdaContext()
         lambda_handler = self.builder.get_lambda_handler()
         response = lambda_handler(event, context)
@@ -163,6 +166,7 @@ class ApiResolverBuilderTests(BaseTest):
                 "X-Forwarded-For": "163.123.189.8, 15.158.4.70",
                 "X-Forwarded-Port": "443",
                 "X-Forwarded-Proto": "https",
+                "x-client-version": "1.0.0",
             },
             "multiValueHeaders": {
                 "Accept-Encoding": ["identity"],

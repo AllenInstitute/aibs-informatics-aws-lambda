@@ -113,6 +113,8 @@ class ApiLambdaHandler(
 
                 logger.info(f"Handling {router.current_event.raw_event} event.")
 
+                cls._parse_event_headers(router.current_event, logger)
+
                 request = cls._parse_event(
                     router.current_event, route_parameters, cast(logging.Logger, logger)
                 )
@@ -163,6 +165,18 @@ class ApiLambdaHandler(
         logger.debug(f"Converting HTTP Parameters to request object")
         request = cls.get_request_from_http_parameters(http_parameters)
         return request
+
+    @classmethod
+    def _parse_event_headers(cls, event: BaseProxyEvent, logger: logging.Logger):
+        logger.info("Parsing and validating event headers")
+        cls.validate_headers(event.headers)
+        config = cls.resolve_request_config(event.headers)
+        try:
+            if config.service_log_level:
+                logger.info(f"Setting log level to {config.service_log_level}")
+                logger.setLevel(config.service_log_level)
+        except Exception as e:
+            logger.warning(f"Failed to set log level to {config.service_log_level}: {e}")
 
     def __repr__(self) -> str:
         return (

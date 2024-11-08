@@ -53,6 +53,139 @@ class ListDataPathsHandlerTests(BaseFileSystemHandlerTestCase):
         response = ListDataPathsResponse(paths=[f"{root}/", root / "x", root / "y"])
         self.assertHandles(self.handler, request.to_dict(), response=response.to_dict())
 
+    def test__handles__nested_paths(self):
+        root = self.tmp_path()
+        self.add_files_to_file_system(
+            root,
+            ("x1/y1/z1", 1),
+            ("x1/y1/z2", 1),
+            ("x1/y2/z1", 1),
+            ("x1/y2/z2", 1),
+            ("x2/y1/z1", 1),
+            ("x2/y2/z2", 1),
+        )
+
+        request = ListDataPathsRequest(path=root / "x1")
+        response = ListDataPathsResponse(
+            paths=[
+                f"{root}/x1/",
+                f"{root}/x1/y1/",
+                f"{root}/x1/y1/z1",
+                f"{root}/x1/y1/z2",
+                f"{root}/x1/y2/",
+                f"{root}/x1/y2/z1",
+                f"{root}/x1/y2/z2",
+            ]
+        )
+        self.assertHandles(self.handler, request.to_dict(), response=response.to_dict())
+
+    def test__handles__include_regex_patterns(self):
+        root = self.prep_regex_pattern_test()
+
+        # Single include pattern
+        self.assertHandles(
+            self.handler,
+            ListDataPathsRequest(path=root, include=".*A.*").to_dict(),
+            ListDataPathsResponse(
+                paths=[
+                    f"{root}/A/",
+                    f"{root}/A/B/",
+                    f"{root}/A/B/C",
+                    f"{root}/A/B/D",
+                    f"{root}/A/C/",
+                    f"{root}/A/C/E",
+                    f"{root}/A/C/F",
+                    f"{root}/C/B/A",
+                ]
+            ).to_dict(),
+        )
+
+        # Multiple include patterns
+        self.assertHandles(
+            self.handler,
+            ListDataPathsRequest(path=root, include=[f"A.*", f".*B.*"]).to_dict(),
+            ListDataPathsResponse(
+                paths=[
+                    f"{root}/A/",
+                    f"{root}/A/B/",
+                    f"{root}/A/B/C",
+                    f"{root}/A/B/D",
+                    f"{root}/A/C/",
+                    f"{root}/A/C/E",
+                    f"{root}/A/C/F",
+                    f"{root}/B/",
+                    f"{root}/B/C/",
+                    f"{root}/B/C/G",
+                    f"{root}/B/D/",
+                    f"{root}/B/D/H",
+                    f"{root}/C/B/",
+                    f"{root}/C/B/A",
+                ]
+            ).to_dict(),
+        )
+
+    def test__handles__regex_exclude_patterns(self):
+        root = self.prep_regex_pattern_test()
+
+        # single exclude pattern
+        self.assertHandles(
+            self.handler,
+            ListDataPathsRequest(path=root, exclude=".*B.*").to_dict(),
+            ListDataPathsResponse(
+                paths=[
+                    f"{root}/",
+                    f"{root}/A/",
+                    f"{root}/A/C/",
+                    f"{root}/A/C/E",
+                    f"{root}/A/C/F",
+                    f"{root}/C/",
+                ]
+            ).to_dict(),
+        )
+
+        # multiple exclude patterns
+        self.assertHandles(
+            self.handler,
+            ListDataPathsRequest(path=root, exclude=[".*A.*", ".*B.*"]).to_dict(),
+            ListDataPathsResponse(
+                paths=[
+                    f"{root}/",
+                    f"{root}/C/",
+                ]
+            ).to_dict(),
+        )
+
+    def test__handles__include_exclude_patterns(self):
+        root = self.prep_regex_pattern_test()
+
+        # include and exclude patterns
+        self.assertHandles(
+            self.handler,
+            ListDataPathsRequest(path=root, include=".*A.*", exclude=".*B.*").to_dict(),
+            ListDataPathsResponse(
+                paths=[
+                    f"{root}/A/",
+                    f"{root}/A/C/",
+                    f"{root}/A/C/E",
+                    f"{root}/A/C/F",
+                ]
+            ).to_dict(),
+        )
+
+    def prep_regex_pattern_test(self):
+        root = self.tmp_path()
+        self.add_files_to_file_system(
+            root,
+            ("A/B/C", 1),
+            ("A/B/D", 1),
+            ("A/C/E", 1),
+            ("A/C/F", 1),
+            ("B/C/G", 1),
+            ("B/D/H", 1),
+            ("C/B/A", 1),
+        )
+        return root
+
 
 class GetDataPathStatsHandlerTests(BaseFileSystemHandlerTestCase):
     @property
