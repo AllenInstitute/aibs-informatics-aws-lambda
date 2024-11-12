@@ -13,6 +13,7 @@ from aibs_informatics_core.models.aws.s3 import S3URI, S3Key
 from aibs_informatics_core.models.data_sync import (
     BatchDataSyncRequest,
     BatchDataSyncResponse,
+    BatchDataSyncResult,
     DataSyncRequest,
     DataSyncResponse,
     GetJSONFromFileRequest,
@@ -114,14 +115,13 @@ class PutJSONToFileHandler(LambdaHandler[PutJSONToFileRequest, PutJSONToFileResp
 class DataSyncHandler(LambdaHandler[DataSyncRequest, DataSyncResponse]):
     def handle(self, request: DataSyncRequest) -> DataSyncResponse:
         sync_operations = DataSyncOperations(request)
-        sync_operations.sync_task(request)
-        return DataSyncResponse(request=request)
+        result = sync_operations.sync_task(request)
+        return DataSyncResponse(request=request, result=result)
 
 
 class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResponse]):
     def handle(self, request: BatchDataSyncRequest) -> BatchDataSyncResponse:
         self.logger.info(f"Received {len(request.requests)} requests to transfer")
-        responses = []
         if isinstance(request.requests, S3URI):
             self.logger.info(f"Request is stored at {request.requests}... fetching content.")
             _ = download_to_json(request.requests)
@@ -130,16 +130,39 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
         else:
             batch_requests = request.requests
 
-        for _ in batch_requests:
+        batch_result = BatchDataSyncResult()
+        response = BatchDataSyncResponse(result=batch_result, failed_requests=[])
+
+        for i, _ in enumerate(batch_requests):
             sync_operations = DataSyncOperations(_)
-            self.logger.info(f"Syncing content from {_.source_path} to {_.destination_path}")
-            sync_operations.sync(
-                source_path=_.source_path,
-                destination_path=_.destination_path,
-                source_path_prefix=_.source_path_prefix,
+            self.logger.info(
+                f"[{i+1}/{len(batch_requests)}] "
+                f"Syncing content from {_.source_path} to {_.destination_path}"
             )
-            responses.append(DataSyncResponse(request=_))
-        return BatchDataSyncResponse(responses)
+            try:
+                result = sync_operations.sync(
+                    source_path=_.source_path,
+                    destination_path=_.destination_path,
+                    source_path_prefix=_.source_path_prefix,
+                )
+                if result.bytes_transferred is not None:
+                    batch_result.add_bytes_transferred(result.bytes_transferred)
+                if result.files_transferred is not None:
+                    batch_result.add_files_transferred(result.files_transferred)
+                batch_result.increment_successful_requests_count()
+
+                if result.bytes_transferred:
+                    result.add_bytes_transferred(result.bytes_transferred)
+            except Exception as e:
+                batch_result.increment_failed_requests_count()
+                response.add_failed_request(_)
+                self.logger.error(
+                    f"Failed to sync content from {_.source_path} to {_.destination_path}"
+                )
+                self.logger.error(e)
+                if not request.allow_partial_failure:
+                    raise e
+        return response
 
 
 class PrepareBatchDataSyncHandler(

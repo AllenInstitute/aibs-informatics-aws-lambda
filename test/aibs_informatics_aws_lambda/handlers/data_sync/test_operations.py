@@ -5,13 +5,17 @@ from unittest import mock
 
 from aibs_informatics_aws_utils.data_sync.file_system import Node
 from aibs_informatics_core.models.aws.s3 import S3Path
+from aibs_informatics_core.models.data_sync import DataSyncResult
 from aibs_informatics_core.utils.time import BEGINNING_OF_TIME
 from pytest import mark, param
 
 from aibs_informatics_aws_lambda.common.handler import LambdaHandlerType
 from aibs_informatics_aws_lambda.handlers.data_sync.operations import (
     DEFAULT_BUCKET_NAME_ENV_VAR,
+    BatchDataSyncHandler,
     BatchDataSyncRequest,
+    BatchDataSyncResponse,
+    BatchDataSyncResult,
     DataSyncRequest,
     GetJSONFromFileHandler,
     GetJSONFromFileRequest,
@@ -360,6 +364,220 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
 
     def create_node(self, key: str, size_bytes: int = 1) -> Node:
         return Node(key, size_bytes=size_bytes, object_count=1)
+
+
+class BatchDataSyncHandlerTests(LambdaHandlerTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.mock_sync_operations = self.create_patch(
+            "aibs_informatics_aws_lambda.handlers.data_sync.operations.DataSyncOperations.sync"
+        )
+        self.mock_download_to_json = self.create_patch(
+            "aibs_informatics_aws_lambda.handlers.data_sync.operations.download_to_json"
+        )
+
+    @property
+    def handler(self) -> LambdaHandlerType:
+        return BatchDataSyncHandler.get_handler()
+
+    def test__handle__list_of_paths__all_succeed(self):
+        fs = self.setUpLocalFS(
+            ("src/a", 3),
+            ("src/b", 7),
+            ("src/c", 10),
+        )
+        source_path = fs / "src"
+        destination_path = fs / "dst"
+
+        requests = [
+            DataSyncRequest(
+                source_path=source_path / "a",
+                destination_path=destination_path / "a",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+            DataSyncRequest(
+                source_path=source_path / "b",
+                destination_path=destination_path / "b",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+            DataSyncRequest(
+                source_path=source_path / "c",
+                destination_path=destination_path / "c",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+        ]
+
+        self.mock_sync_operations.side_effect = [
+            DataSyncResult(files_transferred=1, bytes_transferred=3),
+            DataSyncResult(files_transferred=1, bytes_transferred=7),
+            DataSyncResult(files_transferred=1, bytes_transferred=10),
+        ]
+
+        batch_request = BatchDataSyncRequest(requests=requests)
+        response = BatchDataSyncResponse(
+            result=BatchDataSyncResult(
+                total_requests_count=3,
+                successful_requests_count=3,
+                failed_requests_count=0,
+                bytes_transferred=20,
+                files_transferred=3,
+            ),
+            failed_requests=[],
+        )
+
+        self.assertHandles(self.handler, batch_request.to_dict(), response.to_dict())
+
+        self.mock_download_to_json.assert_not_called()
+        self.mock_sync_operations.assert_called()
+        self.assertEqual(self.mock_sync_operations.call_count, 3)
+
+    def test__handle__list_of_paths__partial_success(self):
+        fs = self.setUpLocalFS(
+            ("src/a", 3),
+            ("src/b", 7),
+            ("src/c", 10),
+        )
+        source_path = fs / "src"
+        destination_path = fs / "dst"
+
+        requests = [
+            DataSyncRequest(
+                source_path=source_path / "a",
+                destination_path=destination_path / "a",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+            DataSyncRequest(
+                source_path=source_path / "b",
+                destination_path=destination_path / "b",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+            DataSyncRequest(
+                source_path=source_path / "c",
+                destination_path=destination_path / "c",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+        ]
+
+        self.mock_sync_operations.side_effect = [
+            DataSyncResult(files_transferred=1, bytes_transferred=3),
+            ValueError("Sync failed"),
+            DataSyncResult(files_transferred=1, bytes_transferred=10),
+        ]
+
+        batch_request = BatchDataSyncRequest(
+            requests=requests,
+            allow_partial_failure=True,
+        )
+        response = BatchDataSyncResponse(
+            result=BatchDataSyncResult(
+                total_requests_count=3,
+                successful_requests_count=2,
+                failed_requests_count=1,
+                bytes_transferred=13,
+                files_transferred=2,
+            ),
+            failed_requests=[requests[1]],
+        )
+
+        self.assertHandles(self.handler, batch_request.to_dict(), response.to_dict())
+
+        self.mock_download_to_json.assert_not_called()
+        self.mock_sync_operations.assert_called()
+        self.assertEqual(self.mock_sync_operations.call_count, 3)
+
+    def test__handle__list_of_paths__fails(self):
+        fs = self.setUpLocalFS(
+            ("src/a", 3),
+            ("src/b", 7),
+            ("src/c", 10),
+        )
+        source_path = fs / "src"
+        destination_path = fs / "dst"
+
+        requests = [
+            DataSyncRequest(
+                source_path=source_path / "a",
+                destination_path=destination_path / "a",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+            DataSyncRequest(
+                source_path=source_path / "b",
+                destination_path=destination_path / "b",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+            DataSyncRequest(
+                source_path=source_path / "c",
+                destination_path=destination_path / "c",
+                max_concurrency=10,
+                retain_source_data=True,
+            ),
+        ]
+
+        self.mock_sync_operations.side_effect = [
+            DataSyncResult(files_transferred=1, bytes_transferred=3),
+            ValueError("Sync failed"),
+            DataSyncResult(files_transferred=1, bytes_transferred=10),
+        ]
+
+        batch_request = BatchDataSyncRequest(
+            requests=requests,
+            allow_partial_failure=False,
+        )
+
+        self.assertLambdaRaises(self.handler, batch_request.to_dict(), ValueError)
+
+        self.mock_download_to_json.assert_not_called()
+        self.mock_sync_operations.assert_called()
+        self.assertEqual(self.mock_sync_operations.call_count, 2)
+
+    def test__handle__requests_stored_in_s3(self):
+        s3_path = S3Path("s3://bucket/intermediate/request_0.json")
+        content = [
+            DataSyncRequest(
+                source_path=Path("/src/a"),
+                destination_path=Path("/dst/a"),
+                max_concurrency=10,
+                retain_source_data=True,
+            ).to_dict(),
+        ]
+
+        self.mock_download_to_json.return_value = content
+        self.mock_sync_operations.return_value = DataSyncResult(
+            files_transferred=1, bytes_transferred=3
+        )
+        batch_request = BatchDataSyncRequest(requests=s3_path)
+        response = BatchDataSyncResponse(
+            result=BatchDataSyncResult(
+                total_requests_count=1,
+                successful_requests_count=1,
+                failed_requests_count=0,
+                bytes_transferred=3,
+                files_transferred=1,
+            ),
+            failed_requests=[],
+        )
+
+        self.assertHandles(self.handler, batch_request.to_dict(), response.to_dict())
+
+        self.mock_download_to_json.assert_called_once_with(s3_path)
+        self.mock_sync_operations.assert_called()
+        self.assertEqual(self.mock_sync_operations.call_count, 1)
+
+    def setUpLocalFS(self, *paths: Tuple[Union[Path, str], int]) -> Path:
+        root_file_system = self.tmp_path()
+        for relative_path, size in paths:
+            full_path = root_file_system / relative_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            full_path.write_text("0" * size)
+        return root_file_system
 
 
 @mark.parametrize(
