@@ -139,7 +139,6 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
                 f"[{i+1}/{len(batch_requests)}] "
                 f"Syncing content from {_.source_path} to {_.destination_path}"
             )
-            batch_result.total_requests_count += 1
             try:
                 result = sync_operations.sync(
                     source_path=_.source_path,
@@ -150,12 +149,12 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
                     batch_result.add_bytes_transferred(result.bytes_transferred)
                 if result.files_transferred is not None:
                     batch_result.add_files_transferred(result.files_transferred)
-                batch_result.successful_requests_count += 1
+                batch_result.increment_successful_requests_count()
 
                 if result.bytes_transferred:
                     result.add_bytes_transferred(result.bytes_transferred)
             except Exception as e:
-                batch_result.failed_requests_count += 1
+                batch_result.increment_failed_requests_count()
                 response.add_failed_request(_)
                 self.logger.error(
                     f"Failed to sync content from {_.source_path} to {_.destination_path}"
