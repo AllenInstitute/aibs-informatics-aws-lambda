@@ -247,8 +247,9 @@ class DemandExecutionContextManager:
                 retain_source_data=True,
                 require_lock=True,
                 batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
-                size_only=self.configuration.size_only,
-                force=self.configuration.force,
+                intermediate_s3_path=self.configuration.input_data_sync_configuration.intermediate_s3_path,
+                size_only=self.configuration.input_data_sync_configuration.size_only,
+                force=self.configuration.input_data_sync_configuration.force,
             )
             for param in self.demand_execution.execution_parameters.downloadable_job_param_inputs
         ]
@@ -262,8 +263,9 @@ class DemandExecutionContextManager:
                 retain_source_data=False,
                 require_lock=False,
                 batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
-                size_only=self.configuration.size_only,
-                force=self.configuration.force,
+                intermediate_s3_path=self.configuration.output_data_sync_configuration.intermediate_s3_path,
+                size_only=self.configuration.output_data_sync_configuration.size_only,
+                force=self.configuration.output_data_sync_configuration.force,
             )
             for param in self.demand_execution.execution_parameters.uploadable_job_param_outputs
         ]

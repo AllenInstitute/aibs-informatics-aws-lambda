@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import EnumField, SchemaModel, custom_field
 from aibs_informatics_core.models.data_sync import DataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
 
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
-from aibs_informatics_aws_lambda.handlers.data_sync import file_system
 
 
 @dataclass
@@ -47,14 +47,45 @@ class EnvFileWriteMode(str, Enum):
 
 
 @dataclass
+class DataSyncConfiguration(SchemaModel):
+    intermediate_s3_path: Optional[S3Path] = custom_field(
+        default=None, mm_field=S3Path.as_mm_field()
+    )
+    force: bool = custom_field(default=False)
+    size_only: bool = custom_field(default=True)
+
+
+@dataclass
 class ContextManagerConfiguration(SchemaModel):
     isolate_inputs: bool = custom_field(default=False)
     env_file_write_mode: EnvFileWriteMode = custom_field(
         mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.ALWAYS
     )
     # data sync configurations
+    # DEPRECATED - use input_data_sync_configuration and output_data_sync_configuration instead
+    intermediate_s3_path: Optional[S3Path] = custom_field(
+        default=None, mm_field=S3Path.as_mm_field()
+    )
+    # DEPRECATED - use input_data_sync_configuration and output_data_sync_configuration instead
     force: bool = custom_field(default=False)
+    # DEPRECATED - use input_data_sync_configuration and output_data_sync_configuration instead
     size_only: bool = custom_field(default=True)
+    input_data_sync_configuration: DataSyncConfiguration = custom_field(
+        default_factory=DataSyncConfiguration, mm_field=DataSyncConfiguration.as_mm_field()
+    )
+    output_data_sync_configuration: DataSyncConfiguration = custom_field(
+        default_factory=DataSyncConfiguration, mm_field=DataSyncConfiguration.as_mm_field()
+    )
+
+    def __post_init__(self):
+        # TEMPOARY: to support backward compatibility
+        if not (self.intermediate_s3_path is None or self.force is None or self.size_only is None):
+            if self.input_data_sync_configuration.intermediate_s3_path is None:
+                self.input_data_sync_configuration.intermediate_s3_path = self.intermediate_s3_path
+            if self.output_data_sync_configuration.intermediate_s3_path is None:
+                self.output_data_sync_configuration.intermediate_s3_path = (
+                    self.intermediate_s3_path
+                )
 
 
 @dataclass
