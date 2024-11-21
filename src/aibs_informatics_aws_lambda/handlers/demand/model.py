@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import EnumField, SchemaModel, custom_field
 from aibs_informatics_core.models.data_sync import DataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
 
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
-from aibs_informatics_aws_lambda.handlers.data_sync import file_system
 
 
 @dataclass
@@ -47,14 +47,27 @@ class EnvFileWriteMode(str, Enum):
 
 
 @dataclass
+class DataSyncConfiguration(SchemaModel):
+    temporary_request_payload_path: Optional[S3Path] = custom_field(
+        default=None, mm_field=S3Path.as_mm_field()
+    )
+    force: bool = custom_field(default=False)
+    size_only: bool = custom_field(default=True)
+
+
+@dataclass
 class ContextManagerConfiguration(SchemaModel):
     isolate_inputs: bool = custom_field(default=False)
     env_file_write_mode: EnvFileWriteMode = custom_field(
         mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.ALWAYS
     )
     # data sync configurations
-    force: bool = custom_field(default=False)
-    size_only: bool = custom_field(default=True)
+    input_data_sync_configuration: DataSyncConfiguration = custom_field(
+        default_factory=DataSyncConfiguration, mm_field=DataSyncConfiguration.as_mm_field()
+    )
+    output_data_sync_configuration: DataSyncConfiguration = custom_field(
+        default_factory=DataSyncConfiguration, mm_field=DataSyncConfiguration.as_mm_field()
+    )
 
 
 @dataclass
