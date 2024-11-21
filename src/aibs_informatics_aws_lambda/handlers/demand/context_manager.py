@@ -247,7 +247,7 @@ class DemandExecutionContextManager:
                 retain_source_data=True,
                 require_lock=True,
                 batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
-                intermediate_s3_path=self.configuration.input_data_sync_configuration.intermediate_s3_path,
+                temporary_request_payload_path=self.configuration.input_data_sync_configuration.temporary_request_payload_path,
                 size_only=self.configuration.input_data_sync_configuration.size_only,
                 force=self.configuration.input_data_sync_configuration.force,
             )
@@ -263,7 +263,7 @@ class DemandExecutionContextManager:
                 retain_source_data=False,
                 require_lock=False,
                 batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
-                intermediate_s3_path=self.configuration.output_data_sync_configuration.intermediate_s3_path,
+                temporary_request_payload_path=self.configuration.output_data_sync_configuration.temporary_request_payload_path,
                 size_only=self.configuration.output_data_sync_configuration.size_only,
                 force=self.configuration.output_data_sync_configuration.force,
             )

@@ -48,7 +48,7 @@ class EnvFileWriteMode(str, Enum):
 
 @dataclass
 class DataSyncConfiguration(SchemaModel):
-    intermediate_s3_path: Optional[S3Path] = custom_field(
+    temporary_request_payload_path: Optional[S3Path] = custom_field(
         default=None, mm_field=S3Path.as_mm_field()
     )
     force: bool = custom_field(default=False)
@@ -62,30 +62,12 @@ class ContextManagerConfiguration(SchemaModel):
         mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.ALWAYS
     )
     # data sync configurations
-    # DEPRECATED - use input_data_sync_configuration and output_data_sync_configuration instead
-    intermediate_s3_path: Optional[S3Path] = custom_field(
-        default=None, mm_field=S3Path.as_mm_field()
-    )
-    # DEPRECATED - use input_data_sync_configuration and output_data_sync_configuration instead
-    force: bool = custom_field(default=False)
-    # DEPRECATED - use input_data_sync_configuration and output_data_sync_configuration instead
-    size_only: bool = custom_field(default=True)
     input_data_sync_configuration: DataSyncConfiguration = custom_field(
         default_factory=DataSyncConfiguration, mm_field=DataSyncConfiguration.as_mm_field()
     )
     output_data_sync_configuration: DataSyncConfiguration = custom_field(
         default_factory=DataSyncConfiguration, mm_field=DataSyncConfiguration.as_mm_field()
     )
-
-    def __post_init__(self):
-        # TEMPOARY: to support backward compatibility
-        if not (self.intermediate_s3_path is None or self.force is None or self.size_only is None):
-            if self.input_data_sync_configuration.intermediate_s3_path is None:
-                self.input_data_sync_configuration.intermediate_s3_path = self.intermediate_s3_path
-            if self.output_data_sync_configuration.intermediate_s3_path is None:
-                self.output_data_sync_configuration.intermediate_s3_path = (
-                    self.intermediate_s3_path
-                )
 
 
 @dataclass

@@ -205,14 +205,18 @@ class PrepareBatchDataSyncHandler(
                 )
             batch_data_sync_requests.append(BatchDataSyncRequest(requests=data_sync_requests))
 
-        if request.intermediate_s3_path:
-            self.logger.info(f"Uploading batch requests to {request.intermediate_s3_path}")
+        if request.temporary_request_payload_path:
+            self.logger.info(
+                f"Uploading batch requests to {request.temporary_request_payload_path}"
+            )
             new_batch_data_sync_requests = []
 
             for i, batch_data_sync_request in enumerate(batch_data_sync_requests):
                 upload_json(
                     [cast(DataSyncRequest, _).to_dict() for _ in batch_data_sync_request.requests],
-                    s3_path=(s3_path := request.intermediate_s3_path / f"request_{i}.json"),
+                    s3_path=(
+                        s3_path := request.temporary_request_payload_path / f"request_{i}.json"
+                    ),
                 )
                 new_batch_data_sync_requests.append(BatchDataSyncRequest(requests=s3_path))
             return PrepareBatchDataSyncResponse(requests=new_batch_data_sync_requests)

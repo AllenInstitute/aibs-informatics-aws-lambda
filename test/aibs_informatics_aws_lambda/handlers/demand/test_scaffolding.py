@@ -62,8 +62,14 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
             "context_manager_configuration": {
                 "isolate_inputs": True,
                 "env_file_write_mode": "NEVER",
-                "force": False,
-                "size_only": True,
+                "input_data_sync_configuration": {
+                    "force": False,
+                    "size_only": True,
+                },
+                "output_data_sync_configuration": {
+                    "force": False,
+                    "size_only": True,
+                },
             },
         }
 
@@ -80,8 +86,6 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
             context_manager_configuration=ContextManagerConfiguration(
                 isolate_inputs=True,
                 env_file_write_mode=EnvFileWriteMode.NEVER,
-                force=False,
-                size_only=True,
             ),
         )
         assert actual == expected

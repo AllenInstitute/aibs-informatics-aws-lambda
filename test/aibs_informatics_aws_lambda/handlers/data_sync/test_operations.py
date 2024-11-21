@@ -220,7 +220,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
             batch_size_bytes_limit=10,
             max_concurrency=10,
             retain_source_data=True,
-            intermediate_s3_path=S3Path.build(bucket_name="bucket", key="intermediate/"),
+            temporary_request_payload_path=S3Path.build(bucket_name="bucket", key="intermediate/"),
         )
 
         expected_json = [

@@ -38,7 +38,6 @@ from aibs_informatics_aws_lambda.handlers.demand.context_manager import (
     BatchEFSConfiguration,
     DemandExecutionContextManager,
     get_batch_efs_configuration,
-    get_batch_job_queue_name,
     update_demand_execution_parameter_inputs,
 )
 from aibs_informatics_aws_lambda.handlers.demand.model import (
@@ -665,7 +664,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         self.assertEqual(expected["source_path"], actual_dict.get("source_path"))
         self.assertEqual(expected["destination_path"], actual_dict.get("destination_path"))
         self.assertEqual(expected["retain_source_data"], actual_dict.get("retain_source_data"))
-        self.assertIsNone(actual_dict.get("intermediate_s3_path"))
+        self.assertIsNone(actual_dict.get("temporary_request_payload_path"))
 
     def test__pre_execution_data_sync_requests__single_input_generates_list__with_data_sync_request_overrides(
         self,
@@ -680,7 +679,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             self.env_base,
             ContextManagerConfiguration(
                 input_data_sync_configuration=DataSyncConfiguration(
-                    intermediate_s3_path=S3URI("s3://bucket/override_prefix")
+                    temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
                 )
             ),
         )
@@ -690,7 +689,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             "retain_source_data": True,
             "source_path": S3_URI,
             "destination_path": f"{self.gwo_file_system_id}:/shared/558ca1533e03aaea2e3fb825be29124c1648046a2893052d1a1df0059becbf4f",
-            "intermediate_s3_path": "s3://bucket/override_prefix",
+            "temporary_request_payload_path": "s3://bucket/override_prefix",
         }
         self.assertTrue(len(actual) == 1)
         actual_dict = actual[0].to_dict()
@@ -698,7 +697,10 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         self.assertEqual(expected["source_path"], actual_dict.get("source_path"))
         self.assertEqual(expected["destination_path"], actual_dict.get("destination_path"))
         self.assertEqual(expected["retain_source_data"], actual_dict.get("retain_source_data"))
-        self.assertEqual(expected["intermediate_s3_path"], actual_dict.get("intermediate_s3_path"))
+        self.assertEqual(
+            expected["temporary_request_payload_path"],
+            actual_dict.get("temporary_request_payload_path"),
+        )
 
     def test__post_execution_data_sync_requests__no_outputs_generate_empty_list(self):
         demand_execution = get_any_demand_execution(
@@ -742,7 +744,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             self.env_base,
             ContextManagerConfiguration(
                 output_data_sync_configuration=DataSyncConfiguration(
-                    intermediate_s3_path=S3URI("s3://bucket/override_prefix")
+                    temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
                 )
             ),
         )
@@ -752,14 +754,17 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             "retain_source_data": False,
             "source_path": f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/outs",
             "destination_path": f"{S3_URI}/outs",
-            "intermediate_s3_path": "s3://bucket/override_prefix",
+            "temporary_request_payload_path": "s3://bucket/override_prefix",
         }
         self.assertTrue(len(actual) == 1)
         actual_dict = actual[0].to_dict()
         self.assertEqual(expected["source_path"], actual_dict.get("source_path"))
         self.assertEqual(expected["destination_path"], actual_dict.get("destination_path"))
         self.assertEqual(expected["retain_source_data"], actual_dict.get("retain_source_data"))
-        self.assertEqual(expected["intermediate_s3_path"], actual_dict.get("intermediate_s3_path"))
+        self.assertEqual(
+            expected["temporary_request_payload_path"],
+            actual_dict.get("temporary_request_payload_path"),
+        )
 
     def test__batch_job_queue_name__works_for_valid_demand_execution(self):
         demand_execution = get_any_demand_execution(
