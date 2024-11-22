@@ -94,8 +94,12 @@ class DemandExecutionSetupConfigs(SchemaModel):
     data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
         mm_field=UnionField(
             [
-                (list, ListField(DataSyncRequest.as_mm_field())),
+                # NOTE: PrepareBatchDataSyncRequest is a subclass of DataSyncRequest
+                #       but it has extra fields. If DataSyncRequest is first, it will ignore
+                #       the extra fields in PrepareBatchDataSyncRequest.
+                #       Therefore, we need to put PrepareBatchDataSyncRequest first.
                 (list, ListField(PrepareBatchDataSyncRequest.as_mm_field())),
+                (list, ListField(DataSyncRequest.as_mm_field())),
             ]
         )
     )
@@ -109,8 +113,12 @@ class DemandExecutionCleanupConfigs(SchemaModel):
     data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
         mm_field=UnionField(
             [
-                (list, ListField(DataSyncRequest.as_mm_field())),
+                # NOTE: PrepareBatchDataSyncRequest is a subclass of DataSyncRequest
+                #       but it has extra fields. If DataSyncRequest is first, it will ignore
+                #       the extra fields in PrepareBatchDataSyncRequest.
+                #       Therefore, we need to put PrepareBatchDataSyncRequest first.
                 (list, ListField(PrepareBatchDataSyncRequest.as_mm_field())),
+                (list, ListField(DataSyncRequest.as_mm_field())),
             ]
         )
     )
