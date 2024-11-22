@@ -1,10 +1,16 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from aibs_informatics_core.models.aws.s3 import S3Path
-from aibs_informatics_core.models.base import EnumField, SchemaModel, custom_field
-from aibs_informatics_core.models.data_sync import DataSyncRequest
+from aibs_informatics_core.models.base import (
+    EnumField,
+    ListField,
+    SchemaModel,
+    UnionField,
+    custom_field,
+)
+from aibs_informatics_core.models.data_sync import DataSyncRequest, PrepareBatchDataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
 
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
@@ -85,13 +91,29 @@ class PrepareDemandScaffoldingRequest(SchemaModel):
 
 @dataclass
 class DemandExecutionSetupConfigs(SchemaModel):
-    data_sync_requests: List[DataSyncRequest]
-    batch_create_request: CreateDefinitionAndPrepareArgsRequest
+    data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
+        mm_field=UnionField(
+            [
+                (list, ListField(DataSyncRequest.as_mm_field())),
+                (list, ListField(PrepareBatchDataSyncRequest.as_mm_field())),
+            ]
+        )
+    )
+    batch_create_request: CreateDefinitionAndPrepareArgsRequest = custom_field(
+        mm_field=CreateDefinitionAndPrepareArgsRequest.as_mm_field()
+    )
 
 
 @dataclass
 class DemandExecutionCleanupConfigs(SchemaModel):
-    data_sync_requests: List[DataSyncRequest]
+    data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
+        mm_field=UnionField(
+            [
+                (list, ListField(DataSyncRequest.as_mm_field())),
+                (list, ListField(PrepareBatchDataSyncRequest.as_mm_field())),
+            ]
+        )
+    )
 
 
 @dataclass
