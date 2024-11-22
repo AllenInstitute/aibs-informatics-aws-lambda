@@ -689,7 +689,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             "retain_source_data": True,
             "source_path": S3_URI,
             "destination_path": f"{self.gwo_file_system_id}:/shared/558ca1533e03aaea2e3fb825be29124c1648046a2893052d1a1df0059becbf4f",
-            "temporary_request_payload_path": "s3://bucket/override_prefix",
+            "temporary_request_payload_path": "s3://bucket/override_prefix/input_0/",
         }
         self.assertTrue(len(actual) == 1)
         actual_dict = actual[0].to_dict()
@@ -754,7 +754,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             "retain_source_data": False,
             "source_path": f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/outs",
             "destination_path": f"{S3_URI}/outs",
-            "temporary_request_payload_path": "s3://bucket/override_prefix",
+            "temporary_request_payload_path": "s3://bucket/override_prefix/output_0/",
         }
         self.assertTrue(len(actual) == 1)
         actual_dict = actual[0].to_dict()

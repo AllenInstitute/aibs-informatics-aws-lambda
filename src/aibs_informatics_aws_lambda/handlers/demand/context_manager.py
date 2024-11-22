@@ -236,39 +236,65 @@ class DemandExecutionContextManager:
 
     @property
     def pre_execution_data_sync_requests(self) -> List[PrepareBatchDataSyncRequest]:
-        return [
-            PrepareBatchDataSyncRequest(
-                source_path=S3URI(param.remote_value),
-                destination_path=get_efs_path(
-                    local_path=Path(param.value),
-                    raise_if_unresolved=True,
-                    mount_points=self.efs_mount_points,
-                ),
-                retain_source_data=True,
-                require_lock=True,
-                batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
-                temporary_request_payload_path=self.configuration.input_data_sync_configuration.temporary_request_payload_path,
-                size_only=self.configuration.input_data_sync_configuration.size_only,
-                force=self.configuration.input_data_sync_configuration.force,
+        requests = []
+        temporary_request_payload_root = (
+            self.configuration.input_data_sync_configuration.temporary_request_payload_path
+        )
+        for i, param in enumerate(
+            self.demand_execution.execution_parameters.downloadable_job_param_inputs
+        ):
+            temporary_request_payload_path = None
+            if temporary_request_payload_root:
+                temporary_request_payload_path = temporary_request_payload_root / f"input_{i}/"
+            requests.append(
+                PrepareBatchDataSyncRequest(
+                    source_path=S3URI(param.remote_value),
+                    destination_path=get_efs_path(
+                        local_path=Path(param.value),
+                        raise_if_unresolved=True,
+                        mount_points=self.efs_mount_points,
+                    ),
+                    retain_source_data=True,
+                    require_lock=True,
+                    batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
+                    temporary_request_payload_path=temporary_request_payload_path,
+                    size_only=self.configuration.input_data_sync_configuration.size_only,
+                    force=self.configuration.input_data_sync_configuration.force,
+                )
             )
-            for param in self.demand_execution.execution_parameters.downloadable_job_param_inputs
-        ]
+        logger.info(
+            f"Generated {len(requests)} data sync requests for pre-execution data sync: {requests}"
+        )
+        return requests
 
     @property
     def post_execution_data_sync_requests(self) -> List[PrepareBatchDataSyncRequest]:
-        return [
-            PrepareBatchDataSyncRequest(
-                source_path=get_efs_path(Path(param.value), True, self.efs_mount_points),
-                destination_path=S3URI(param.remote_value),
-                retain_source_data=False,
-                require_lock=False,
-                batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
-                temporary_request_payload_path=self.configuration.output_data_sync_configuration.temporary_request_payload_path,
-                size_only=self.configuration.output_data_sync_configuration.size_only,
-                force=self.configuration.output_data_sync_configuration.force,
+        requests = []
+        temporary_request_payload_root = (
+            self.configuration.output_data_sync_configuration.temporary_request_payload_path
+        )
+        for i, param in enumerate(
+            self.demand_execution.execution_parameters.uploadable_job_param_outputs
+        ):
+            temporary_request_payload_path = None
+            if temporary_request_payload_root:
+                temporary_request_payload_path = temporary_request_payload_root / f"output_{i}/"
+            requests.append(
+                PrepareBatchDataSyncRequest(
+                    source_path=get_efs_path(Path(param.value), True, self.efs_mount_points),
+                    destination_path=S3URI(param.remote_value),
+                    retain_source_data=False,
+                    require_lock=False,
+                    batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max
+                    temporary_request_payload_path=temporary_request_payload_path,
+                    size_only=self.configuration.output_data_sync_configuration.size_only,
+                    force=self.configuration.output_data_sync_configuration.force,
+                )
             )
-            for param in self.demand_execution.execution_parameters.uploadable_job_param_outputs
-        ]
+        logger.info(
+            f"Generated {len(requests)} data sync requests for post-execution data sync: {requests}"
+        )
+        return requests
 
     @classmethod
     def from_demand_execution(
