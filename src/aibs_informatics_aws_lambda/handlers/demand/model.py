@@ -98,6 +98,7 @@ class DemandExecutionSetupConfigs(SchemaModel):
                 #       but it has extra fields. If DataSyncRequest is first, it will ignore
                 #       the extra fields in PrepareBatchDataSyncRequest.
                 #       Therefore, we need to put PrepareBatchDataSyncRequest first.
+                # TODO: Consider dropping DataSyncRequest and only use PrepareBatchDataSyncRequest
                 (list, ListField(PrepareBatchDataSyncRequest.as_mm_field())),
                 (list, ListField(DataSyncRequest.as_mm_field())),
             ]
@@ -117,6 +118,7 @@ class DemandExecutionCleanupConfigs(SchemaModel):
                 #       but it has extra fields. If DataSyncRequest is first, it will ignore
                 #       the extra fields in PrepareBatchDataSyncRequest.
                 #       Therefore, we need to put PrepareBatchDataSyncRequest first.
+                # TODO: Consider dropping DataSyncRequest and only use PrepareBatchDataSyncRequest
                 (list, ListField(PrepareBatchDataSyncRequest.as_mm_field())),
                 (list, ListField(DataSyncRequest.as_mm_field())),
             ]
