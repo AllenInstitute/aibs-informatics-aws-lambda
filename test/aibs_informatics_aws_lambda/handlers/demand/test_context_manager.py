@@ -311,7 +311,7 @@ class Helpers:
 class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
     def setUp(self) -> None:
         super().setUp()
-        self._file_store_name_id_map = {}
+        self._file_store_name_id_map = {}  # type: ignore
         self.mock_efs = mock_efs()
         self.mock_efs.start()
         self.set_aws_credentials()
