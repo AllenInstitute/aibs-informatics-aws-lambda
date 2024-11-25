@@ -86,8 +86,7 @@ class PrepareDemandScaffoldingHandler(
         self.setup_file_system(context_manager)
         setup_configs = DemandExecutionSetupConfigs(
             data_sync_requests=[
-                DataSyncRequest.from_dict(_.to_dict())
-                for _ in context_manager.pre_execution_data_sync_requests
+                _.from_dict(_.to_dict()) for _ in context_manager.pre_execution_data_sync_requests
             ],
             batch_create_request=CreateDefinitionAndPrepareArgsRequest(
                 image=batch_job_builder.image,
@@ -107,8 +106,7 @@ class PrepareDemandScaffoldingHandler(
 
         cleanup_configs = DemandExecutionCleanupConfigs(
             data_sync_requests=[
-                DataSyncRequest.from_dict(_.to_dict())
-                for _ in context_manager.post_execution_data_sync_requests
+                _.from_dict(_.to_dict()) for _ in context_manager.post_execution_data_sync_requests
             ]
         )
 

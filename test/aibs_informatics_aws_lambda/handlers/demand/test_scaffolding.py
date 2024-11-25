@@ -7,6 +7,7 @@ from typing import Any, Dict
 from unittest import mock
 
 from aibs_informatics_aws_utils.efs import MountPointConfiguration
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.demand_execution import DemandExecution
 from aibs_informatics_core.models.unique_ids import UniqueID
 
@@ -20,6 +21,7 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
     DemandFileSystemConfigurations,
     EnvFileWriteMode,
     FileSystemConfiguration,
+    PrepareBatchDataSyncRequest,
     PrepareDemandScaffoldingRequest,
     PrepareDemandScaffoldingResponse,
 )
@@ -180,7 +182,13 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         context_manager = mock.MagicMock()
         self.mock_DemandExecutionContextManager.return_value = context_manager
         context_manager.demand_execution = self.demand_execution
-        context_manager.pre_execution_data_sync_requests = []
+        context_manager.pre_execution_data_sync_requests = [
+            PrepareBatchDataSyncRequest(
+                source_path=S3Path("s3://bucket/src"),
+                destination_path=S3Path("s3://bucket/dst"),
+                temporary_request_payload_path=S3Path("s3://bucket/tmp"),
+            )
+        ]
         context_manager.post_execution_data_sync_requests = []
         batch_job_builder = mock.MagicMock()
         context_manager.batch_job_builder = batch_job_builder
@@ -199,7 +207,13 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         expected = PrepareDemandScaffoldingResponse(
             demand_execution=self.demand_execution,
             setup_configs=DemandExecutionSetupConfigs(
-                data_sync_requests=[],
+                data_sync_requests=[
+                    PrepareBatchDataSyncRequest(
+                        source_path=S3Path("s3://bucket/src"),
+                        destination_path=S3Path("s3://bucket/dst"),
+                        temporary_request_payload_path=S3Path("s3://bucket/tmp"),
+                    )
+                ],
                 batch_create_request=CreateDefinitionAndPrepareArgsRequest(
                     image="image",
                     job_definition_name="job_definition_name",
