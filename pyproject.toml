@@ -33,6 +33,11 @@ docker = [
     "awslambdaric",
 ]
 
+release = [
+    "build",
+    "wheel",
+]
+
 [project.scripts]
 handle-lambda-request = "aibs_informatics_aws_lambda.main:handle_cli"
 
