@@ -51,6 +51,12 @@ version = {attr = "aibs_informatics_aws_lambda._version.__version__"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[project.urls]
+Documentation = "https://.github.io/aibs-informatics-aws-lambda/"
+Homepage = "https://github.com/AllenInstitute/aibs-informatics-aws-lambda/"
+Issues = "https://github.com/AllenInstitute/aibs-informatics-aws-lambda/issues"
+Repository = "https://github.com/AllenInstitute/aibs-informatics-aws-lambda/"
+
 # -----------------------------------------------------------------------------
 ##  Pyright Configurations
 #   https://github.com/microsoft/pyright/blob/main/docs/configuration.md
