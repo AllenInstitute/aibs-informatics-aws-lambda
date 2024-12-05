@@ -15,22 +15,28 @@ dynamic = [
     "version",
 ]
 dependencies = [
+    "aibs-informatics-aws-utils",
+    "aibs-informatics-core",
     "aws-lambda-powertools ~= 2.35",
     "pydantic >= 2.0.3, < 3",
     "aws-lambda-typing",
-    "aibs-informatics-aws-utils @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-aws-utils.git@main",
-    "aibs-informatics-core @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-core.git@main",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "aibs-informatics-test-resources @ git+ssh://git@github.com/AllenInstitute/aibs-informatics-test-resources.git@main",
+    "aibs-informatics-test-resources",
     "boto3-stubs[athena,batch,ecs,essential,sns,stepfunctions]",
     "moto[lambda,stepfunctions,sts] ~= 4.0",
 ]
 
 docker = [
     "awslambdaric",
+]
+
+release = [
+    "build",
+    "bump-my-version",
+    "wheel",
 ]
 
 [project.scripts]
@@ -44,6 +50,12 @@ version = {attr = "aibs_informatics_aws_lambda._version.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.urls]
+Documentation = "https://.github.io/aibs-informatics-aws-lambda/"
+Homepage = "https://github.com/AllenInstitute/aibs-informatics-aws-lambda/"
+Issues = "https://github.com/AllenInstitute/aibs-informatics-aws-lambda/issues"
+Repository = "https://github.com/AllenInstitute/aibs-informatics-aws-lambda/"
 
 # -----------------------------------------------------------------------------
 ##  Pyright Configurations
@@ -207,3 +219,29 @@ line_length = 99
 profile = "black"
 src_paths = ["src", "test"]
 
+# -----------------------------------------------------------------------------
+##  bumpversion Configurations
+#   https://callowayproject.github.io/bump-my-version/
+# -----------------------------------------------------------------------------
+
+[tool.bumpversion]
+allow_dirty = false
+commit = true
+commit_args = ""
+current_version = "0.0.1"
+ignore_missing_version = false
+message = "Bump version: {current_version} → {new_version}"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+regex = false
+replace = "{new_version}"
+search = "{current_version}"
+serialize = ["{major}.{minor}.{patch}"]
+sign_tags = false
+tag = true
+tag_message = "Bump version: {current_version} → {new_version}"
+tag_name = "v{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "src/aibs_informatics_aws_lambda/_version.py"
+search = "__version__ = \"{current_version}\""
+replace = "__version__ = \"{new_version}\""

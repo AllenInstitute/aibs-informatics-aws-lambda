@@ -119,3 +119,11 @@ handle-lambda-request --handler-qualified-name aibs_informatics_aws_lambda.handl
 ## Testing
 
 The package includes comprehensive tests for all handlers, which can be found under the [test](test) directory.
+
+## Contributing
+
+Any and all PRs are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+
+## Licensing
+
+This software is licensed under the Allen Institute Software License, which is the 2-clause BSD license plus a third clause that prohibits redistribution and use for commercial purposes without further permission. For more information, please visit [Allen Institute Terms of Use](https://alleninstitute.org/terms-of-use/).
