@@ -9,7 +9,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aibs-informatics-aws-lambda"
-description = "aibs informatics lambda functions"
+description = "Utility library for building validated and typed AWS Lambda functions"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
 dynamic = [
     "version",
