@@ -82,7 +82,7 @@ jobs:
           echo "PATCH_VERSION=$patch_version" >> $GITHUB_OUTPUT
           short_version="$major_version.$minor_version"
           echo "SHORT_VERSION=$short_version" >> $GITHUB_OUTPUT
-          commit_sha=$(git rev-parse $latest_tag)
+          commit_sha=$(git rev-list -n 1 $latest_tag)
           echo "COMMIT_SHA=$commit_sha" >> $GITHUB_OUTPUT
       - name: Show version
         run: |
