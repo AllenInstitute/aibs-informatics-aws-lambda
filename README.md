@@ -1,6 +1,7 @@
 # AIBS Informatics AWS Lambda
 
 [![Build Status](https://github.com/AllenInstitute/aibs-informatics-aws-lambda/actions/workflows/build.yml/badge.svg)](https://github.com/AllenInstitute/aibs-informatics-aws-lambda/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/AllenInstitute/aibs-informatics-aws-lambda/graph/badge.svg?token=SEHNFMIX4G)](https://codecov.io/gh/AllenInstitute/aibs-informatics-aws-lambda)
 
 ---
 
