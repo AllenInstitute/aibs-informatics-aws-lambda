@@ -35,6 +35,7 @@ from aibs_informatics_core.utils.hashing import sha256_hexdigest
 from aibs_informatics_core.utils.os_operations import write_env_file
 from aibs_informatics_core.utils.units import BYTES_PER_GIBIBYTE
 
+from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
 from aibs_informatics_aws_lambda.handlers.demand.model import (
     ContextManagerConfiguration,
     EnvFileWriteMode,
@@ -294,6 +295,24 @@ class DemandExecutionContextManager:
         logger.info(
             f"Generated {len(requests)} data sync requests for post-execution data sync: {requests}"
         )
+        return requests
+
+    @property
+    def post_execution_remove_data_paths_requests(self) -> List[RemoveDataPathsRequest]:
+        """Generates remove data paths requests for post-execution data sync
+
+        Returns:
+            List[RemoveDataPathsRequest]: list of remove data paths requests
+        """
+        requests = []
+        if self.configuration.cleanup_inputs:
+            input_paths = []
+            for param in self.demand_execution.execution_parameters.downloadable_job_param_inputs:
+                input_paths.append(get_efs_path(Path(param.value), True, self.efs_mount_points))
+            requests.append(RemoveDataPathsRequest(paths=input_paths))
+
+        if self.configuration.cleanup_working_dir:
+            requests.append(RemoveDataPathsRequest(paths=[self.efs_working_path]))
         return requests
 
     @classmethod

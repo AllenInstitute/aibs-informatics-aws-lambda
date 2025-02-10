@@ -14,6 +14,7 @@ from aibs_informatics_core.models.data_sync import DataSyncRequest, PrepareBatch
 from aibs_informatics_core.models.demand_execution import DemandExecution
 
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
+from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
 
 
 @dataclass
@@ -64,6 +65,8 @@ class DataSyncConfiguration(SchemaModel):
 @dataclass
 class ContextManagerConfiguration(SchemaModel):
     isolate_inputs: bool = custom_field(default=False)
+    cleanup_inputs: bool = custom_field(default=False)
+    cleanup_working_dir: bool = custom_field(default=False)
     env_file_write_mode: EnvFileWriteMode = custom_field(
         mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.ALWAYS
     )
@@ -123,6 +126,9 @@ class DemandExecutionCleanupConfigs(SchemaModel):
                 (list, ListField(DataSyncRequest.as_mm_field())),
             ]
         )
+    )
+    remove_data_paths_requests: List[RemoveDataPathsRequest] = custom_field(
+        mm_field=ListField(RemoveDataPathsRequest.as_mm_field()), default_factory=list
     )
 
 
