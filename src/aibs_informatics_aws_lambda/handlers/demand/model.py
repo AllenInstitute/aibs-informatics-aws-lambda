@@ -65,6 +65,8 @@ class DataSyncConfiguration(SchemaModel):
 @dataclass
 class ContextManagerConfiguration(SchemaModel):
     isolate_inputs: bool = custom_field(default=False)
+    # NOTE: cleanup_inputs may not work as expected if isolate_inputs is set to False
+    #       because the inputs are typically mounted as read-only
     cleanup_inputs: bool = custom_field(default=False)
     cleanup_working_dir: bool = custom_field(default=False)
     env_file_write_mode: EnvFileWriteMode = custom_field(
