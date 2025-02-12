@@ -13,7 +13,6 @@ from aibs_informatics_aws_utils.constants.efs import (
 )
 from aibs_informatics_aws_utils.efs import MountPointConfiguration
 from aibs_informatics_core.env import EnvBase
-from aibs_informatics_core.models.data_sync import DataSyncRequest
 
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 from aibs_informatics_aws_lambda.handlers.demand.context_manager import (
@@ -109,7 +108,8 @@ class PrepareDemandScaffoldingHandler(
             data_sync_requests=[
                 sync_request.from_dict(sync_request.to_dict())
                 for sync_request in context_manager.post_execution_data_sync_requests
-            ]
+            ],
+            remove_data_paths_requests=context_manager.post_execution_remove_data_paths_requests,
         )
 
         return PrepareDemandScaffoldingResponse(

@@ -1,10 +1,9 @@
 from datetime import datetime
 from pathlib import Path
-from test.base import AwsBaseTest, does_not_raise
+from test.base import AwsBaseTest
 from typing import Dict, Optional, Union
 
 import boto3
-from aibs_informatics_aws_utils.batch import BatchJobBuilder
 from aibs_informatics_aws_utils.constants.efs import (
     EFS_ROOT_ACCESS_POINT_NAME,
     EFS_ROOT_PATH,
@@ -32,7 +31,7 @@ from aibs_informatics_core.models.demand_execution.platform import (
 from aibs_informatics_core.models.unique_ids import UniqueID
 from aibs_informatics_core.utils.hashing import uuid_str
 from moto import mock_efs, mock_sts
-from pytest import fixture, mark, param
+from pytest import fixture
 
 from aibs_informatics_aws_lambda.handlers.demand.context_manager import (
     BatchEFSConfiguration,
@@ -650,7 +649,13 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
                 command=["cmd"], inputs=["X"], params={"X": S3_URI}
             )
         )
-        decm = DemandExecutionContextManager.from_demand_execution(demand_execution, self.env_base)
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=False, cleanup_inputs=False, cleanup_working_dir=False
+            ),
+        )
         actual = decm.pre_execution_data_sync_requests
 
         expected = {
@@ -678,9 +683,12 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             demand_execution,
             self.env_base,
             ContextManagerConfiguration(
+                isolate_inputs=False,
+                cleanup_inputs=False,
+                cleanup_working_dir=False,
                 input_data_sync_configuration=DataSyncConfiguration(
                     temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
-                )
+                ),
             ),
         )
         actual = decm.pre_execution_data_sync_requests
@@ -765,6 +773,117 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             expected["temporary_request_payload_path"],
             actual_dict.get("temporary_request_payload_path"),
         )
+
+    def test__post_execution_remove_data_paths_requests__no_cleanup_data(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd"],
+                inputs=["X", "Y"],
+                params={
+                    "X": {
+                        "remote": S3_URI + "1",
+                        "local": "X",
+                    },
+                    "Y": {
+                        "remote": S3_URI + "2",
+                        "local": "Y",
+                    },
+                },
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=True, cleanup_inputs=False, cleanup_working_dir=False
+            ),
+        )
+        actual = decm.post_execution_remove_data_paths_requests
+
+        self.assertEqual(len(actual), 0)
+
+    def test__post_execution_remove_data_paths_requests__cleanup_inputs(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd"],
+                inputs=["X", "Y"],
+                params={
+                    "X": {
+                        "remote": S3_URI + "1",
+                        "local": "X",
+                    },
+                    "Y": {
+                        "remote": S3_URI + "2",
+                        "local": "Y",
+                    },
+                },
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=True, cleanup_inputs=True, cleanup_working_dir=False
+            ),
+        )
+        actual = decm.post_execution_remove_data_paths_requests
+
+        expected = [
+            {
+                "paths": [
+                    f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/X",
+                    f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/Y",
+                ]
+            },
+        ]
+        self.assertTrue(len(actual) == 1)
+        self.assertEqual(len(actual[0].paths), 2)
+        self.assertListEqual(expected[0]["paths"], actual[0].paths)
+
+    def test__post_execution_remove_data_paths_requests__cleanup_inputs_and_working_dir(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd"],
+                inputs=["X", "Y"],
+                params={
+                    "X": {
+                        "remote": S3_URI + "1",
+                        "local": "X",
+                    },
+                    "Y": {
+                        "remote": S3_URI + "2",
+                        "local": "Y",
+                    },
+                },
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=True, cleanup_inputs=True, cleanup_working_dir=True
+            ),
+        )
+        actual = decm.post_execution_remove_data_paths_requests
+
+        expected = [
+            {
+                "paths": [
+                    f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/X",
+                    f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/Y",
+                ]
+            },
+            {
+                "paths": [
+                    f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}",
+                ]
+            },
+        ]
+        self.assertTrue(len(actual) == 2)
+        self.assertEqual(len(actual[0].paths), 2)
+        self.assertEqual(len(actual[1].paths), 1)
+        self.assertListEqual(expected[0]["paths"], actual[0].paths)
+        self.assertListEqual(expected[1]["paths"], actual[1].paths)
 
     def test__batch_job_queue_name__works_for_valid_demand_execution(self):
         demand_execution = get_any_demand_execution(

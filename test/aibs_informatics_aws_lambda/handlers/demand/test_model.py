@@ -5,6 +5,7 @@ from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.email_address import EmailAddress
 from pytest import mark, param, raises
 
+from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
 from aibs_informatics_aws_lambda.handlers.demand.model import (
     DataSyncRequest,
     DemandExecutionCleanupConfigs,
@@ -25,7 +26,7 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
                         destination_path=S3Path("s3://bucket/dst"),
                         temporary_request_payload_path=S3Path("s3://bucket/tmp"),
                     )
-                ]
+                ],
             ),
             {
                 "data_sync_requests": [
@@ -42,7 +43,8 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
                         "source_path": "s3://bucket/src",
                         "temporary_request_payload_path": "s3://bucket/tmp",
                     }
-                ]
+                ],
+                "remove_data_paths_requests": [],
             },
             does_not_raise(),
             id="Handles single PrepareBatchDataSyncRequest",
@@ -70,10 +72,25 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
                         "size_only": False,
                         "source_path": "s3://bucket/src",
                     }
-                ]
+                ],
+                "remove_data_paths_requests": [],
             },
             does_not_raise(),
             id="Handles single ambiguous ds request",
+        ),
+        param(
+            DemandExecutionCleanupConfigs(
+                data_sync_requests=[],
+                remove_data_paths_requests=[
+                    RemoveDataPathsRequest(paths=["efs://path1", "efs://path2"])
+                ],
+            ),
+            {
+                "data_sync_requests": [],
+                "remove_data_paths_requests": [{"paths": ["efs://path1", "efs://path2"]}],
+            },
+            does_not_raise(),
+            id="Handles remove data path request, empty data sync requests",
         ),
     ],
 )
