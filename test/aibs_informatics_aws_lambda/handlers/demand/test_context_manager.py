@@ -649,7 +649,13 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
                 command=["cmd"], inputs=["X"], params={"X": S3_URI}
             )
         )
-        decm = DemandExecutionContextManager.from_demand_execution(demand_execution, self.env_base)
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=False, cleanup_inputs=False, cleanup_working_dir=False
+            ),
+        )
         actual = decm.pre_execution_data_sync_requests
 
         expected = {
@@ -677,9 +683,12 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             demand_execution,
             self.env_base,
             ContextManagerConfiguration(
+                isolate_inputs=False,
+                cleanup_inputs=False,
+                cleanup_working_dir=False,
                 input_data_sync_configuration=DataSyncConfiguration(
                     temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
-                )
+                ),
             ),
         )
         actual = decm.pre_execution_data_sync_requests
@@ -785,7 +794,9 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         decm = DemandExecutionContextManager.from_demand_execution(
             demand_execution,
             self.env_base,
-            ContextManagerConfiguration(isolate_inputs=True),
+            ContextManagerConfiguration(
+                isolate_inputs=True, cleanup_inputs=False, cleanup_working_dir=False
+            ),
         )
         actual = decm.post_execution_remove_data_paths_requests
 
@@ -811,7 +822,9 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         decm = DemandExecutionContextManager.from_demand_execution(
             demand_execution,
             self.env_base,
-            ContextManagerConfiguration(isolate_inputs=True, cleanup_inputs=True),
+            ContextManagerConfiguration(
+                isolate_inputs=True, cleanup_inputs=True, cleanup_working_dir=False
+            ),
         )
         actual = decm.post_execution_remove_data_paths_requests
 

@@ -55,6 +55,23 @@ class EnvFileWriteMode(str, Enum):
 
 @dataclass
 class DataSyncConfiguration(SchemaModel):
+    """
+    Configuration for how data sync should be run.
+
+    Attributes:
+        temporary_request_payload_path (Optional[S3Path]):
+            The path to the temporary request payload. This is useful if many requests will
+            be generated and the payloads are too large to be passed in the state machine
+            context object.
+        force (bool):
+            If True, the data will be synced even if it already exists and satisfies
+            the checksum or size check.
+        size_only (bool):
+            If True, only the size of the data will be checked when determining if the data
+            should be synced. If False, the checksum of the data will also be checked.
+
+    """
+
     temporary_request_payload_path: Optional[S3Path] = custom_field(
         default=None, mm_field=S3Path.as_mm_field()
     )
@@ -64,15 +81,47 @@ class DataSyncConfiguration(SchemaModel):
 
 @dataclass
 class ContextManagerConfiguration(SchemaModel):
-    isolate_inputs: bool = custom_field(default=False)
-    # NOTE: cleanup_inputs may not work as expected if isolate_inputs is set to False
-    #       because the inputs are typically mounted as read-only
-    cleanup_inputs: bool = custom_field(default=False)
-    cleanup_working_dir: bool = custom_field(default=False)
+    """
+    Configuration for managing the context in which a demand execution runs.
+
+    Attributes:
+        isolate_inputs (bool):
+            If True, input data will be written to working directory instead of the shared
+            scratch directory. This is useful if:
+            - you want to ensure that input data is not modified by other processes,
+            - can be modified by the demand execution,
+            - and can be cleaned up immediately after completion
+                (RO shared scratch data is not cleaned up).
+        cleanup_inputs (bool):
+            If True, input data will be cleaned up after execution. Note that this may
+            not work as expected if isolate_inputs is False, as inputs are typically
+            mounted as read-only. This will be clear when defining infrastructure code.
+        cleanup_working_dir (bool):
+            If True, the working directory will be cleaned up after execution. This is useful if
+            you want to ensure that no data is left behind in the working directory.
+        env_file_write_mode (EnvFileWriteMode):
+            Determines when environment files should be written instead of being added to the list
+            of env variables in batch job definition. Options are NEVER, ALWAYS, and IF_REQUIRED.
+            IF_REQUIRED is experimental and attempts to write env files only if the env variables
+            exceed a certain length.
+        input_data_sync_configuration (DataSyncConfiguration):
+            Configuration for syncing input data. The force flag and size_only flag are used to
+            determine how the data is synced. The temporary_request_payload_path should be used
+            if many requests will be generated and the payloads are too large to be passed
+            in the state machine context object.
+        output_data_sync_configuration (DataSyncConfiguration):
+            Configuration for syncing output data. The force flag and size_only flag are used to
+            determine how the data is synced. The temporary_request_payload_path should be used
+            if many requests will be generated and the payloads are too large to be passed
+            in the state machine context object.
+    """
+
+    isolate_inputs: bool = custom_field(default=True)
+    cleanup_inputs: bool = custom_field(default=True)
+    cleanup_working_dir: bool = custom_field(default=True)
     env_file_write_mode: EnvFileWriteMode = custom_field(
         mm_field=EnumField(EnvFileWriteMode), default=EnvFileWriteMode.ALWAYS
     )
-    # data sync configurations
     input_data_sync_configuration: DataSyncConfiguration = custom_field(
         default_factory=DataSyncConfiguration, mm_field=DataSyncConfiguration.as_mm_field()
     )
