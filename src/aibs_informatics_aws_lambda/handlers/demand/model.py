@@ -9,6 +9,7 @@ from aibs_informatics_core.models.base import (
     SchemaModel,
     UnionField,
     custom_field,
+    pre_load,
 )
 from aibs_informatics_core.models.data_sync import DataSyncRequest, PrepareBatchDataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
@@ -33,17 +34,40 @@ class FileSystemConfiguration(SchemaModel):
     container_path: Optional[str] = None
 
 
+class FileSystemSelectionStrategy(str, Enum):
+    # DATE = "DATE"
+    RANDOM = "RANDOM"
+    LEAST_UTILIZED = "LEAST_UTILIZED"
+
+
 @dataclass
 class DemandFileSystemConfigurations(SchemaModel):
-    shared: FileSystemConfiguration = custom_field(
-        mm_field=FileSystemConfiguration.as_mm_field(), default_factory=FileSystemConfiguration
+    shared: List[FileSystemConfiguration] = custom_field(
+        mm_field=ListField(FileSystemConfiguration.as_mm_field())
     )
-    scratch: FileSystemConfiguration = custom_field(
-        mm_field=FileSystemConfiguration.as_mm_field(), default_factory=FileSystemConfiguration
+    scratch: List[FileSystemConfiguration] = custom_field(
+        mm_field=ListField(FileSystemConfiguration.as_mm_field())
     )
-    tmp: Optional[FileSystemConfiguration] = custom_field(
-        mm_field=FileSystemConfiguration.as_mm_field(), default=None
+    tmp: List[FileSystemConfiguration] = custom_field(
+        mm_field=ListField(FileSystemConfiguration.as_mm_field()), default_factory=list
     )
+    selection_strategy: FileSystemSelectionStrategy = custom_field(
+        mm_field=EnumField(FileSystemSelectionStrategy),
+        default=FileSystemSelectionStrategy.LEAST_UTILIZED,
+    )
+
+    @classmethod
+    @pre_load
+    def _convert_single_instance_volumes_to_lists(
+        cls, data: Dict[str, Any], **kwargs
+    ) -> Dict[str, Any]:
+        if "shared" in data and not isinstance(data["shared"], list):
+            data["shared"] = [data["shared"]]
+        if "scratch" in data and not isinstance(data["scratch"], list):
+            data["scratch"] = [data["scratch"]]
+        if "tmp" in data and not isinstance(data["tmp"], list):
+            data["tmp"] = [data["tmp"]]
+        return data
 
 
 class EnvFileWriteMode(str, Enum):
