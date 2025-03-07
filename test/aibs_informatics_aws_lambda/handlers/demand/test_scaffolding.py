@@ -7,7 +7,6 @@ from typing import Any, Dict
 from unittest import mock
 
 from aibs_informatics_aws_utils.efs import MountPointConfiguration
-from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.demand_execution import DemandExecution
 from aibs_informatics_core.models.unique_ids import UniqueID
 
@@ -22,7 +21,6 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
     EnvFileWriteMode,
     FileSystemConfiguration,
     FileSystemSelectionStrategy,
-    PrepareBatchDataSyncRequest,
     PrepareDemandScaffoldingRequest,
     PrepareDemandScaffoldingResponse,
 )
@@ -403,6 +401,11 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
                         "access_point": "fsap-1234567890123",
                         "container_path": "/opt/efs/anothershared",
                     },
+                    "tmp": {
+                        "file_system": "fs-123456789012",
+                        "access_point": "fsap-1234567890124",
+                        "container_path": "/opt/efs/anothertmp",
+                    },
                 },
             },
             response=expected,
@@ -421,6 +424,13 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
                 access_point="fsap-1234567890123",
                 container_path="/opt/efs/anothershared",
                 read_only=True,
+            ),
+            mock.call(
+                env_base=self.env_base,
+                file_system="fs-123456789012",
+                access_point="fsap-1234567890124",
+                container_path="/opt/efs/anothertmp",
+                read_only=False,
             ),
         ]
 

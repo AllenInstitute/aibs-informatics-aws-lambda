@@ -36,10 +36,64 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
 class PrepareDemandScaffoldingHandler(
     LambdaHandler[PrepareDemandScaffoldingRequest, PrepareDemandScaffoldingResponse]
 ):
-    def handle(self, request: PrepareDemandScaffoldingRequest) -> PrepareDemandScaffoldingResponse:
-        if request.file_system_configurations.scratch is None:
-            raise ValueError("Scratch file system configuration is required")
+    """
+    Lambda handler for preparing the scaffolding required for demand execution.
 
+    This handler is responsible for setting up the file system configurations and creating the
+    execution context for a demand request. It selects the appropriate file systems for scratch,
+    shared, and (optionally) temporary volumes based on a specified selection strategy (e.g.,
+    RANDOM or LEAST_UTILIZED) and configures the associated EFS mount points. The handler then
+    constructs the necessary Batch job setup and cleanup configurations by initializing a
+    DemandExecutionContextManager.
+
+    Key responsibilities include:
+      - Selecting the file system configuration for each volume (scratch, shared, and tmp) using
+        a strategy and an optional seed (derived from the demand execution ID) for reproducibility.
+      - Constructing EFS volume configurations by calling `construct_batch_efs_configuration`,
+        ensuring that default container paths are used when none are specified.
+      - Initializing a DemandExecutionContextManager to manage pre- and post-execution data sync
+        requests, Batch job definitions, and cleanup steps.
+      - Setting up the file system, such as creating the working directory.
+
+    The handler expects a request of type `PrepareDemandScaffoldingRequest` and returns a response of
+    type `PrepareDemandScaffoldingResponse` containing demand execution details along with the associated
+    setup and cleanup configurations.
+    """
+
+    def handle(self, request: PrepareDemandScaffoldingRequest) -> PrepareDemandScaffoldingResponse:
+        """
+        Process the PrepareDemandScaffoldingRequest to configure the demand execution environment.
+
+        This method executes the following steps:
+          1. Selects the file system configurations for the scratch and shared volumes using the
+             provided selection strategy and the execution ID as a seed. If a temporary file system
+             configuration is provided, it is similarly selected.
+          2. Constructs EFS volume configurations for each selected file system by invoking
+             `construct_batch_efs_configuration`. Default container paths are assigned if not specified.
+          3. Instantiates a DemandExecutionContextManager using the configured volume settings and
+             context manager configuration from the request.
+          4. Calls `setup_file_system` to perform necessary file system preparations (e.g., creating
+             the working directory).
+          5. Prepares the Batch job definition, including data sync requests and resource settings, and
+             compiles the setup and cleanup configurations.
+          6. Returns a `PrepareDemandScaffoldingResponse` containing the demand execution details,
+             Batch job setup configurations, and cleanup configurations.
+
+        Parameters:
+            request (PrepareDemandScaffoldingRequest): The request object containing:
+                - File system configurations for scratch, shared, and optionally temporary volumes.
+                - Demand execution metadata (including an execution ID for seeding randomness).
+                - Context manager configuration details.
+
+        Returns:
+            PrepareDemandScaffoldingResponse: A response object that includes:
+                - The demand execution details.
+                - The setup configurations required for the Batch job.
+                - The cleanup configurations for post-execution tasks.
+
+        Raises:
+            ValueError: If required file system configurations are missing or invalid.
+        """
         scratch_fs_config = select_file_system(
             request.file_system_configurations.scratch,
             selection_strategy=request.file_system_configurations.selection_strategy,
@@ -152,6 +206,42 @@ def select_file_system(
     selection_strategy: FileSystemSelectionStrategy,
     seed_number: Optional[Union[str, int]] = None,
 ) -> FileSystemConfiguration:
+    """
+    Select a file system configuration from a list based on the specified selection strategy.
+
+    This function evaluates the provided list of file system configurations and returns one configuration
+    according to the given strategy. Two strategies are supported:
+
+    1. RANDOM:
+       - Randomly selects one configuration from the list.
+       - If a seed_number is provided, it seeds the random number generator for reproducible results.
+
+    2. LEAST_UTILIZED:
+       - Chooses the configuration whose associated file system has the least storage used.
+       - For each configuration, it retrieves the file system details (using the file system ID or by
+         resolving the access point to a file system ID) and sorts them by the "SizeInBytes" value (i.e.,
+         the amount of storage used), returning the configuration with the smallest usage.
+
+    Parameters:
+        file_system_configurations (List[FileSystemConfiguration]):
+            A list of file system configurations. Each configuration must specify either a file system ID
+            or an access point ID to resolve the file system details.
+        selection_strategy (FileSystemSelectionStrategy):
+            The strategy used to select a file system configuration. Supported values are:
+                - RANDOM: Selects a configuration at random.
+                - LEAST_UTILIZED: Selects the configuration with the lowest storage utilization.
+        seed_number (Optional[Union[str, int]], optional):
+            An optional seed for the random number generator when using the RANDOM strategy. Defaults to None.
+
+    Returns:
+        FileSystemConfiguration: The selected file system configuration based on the provided strategy.
+
+    Raises:
+        ValueError: If no file system configurations are provided.
+        ValueError: If a configuration lacks both a file system ID and an access point ID.
+        ValueError: If an unknown selection strategy is specified.
+    """
+
     # Edge cases
     if len(file_system_configurations) == 0:
         raise ValueError("No file system configurations provided")
@@ -204,7 +294,7 @@ def select_file_system(
         return sorted_configs[0]
 
     else:
-        raise ValueError(f"Unknown selection strategy: {selection_strategy}")
+        raise ValueError(f"Unknown selection strategy: {selection_strategy}")  # pragma: no cover
 
 
 def construct_batch_efs_configuration(

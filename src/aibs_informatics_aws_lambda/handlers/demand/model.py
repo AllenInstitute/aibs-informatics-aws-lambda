@@ -53,7 +53,7 @@ class DemandFileSystemConfigurations(SchemaModel):
     )
     selection_strategy: FileSystemSelectionStrategy = custom_field(
         mm_field=EnumField(FileSystemSelectionStrategy),
-        default=FileSystemSelectionStrategy.LEAST_UTILIZED,
+        default=FileSystemSelectionStrategy.RANDOM,
     )
 
     def __post_init__(self):

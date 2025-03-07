@@ -201,7 +201,7 @@ def test__DemandExecutionCleanupConfigs__deserialization(
                         "container_path": "/opt/efs/tmp",
                     },
                 ],
-                "selection_strategy": "RANDOM",
+                "selection_strategy": "LEAST_UTILIZED",
             },
             DemandFileSystemConfigurations(
                 scratch=[
@@ -224,7 +224,7 @@ def test__DemandExecutionCleanupConfigs__deserialization(
                         container_path="/opt/efs/tmp",
                     ),
                 ],
-                selection_strategy=FileSystemSelectionStrategy.RANDOM,
+                selection_strategy=FileSystemSelectionStrategy.LEAST_UTILIZED,
             ),
             does_not_raise(),
             id="Handles all fields present as lists",
@@ -242,7 +242,7 @@ def test__DemandExecutionCleanupConfigs__deserialization(
                     "access_point": "fsap-22222222",
                     "container_path": "/opt/efs/tmp",
                 },
-                "selection_strategy": "RANDOM",
+                "selection_strategy": "LEAST_UTILIZED",
             },
             DemandFileSystemConfigurations(
                 scratch=[
@@ -262,7 +262,7 @@ def test__DemandExecutionCleanupConfigs__deserialization(
                         container_path="/opt/efs/tmp",
                     ),
                 ],
-                selection_strategy=FileSystemSelectionStrategy.RANDOM,
+                selection_strategy=FileSystemSelectionStrategy.LEAST_UTILIZED,
             ),
             does_not_raise(),
             id="Handles all fields present as single instances",
