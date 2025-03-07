@@ -56,6 +56,12 @@ class DemandFileSystemConfigurations(SchemaModel):
         default=FileSystemSelectionStrategy.LEAST_UTILIZED,
     )
 
+    def __post_init__(self):
+        if not self.shared:
+            raise ValueError("Shared file system configuration is required")
+        if not self.scratch:
+            raise ValueError("Scratch file system configuration is required")
+
     @classmethod
     @pre_load
     def _convert_single_instance_volumes_to_lists(
@@ -159,7 +165,6 @@ class PrepareDemandScaffoldingRequest(SchemaModel):
     demand_execution: DemandExecution = custom_field(mm_field=DemandExecution.as_mm_field())
     file_system_configurations: DemandFileSystemConfigurations = custom_field(
         mm_field=DemandFileSystemConfigurations.as_mm_field(),
-        default_factory=DemandFileSystemConfigurations,
     )
     context_manager_configuration: ContextManagerConfiguration = custom_field(
         mm_field=ContextManagerConfiguration.as_mm_field(),

@@ -1,15 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
-from random import choice
+from random import choice, seed
 from typing import Any, Dict, List, Optional, Union, cast
 
 from aibs_informatics_aws_utils.batch import build_retry_strategy
 from aibs_informatics_aws_utils.constants.efs import (
-    EFS_SCRATCH_ACCESS_POINT_NAME,
     EFS_SCRATCH_PATH,
-    EFS_SHARED_ACCESS_POINT_NAME,
     EFS_SHARED_PATH,
-    EFS_TMP_ACCESS_POINT_NAME,
     EFS_TMP_PATH,
 )
 from aibs_informatics_aws_utils.efs import (
@@ -45,7 +42,8 @@ class PrepareDemandScaffoldingHandler(
 
         scratch_fs_config = select_file_system(
             request.file_system_configurations.scratch,
-            request.file_system_configurations.selection_strategy,
+            selection_strategy=request.file_system_configurations.selection_strategy,
+            seed_number=request.demand_execution.execution_id,
         )
 
         scratch_vol_configuration = construct_batch_efs_configuration(
@@ -60,7 +58,8 @@ class PrepareDemandScaffoldingHandler(
 
         shared_fs_config = select_file_system(
             request.file_system_configurations.shared,
-            request.file_system_configurations.selection_strategy,
+            selection_strategy=request.file_system_configurations.selection_strategy,
+            seed_number=request.demand_execution.execution_id,
         )
 
         shared_vol_configuration = construct_batch_efs_configuration(
@@ -76,7 +75,8 @@ class PrepareDemandScaffoldingHandler(
         if request.file_system_configurations.tmp:
             tmp_fs_config = select_file_system(
                 request.file_system_configurations.tmp,
-                request.file_system_configurations.selection_strategy,
+                selection_strategy=request.file_system_configurations.selection_strategy,
+                seed_number=request.demand_execution.execution_id,
             )
 
             tmp_vol_configuration = construct_batch_efs_configuration(
@@ -150,6 +150,7 @@ class PrepareDemandScaffoldingHandler(
 def select_file_system(
     file_system_configurations: List[FileSystemConfiguration],
     selection_strategy: FileSystemSelectionStrategy,
+    seed_number: Optional[Union[str, int]] = None,
 ) -> FileSystemConfiguration:
     # Edge cases
     if len(file_system_configurations) == 0:
@@ -161,7 +162,9 @@ def select_file_system(
 
     if selection_strategy == FileSystemSelectionStrategy.RANDOM:
         # Randomly select a file system configuration from the list
-        return file_system_configurations[choice(range(len(file_system_configurations)))]
+        if seed_number is not None:
+            seed(seed_number)
+        return choice(file_system_configurations)
     elif selection_strategy == FileSystemSelectionStrategy.LEAST_UTILIZED:
         # Select the file system configuration with the least amount of storage used
 
@@ -183,6 +186,10 @@ def select_file_system(
                 if fsconfig.file_system and fsconfig.file_system not in fs_id_to_description:
                     file_system = get_efs_file_system(file_system_id=fsconfig.file_system)
                     fs_id_to_description[fsconfig.file_system] = file_system
+            else:
+                raise ValueError(
+                    "Neither file system ID nor access point ID provided for file system configuration"
+                )
 
         # Filter out configurations that do not have an associated file system and sort them
         # by the amount of storage currently used (ascending order, selecting the least used)

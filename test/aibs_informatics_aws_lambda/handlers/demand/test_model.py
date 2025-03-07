@@ -10,8 +10,10 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
     DataSyncRequest,
     DemandExecutionCleanupConfigs,
     DemandExecutionSetupConfigs,
+    DemandFileSystemConfigurations,
+    FileSystemConfiguration,
+    FileSystemSelectionStrategy,
     PrepareBatchDataSyncRequest,
-    PrepareDemandScaffoldingRequest,
 )
 
 
@@ -170,5 +172,172 @@ def test__DemandExecutionCleanupConfigs__deserialization(
 ):
     with raise_expectation:
         actual = DemandExecutionCleanupConfigs.from_dict(input_value)
+    if expected:
+        assert expected == actual
+
+
+@mark.parametrize(
+    "input_value, expected, raise_expectation",
+    [
+        param(
+            {
+                "scratch": [
+                    {
+                        "file_system": "fs-11111111",
+                    }
+                ],
+                "shared": [
+                    {
+                        "file_system": "fs-11111111",
+                    }
+                ],
+                "tmp": [
+                    {
+                        "file_system": "fs-11111111",
+                    },
+                    {
+                        "file_system": "fs-22222222",
+                        "access_point": "fsap-22222222",
+                        "container_path": "/opt/efs/tmp",
+                    },
+                ],
+                "selection_strategy": "RANDOM",
+            },
+            DemandFileSystemConfigurations(
+                scratch=[
+                    FileSystemConfiguration(
+                        file_system="fs-11111111",
+                    )
+                ],
+                shared=[
+                    FileSystemConfiguration(
+                        file_system="fs-11111111",
+                    )
+                ],
+                tmp=[
+                    FileSystemConfiguration(
+                        file_system="fs-11111111",
+                    ),
+                    FileSystemConfiguration(
+                        file_system="fs-22222222",
+                        access_point="fsap-22222222",
+                        container_path="/opt/efs/tmp",
+                    ),
+                ],
+                selection_strategy=FileSystemSelectionStrategy.RANDOM,
+            ),
+            does_not_raise(),
+            id="Handles all fields present as lists",
+        ),
+        param(
+            {
+                "scratch": {
+                    "file_system": "fs-11111111",
+                },
+                "shared": {
+                    "file_system": "fs-11111111",
+                },
+                "tmp": {
+                    "file_system": "fs-22222222",
+                    "access_point": "fsap-22222222",
+                    "container_path": "/opt/efs/tmp",
+                },
+                "selection_strategy": "RANDOM",
+            },
+            DemandFileSystemConfigurations(
+                scratch=[
+                    FileSystemConfiguration(
+                        file_system="fs-11111111",
+                    )
+                ],
+                shared=[
+                    FileSystemConfiguration(
+                        file_system="fs-11111111",
+                    )
+                ],
+                tmp=[
+                    FileSystemConfiguration(
+                        file_system="fs-22222222",
+                        access_point="fsap-22222222",
+                        container_path="/opt/efs/tmp",
+                    ),
+                ],
+                selection_strategy=FileSystemSelectionStrategy.RANDOM,
+            ),
+            does_not_raise(),
+            id="Handles all fields present as single instances",
+        ),
+        param(
+            {
+                "scratch": [
+                    {
+                        "file_system": "fs-11111111",
+                    }
+                ],
+                "shared": [
+                    {
+                        "file_system": "fs-11111111",
+                    }
+                ],
+            },
+            DemandFileSystemConfigurations(
+                scratch=[FileSystemConfiguration(file_system="fs-11111111")],
+                shared=[FileSystemConfiguration(file_system="fs-11111111")],
+            ),
+            does_not_raise(),
+            id="Handles required fields present as lists",
+        ),
+        param(
+            {
+                "scratch": {
+                    "file_system": "fs-11111111",
+                },
+                "shared": {
+                    "file_system": "fs-11111111",
+                },
+            },
+            DemandFileSystemConfigurations(
+                scratch=[FileSystemConfiguration(file_system="fs-11111111")],
+                shared=[FileSystemConfiguration(file_system="fs-11111111")],
+            ),
+            does_not_raise(),
+            id="Handles required fields present as single instances",
+        ),
+        param(
+            {
+                "scratch": [
+                    {
+                        "file_system": "fs-11111111",
+                    }
+                ],
+                "shared": {
+                    "file_system": "fs-11111111",
+                },
+            },
+            DemandFileSystemConfigurations(
+                scratch=[FileSystemConfiguration(file_system="fs-11111111")],
+                shared=[FileSystemConfiguration(file_system="fs-11111111")],
+            ),
+            does_not_raise(),
+            id="Handles required fields present as mixed list and instances",
+        ),
+        param(
+            {
+                "scratch": [],
+                "shared": {
+                    "file_system": "fs-11111111",
+                },
+            },
+            None,
+            raises(ValueError),
+            id="Raises error for empty scratch field",
+        ),
+    ],
+)
+def test__DemandFileSystemConfigurations__deserialization(
+    input_value, expected: DemandFileSystemConfigurations, raise_expectation
+):
+    with raise_expectation:
+        actual = DemandFileSystemConfigurations.from_dict(input_value)
     if expected:
         assert expected == actual
