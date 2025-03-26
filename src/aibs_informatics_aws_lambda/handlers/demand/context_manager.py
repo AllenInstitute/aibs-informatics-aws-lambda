@@ -512,11 +512,13 @@ def generate_batch_job_builder(
 
     EXECUTION_ID_VAR = "EXECUTION_ID"
     WORKING_DIR_VAR = "WORKING_DIR"
+    OCS_WORKING_DIR_VAR = "OCS_WORKING_DIR"
     TMPDIR_VAR = "TMPDIR"
 
     environment: Dict[str, str] = {
         EXECUTION_ID_VAR: demand_execution.execution_id,
         WORKING_DIR_VAR: f"{container_working_path}",
+        OCS_WORKING_DIR_VAR: f"{container_working_path}",
         TMPDIR_VAR: f"{container_tmp_path}",
     }
 
