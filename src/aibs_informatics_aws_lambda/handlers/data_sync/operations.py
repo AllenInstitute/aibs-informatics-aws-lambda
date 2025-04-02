@@ -201,6 +201,11 @@ class PrepareBatchDataSyncHandler(
                         max_concurrency=request.max_concurrency,
                         retain_source_data=request.retain_source_data,
                         require_lock=request.require_lock,
+                        force=request.force,
+                        size_only=request.size_only,
+                        fail_if_missing=request.fail_if_missing,
+                        include_detailed_response=request.include_detailed_response,
+                        remote_to_local_config=request.remote_to_local_config,
                     )
                 )
             batch_data_sync_requests.append(BatchDataSyncRequest(requests=data_sync_requests))
