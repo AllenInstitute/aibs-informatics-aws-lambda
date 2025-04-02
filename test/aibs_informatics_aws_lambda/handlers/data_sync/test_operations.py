@@ -206,6 +206,43 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         )
         self.assertHandles(self.handler, request.to_dict(), expected.to_dict())
 
+    def test__handle__prepare_local_to_s3__simple__non_default_args_preserved(self):
+        fs = self.setUpLocalFS(
+            ("a", 1),
+            ("b", 1),
+            ("c", 1),
+        )
+        source_path = fs
+        destination_path = S3Path.build(bucket_name="bucket", key="key/")
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=destination_path,
+            batch_size_bytes_limit=10,
+            max_concurrency=10,
+            retain_source_data=True,
+            size_only=True,
+            force=True,
+            include_detailed_response=True,
+        )
+        expected = PrepareBatchDataSyncResponse(
+            requests=[
+                BatchDataSyncRequest(
+                    requests=[
+                        DataSyncRequest(
+                            source_path=source_path,
+                            destination_path=destination_path,
+                            max_concurrency=10,
+                            retain_source_data=True,
+                            size_only=True,
+                            force=True,
+                            include_detailed_response=True,
+                        )
+                    ]
+                )
+            ]
+        )
+        self.assertHandles(self.handler, request.to_dict(), expected.to_dict())
+
     def test__handle__prepare_local_to_s3__simple__upload_to_s3(self):
         fs = self.setUpLocalFS(
             ("a", 1),
