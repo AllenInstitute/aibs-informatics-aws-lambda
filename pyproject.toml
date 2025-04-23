@@ -19,7 +19,8 @@ dynamic = [
 ]
 dependencies = [
     "aibs-informatics-aws-utils~=0.0.4",
-    "aibs-informatics-core~=0.0.8",
+    # "aibs-informatics-core~=0.0.8",
+    "aibs-informatics-core @ git+https://github.com/AllenInstitute/aibs-informatics-core.git@feature/DT-7737-add-execution-tags-to-demand-execution#egg=aibs-informatics-core", 
     "aws-lambda-powertools ~= 2.35",
     "pydantic >= 2.0.3, < 3",
     "aws-lambda-typing",
