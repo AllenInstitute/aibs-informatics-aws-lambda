@@ -118,7 +118,7 @@ class RemoveDataPathsResponse(SchemaModel):
 
 @dataclass
 class OutdatedDataPathScannerRequest(WithDataPath):
-    days_since_last_accessed: float = custom_field(default=7.0, mm_field=FloatField())
+    days_since_last_accessed: float = custom_field(default=0, mm_field=FloatField())
     max_depth: Optional[int] = custom_field(default=None, mm_field=IntegerField())
     min_depth: Optional[int] = custom_field(default=None, mm_field=IntegerField())
     min_size_bytes_allowed: int = custom_field(default=0, mm_field=IntegerField())
