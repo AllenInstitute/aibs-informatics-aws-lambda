@@ -18,7 +18,7 @@ dynamic = [
     "version",
 ]
 dependencies = [
-    "aibs-informatics-aws-utils~=0.0",
+    "aibs-informatics-aws-utils>=0.0.8,<1",
     "aibs-informatics-core~=0.1",
     "aws-lambda-powertools ~= 2.35",
     "pydantic >= 2.0.3, < 3",
