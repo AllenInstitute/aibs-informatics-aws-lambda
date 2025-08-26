@@ -57,7 +57,7 @@ class NotificationRequest(SchemaModel):
     content: NotificationContent = custom_field(mm_field=NotificationContent.as_mm_field())
     targets: List[Union[SESEmailTarget, SNSTopicTarget]] = custom_field(
         mm_field=ListField(
-            UnionField([(_, _.as_mm_field()) for _ in [SESEmailTarget, SNSTopicTarget]]),  # type: ignore[list-item]
+            UnionField([(_, _.as_mm_field()) for _ in [SESEmailTarget, SNSTopicTarget]]),  # type: ignore[list-item, misc]
         ),
     )
 
