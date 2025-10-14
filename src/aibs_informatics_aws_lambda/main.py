@@ -39,13 +39,13 @@ def handle(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
     """
     logger.info("Parsing event")
     if not isinstance(event, dict):
-        raise ValueError(f"Unable to parse event - events must be Dict type")
+        raise ValueError("Unable to parse event - events must be Dict type")
     request = LambdaHandlerRequest.from_dict(event)
     logger.info(f"Successfully deserialized request. Loading handler from '{request.handler}'")
     target_handler = request.handler
-    logger.info(f"Successfully loaded handler. Invoking..")
+    logger.info("Successfully loaded handler. Invoking..")
     response = target_handler(request.event, context)
-    logger.info(f"Invocation is complete. Returning result")
+    logger.info("Invocation is complete. Returning result")
     return response
 
 
@@ -107,21 +107,21 @@ def handle_cli(args: Optional[Sequence[str]] = None):
     else:
         event = load_json_object(parsed_args.payload)
 
-    logger.info(f"Successfully loaded handler. Invoking..")
+    logger.info("Successfully loaded handler. Invoking..")
     response = target_handler(event, DefaultLambdaContext())
-    logger.info(f"Invocation complete.")
+    logger.info("Invocation complete.")
 
     response_location = parsed_args.response_location
     if response_location:
         response = response or {}
         logger.info(f"Response location specified: {response_location}")
         if S3URI.is_valid(response_location):
-            logger.info(f"Uploading result to S3")
+            logger.info("Uploading result to S3")
             upload_json(response, S3URI(response_location))
         elif not os.path.isdir(response_location) and os.access(
             os.path.dirname(response_location), os.W_OK
         ):
-            logger.info(f"Writing result locally")
+            logger.info("Writing result locally")
             with open(response_location, "w") as f:
                 json.dump(response, f, sort_keys=True)
         else:
@@ -129,7 +129,7 @@ def handle_cli(args: Optional[Sequence[str]] = None):
                 f"Response location specified {response_location}, but not a valid s3/local path"
             )
     else:
-        logger.info(f"Response location NOT specified. Response not saved.")
+        logger.info("Response location NOT specified. Response not saved.")
 
     logger.info("Handler execution complete.")
 

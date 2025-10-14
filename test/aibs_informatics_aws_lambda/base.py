@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from test.base import BaseTest
 from typing import Callable, Optional, Type
 
 from aibs_informatics_core.env import ENV_BASE_KEY
@@ -12,6 +11,7 @@ from aws_lambda_powertools.utilities.typing.lambda_client_context_mobile_client 
 from aws_lambda_powertools.utilities.typing.lambda_cognito_identity import LambdaCognitoIdentity
 
 from aibs_informatics_aws_lambda.common.api.handler import LambdaEvent
+from test.base import BaseTest
 
 
 class MockLambdaContext(LambdaContext):

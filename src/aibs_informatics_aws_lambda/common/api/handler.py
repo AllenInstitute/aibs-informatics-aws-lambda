@@ -5,19 +5,15 @@ __all__ = [
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from types import ModuleType
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, cast
 
 from aibs_informatics_core.models.api.http_parameters import HTTPParameters
 from aibs_informatics_core.models.api.route import ApiRoute
 from aibs_informatics_core.models.base import ModelProtocol
 from aibs_informatics_core.utils.json import JSON
-from aibs_informatics_core.utils.modules import get_all_subclasses, load_all_modules_from_pkg
-from aws_lambda_powertools.event_handler import APIGatewayRestResolver, content_types
 from aws_lambda_powertools.event_handler.api_gateway import BaseRouter
 from aws_lambda_powertools.logging import Logger
 from aws_lambda_powertools.metrics import EphemeralMetrics, Metrics
-from aws_lambda_powertools.tracing import Tracer
 from aws_lambda_powertools.utilities.data_classes.api_gateway_proxy_event import (
     APIGatewayEventRequestContext,
     APIGatewayProxyEvent,
@@ -28,11 +24,8 @@ from aws_lambda_powertools.utilities.data_classes.common import (
 )
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
-from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import (
-    MetricsMixins,
     add_duration_metric,
     add_failure_metric,
     add_success_metric,
@@ -101,7 +94,6 @@ class ApiLambdaHandler(
         logger = logger or cls.get_logger(service=cls.service_name())
         metrics = metrics or cls.get_metrics()
 
-        # TODO: remove args once https://github.com/python/mypy/pull/15133 is released (should be mypy 1.2.1)
         @metrics.log_metrics
         @router.route(rule=cls.route_rule(), method=cls.route_method())
         def gateway_handler(logger=logger, metrics=metrics, **route_parameters) -> Any:
@@ -128,7 +120,7 @@ class ApiLambdaHandler(
                     *args, _current_event=router.current_event, **kwargs
                 )
 
-                logger.info(f"Route handler method constructed. Invoking")
+                logger.info("Route handler method constructed. Invoking")
                 response = lambda_handler(event, router.lambda_context)
                 add_success_metric(metrics=metrics)
                 add_duration_metric(start=start, metrics=metrics)
@@ -144,7 +136,7 @@ class ApiLambdaHandler(
     def _parse_event(
         cls, event: BaseProxyEvent, route_parameters: Dict[str, Any], logger: logging.Logger
     ) -> API_REQUEST:
-        logger.info(f"parsing event.")
+        logger.info("parsing event.")
         stringified_route_params = route_parameters
         stringified_query_params = event.query_string_parameters
         stringified_request_body = event.json_body if event.body else None
@@ -162,7 +154,7 @@ class ApiLambdaHandler(
         )
         logger.debug(f"Constructed following HTTP Parameters: {http_parameters}")
 
-        logger.debug(f"Converting HTTP Parameters to request object")
+        logger.debug("Converting HTTP Parameters to request object")
         request = cls.get_request_from_http_parameters(http_parameters)
         return request
 

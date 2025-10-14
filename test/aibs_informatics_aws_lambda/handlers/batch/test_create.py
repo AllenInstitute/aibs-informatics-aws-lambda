@@ -1,7 +1,6 @@
-from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
-
 from aibs_informatics_core.utils.hashing import uuid_str
 from pytest import mark
+from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 
 from aibs_informatics_aws_lambda.common.api.handler import LambdaHandlerType
 from aibs_informatics_aws_lambda.handlers.batch.create import (

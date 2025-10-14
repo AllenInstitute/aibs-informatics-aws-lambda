@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, TypeVar, Union
+from typing import Any, Dict, List, TypeVar, Union
 
 import marshmallow as mm
-from aibs_informatics_core.collections import StrEnum
 from aibs_informatics_core.models.aws.sns import SNSTopicArn
 from aibs_informatics_core.models.base import (
     BooleanField,

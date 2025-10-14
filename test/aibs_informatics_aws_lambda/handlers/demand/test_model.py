@@ -1,18 +1,12 @@
-from test.base import does_not_raise
-
-from aibs_informatics_core.exceptions import ValidationError
 from aibs_informatics_core.models.aws.s3 import S3Path
-from aibs_informatics_core.models.email_address import EmailAddress
-from pytest import mark, param, raises
+from pytest import mark, param
 
 from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
 from aibs_informatics_aws_lambda.handlers.demand.model import (
-    DataSyncRequest,
     DemandExecutionCleanupConfigs,
-    DemandExecutionSetupConfigs,
     PrepareBatchDataSyncRequest,
-    PrepareDemandScaffoldingRequest,
 )
+from test.base import does_not_raise
 
 
 @mark.parametrize(

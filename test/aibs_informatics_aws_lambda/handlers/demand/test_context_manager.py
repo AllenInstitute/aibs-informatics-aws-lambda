@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from test.base import AwsBaseTest
 from typing import Dict, Optional, Union
 
 import boto3
@@ -44,6 +43,7 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
     DataSyncConfiguration,
     EnvFileWriteMode,
 )
+from test.base import AwsBaseTest
 
 ENV_BASE = EnvBase("dev-marmotdev")
 DEMAND_ID = UniqueID.create()
@@ -210,7 +210,7 @@ def test__BatchEFSConfiguration__build__works(get_or_create_file_system, create_
         access_point=ap_id, mount_path="/mnt/efs"
     )
 
-    expected_volume_name = f"fs-mnt-efs-vol"
+    expected_volume_name = "fs-mnt-efs-vol"
 
     expected_volume = {
         "name": expected_volume_name,
@@ -494,7 +494,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         )
         assert env_file.exists()
         assert env_file.read_text() == (
-            f'export EXECUTION_ID="{demand_execution.execution_id}"\n' 'export C="c"'
+            f'export EXECUTION_ID="{demand_execution.execution_id}"\nexport C="c"'
         )
         assert actual.environment == {
             "ENV_BASE": "dev-marmotdev",

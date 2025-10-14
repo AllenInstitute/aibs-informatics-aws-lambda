@@ -70,10 +70,10 @@ class GetJSONFromFileHandler(LambdaHandler[GetJSONFromFileRequest, GetJSONFromFi
 
             self.logger.info(f"Fetching content from {path}")
             if isinstance(path, S3URI):
-                self.logger.info(f"Downloading from S3")
+                self.logger.info("Downloading from S3")
                 content = download_to_json(s3_path=path)
             else:
-                self.logger.info(f"Loading from path")
+                self.logger.info("Loading from path")
                 content = load_json(path)
             return GetJSONFromFileResponse(content=content)
         except Exception as e:
@@ -103,10 +103,10 @@ class PutJSONToFileHandler(LambdaHandler[PutJSONToFileRequest, PutJSONToFileResp
         self.logger.info(f"Writing content to {path}")
         self.logger.info(f"Content to write: {content}")
         if isinstance(path, S3URI):
-            self.logger.info(f"Uploading to S3")
+            self.logger.info("Uploading to S3")
             upload_json(content, s3_path=path, extra_args=SCRATCH_EXTRA_ARGS)
         else:
-            self.logger.info(f"Writing to file")
+            self.logger.info("Writing to file")
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(content, indent=4, sort_keys=True))
         return PutJSONToFileResponse(path=path)
@@ -136,7 +136,7 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
         for i, _ in enumerate(batch_requests):
             sync_operations = DataSyncOperations(_)
             self.logger.info(
-                f"[{i+1}/{len(batch_requests)}] "
+                f"[{i + 1}/{len(batch_requests)}] "
                 f"Syncing content from {_.source_path} to {_.destination_path}"
             )
             try:
@@ -251,9 +251,9 @@ class PrepareBatchDataSyncHandler(
         if node.has_children():
             relative_path += "/"
         if isinstance(request.destination_path, S3URI):
-            return S3URI.build(
-                bucket_name=request.destination_path.bucket,
-                key=request.destination_path.key + relative_path,
+            return S3URI(
+                f"s3://{request.destination_path.bucket}/"
+                f"{request.destination_path.key + relative_path}"
             )
         else:
             return Path(f"{request.destination_path}/{relative_path}")
@@ -283,10 +283,11 @@ class PrepareBatchDataSyncHandler(
         ## We will use a revised version of the bin packing problem:
         # https://en.wikipedia.org/wiki/Bin_packing_problem
 
-        # Step 1: and then sort the nodes by size (descending order)
+        # Step 1:   and then sort the nodes by size (descending order)
         unbatched_nodes = sorted(nodes, key=lambda node: node.size_bytes, reverse=True)
 
-        # Step 2: Group nodes in order to maximize the data synced per request (bin packing problem)
+        # Step 2:   Group nodes in order to maximize the data synced per request
+        #           (bin packing problem)
         node_batches: List[List[Node]] = []
 
         # (Optimize) Convert all nodes that are larger than the threshold into single requests.

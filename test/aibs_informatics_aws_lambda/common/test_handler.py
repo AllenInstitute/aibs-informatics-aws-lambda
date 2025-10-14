@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase, LambdaHandlerType
 
 from aibs_informatics_core.env import ENV_BASE_KEY
 from aibs_informatics_core.models.base import IntegerField, SchemaModel, custom_field
 from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import (
     DynamoDBRecordEventName,
 )
-from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
+from boto3.dynamodb.types import TypeSerializer
 
 from aibs_informatics_aws_lambda.common.handler import DynamoDBRecord, LambdaHandler, SQSRecord
+from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase, LambdaHandlerType
 
 
 @dataclass

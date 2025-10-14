@@ -1,5 +1,4 @@
 from pathlib import Path
-from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 from typing import Tuple, Union
 from unittest import mock
 
@@ -27,6 +26,7 @@ from aibs_informatics_aws_lambda.handlers.data_sync.operations import (
     PutJSONToFileRequest,
     PutJSONToFileResponse,
 )
+from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 
 
 class GetJSONFromFileHandlerTests(LambdaHandlerTestCase):

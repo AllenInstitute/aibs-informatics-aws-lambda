@@ -1,6 +1,5 @@
 from datetime import timedelta
 from pathlib import Path
-from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 from time import sleep
 from typing import Tuple, Union
 
@@ -23,6 +22,7 @@ from aibs_informatics_aws_lambda.handlers.data_sync.model import (
     RemoveDataPathsRequest,
     RemoveDataPathsResponse,
 )
+from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 
 
 class BaseFileSystemHandlerTestCase(LambdaHandlerTestCase):
@@ -103,7 +103,7 @@ class ListDataPathsHandlerTests(BaseFileSystemHandlerTestCase):
         # Multiple include patterns
         self.assertHandles(
             self.handler,
-            ListDataPathsRequest(path=root, include=[f"A.*", f".*B.*"]).to_dict(),
+            ListDataPathsRequest(path=root, include=["A.*", ".*B.*"]).to_dict(),
             ListDataPathsResponse(
                 paths=[
                     f"{root}/A/",

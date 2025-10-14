@@ -33,16 +33,16 @@ class CreateDefinitionAndPrepareArgsRequest(SchemaModel):
     command: List[str] = custom_field(default_factory=list)
     environment: Dict[str, str] = custom_field(default_factory=dict)
     job_definition_tags: Dict[str, str] = custom_field(default_factory=dict)
-    resource_requirements: Union[
-        List[ResourceRequirementTypeDef], ResourceRequirements
-    ] = custom_field(
-        default_factory=list,
-        mm_field=UnionField(
-            [
-                (list, ListField(DictField)),
-                (ResourceRequirements, ResourceRequirements.as_mm_field()),
-            ]
-        ),
+    resource_requirements: Union[List[ResourceRequirementTypeDef], ResourceRequirements] = (
+        custom_field(
+            default_factory=list,
+            mm_field=UnionField(
+                [
+                    (list, ListField(DictField)),
+                    (ResourceRequirements, ResourceRequirements.as_mm_field()),
+                ]
+            ),
+        )
     )
     mount_points: List[MountPointTypeDef] = custom_field(default_factory=list)
     volumes: List[VolumeTypeDef] = custom_field(default_factory=list)

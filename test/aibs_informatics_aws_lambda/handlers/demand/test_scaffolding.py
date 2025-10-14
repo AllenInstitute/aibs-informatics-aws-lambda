@@ -1,8 +1,4 @@
 from pathlib import Path
-from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
-from test.aibs_informatics_aws_lambda.handlers.demand.test_context_manager import (
-    get_any_demand_execution,
-)
 from typing import Any, Dict
 from unittest import mock
 
@@ -28,6 +24,10 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
 from aibs_informatics_aws_lambda.handlers.demand.scaffolding import (
     PrepareDemandScaffoldingHandler,
     construct_batch_efs_configuration,
+)
+from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
+from test.aibs_informatics_aws_lambda.handlers.demand.test_context_manager import (
+    get_any_demand_execution,
 )
 
 
@@ -231,9 +231,9 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
                             {
                                 "action": "RETRY",
                                 "onReason": "DockerTimeoutError*",
-                                "onStatusReason": "Task " "failed " "to " "start",
+                                "onStatusReason": "Task failed to start",
                             },
-                            {"action": "RETRY", "onStatusReason": "Host " "EC2*"},
+                            {"action": "RETRY", "onStatusReason": "Host EC2*"},
                             {"action": "EXIT", "onStatusReason": "*"},
                         ],
                     },
@@ -321,9 +321,9 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
                             {
                                 "action": "RETRY",
                                 "onReason": "DockerTimeoutError*",
-                                "onStatusReason": "Task " "failed " "to " "start",
+                                "onStatusReason": "Task failed to start",
                             },
-                            {"action": "RETRY", "onStatusReason": "Host " "EC2*"},
+                            {"action": "RETRY", "onStatusReason": "Host EC2*"},
                             {"action": "EXIT", "onStatusReason": "*"},
                         ],
                     },

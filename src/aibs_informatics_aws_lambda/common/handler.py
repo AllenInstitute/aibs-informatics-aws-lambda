@@ -244,4 +244,9 @@ class LambdaHandler(
         return handler  # type: ignore
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(request: {self.get_request_cls()}, response: {self.get_response_cls()})"
+        return (
+            f"{self.__class__.__name__}("
+            f"request: {self.get_request_cls()}, "
+            f"response: {self.get_response_cls()}"
+            ")"
+        )

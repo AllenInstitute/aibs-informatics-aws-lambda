@@ -1,4 +1,3 @@
-from test.base import BaseTest
 from typing import Optional
 
 from aibs_informatics_core.env import EnvBase
@@ -9,11 +8,11 @@ from aibs_informatics_aws_lambda.common.handler import LambdaEvent
 from aibs_informatics_aws_lambda.common.models import DefaultLambdaContext, LambdaHandlerRequest
 from aibs_informatics_aws_lambda.main import (
     AWS_LAMBDA_EVENT_PAYLOAD_KEY,
-    AWS_LAMBDA_EVENT_RESPONSE_LOCATION_KEY,
     AWS_LAMBDA_FUNCTION_HANDLER_KEY,
     handle,
     handle_cli,
 )
+from test.base import BaseTest
 
 
 def mock_handler(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:

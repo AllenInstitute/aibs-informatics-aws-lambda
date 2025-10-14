@@ -18,7 +18,6 @@ from aws_lambda_powertools.event_handler.middlewares import NextMiddleware
 from aws_lambda_powertools.logging import Logger
 from aws_lambda_powertools.logging.correlation_paths import API_GATEWAY_REST
 from aws_lambda_powertools.metrics import EphemeralMetrics, Metrics
-from aws_lambda_powertools.tracing import Tracer
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
 from aws_lambda_powertools.utilities.typing import LambdaContext
 

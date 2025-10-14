@@ -24,15 +24,18 @@ from aibs_informatics_core.models.base import (
 from aibs_informatics_core.utils.time import get_current_time
 
 DataPath = Union[S3Path, EFSPath, Path, str]
-DataPathField = lambda *args, **kwargs: UnionField(
-    [
-        (S3Path, S3Path.as_mm_field()),
-        ((EFSPath, str), EFSPath.as_mm_field()),
-        ((Path, str), PathField()),
-    ],
-    *args,
-    **kwargs,
-)
+
+
+def DataPathField(*args, **kwargs):
+    return UnionField(
+        [
+            (S3Path, S3Path.as_mm_field()),
+            ((EFSPath, str), EFSPath.as_mm_field()),
+            ((Path, str), PathField()),
+        ],
+        *args,
+        **kwargs,
+    )
 
 
 @dataclass
