@@ -251,9 +251,9 @@ class PrepareBatchDataSyncHandler(
         if node.has_children():
             relative_path += "/"
         if isinstance(request.destination_path, S3URI):
-            return S3URI(
-                f"s3://{request.destination_path.bucket}/"
-                f"{request.destination_path.key + relative_path}"
+            return S3URI.build(
+                bucket_name=request.destination_path.bucket,
+                key=request.destination_path.key + relative_path,
             )
         else:
             return Path(f"{request.destination_path}/{relative_path}")
