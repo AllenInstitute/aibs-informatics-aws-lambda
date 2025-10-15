@@ -26,7 +26,7 @@ class HealthCheckResponse(SchemaModel):
 class HealthCheckRoute(ApiRoute[HealthCheckRequest, HealthCheckResponse]):
     @classmethod
     def route_rule(cls) -> str:
-        return f"/health"
+        return "/health"
 
     @classmethod
     def route_method(cls) -> List[str]:
@@ -62,7 +62,7 @@ class GetResponse(SchemaModel):
 class GetRoute(ApiRoute[GetRequest, GetResponse]):
     @classmethod
     def route_rule(cls) -> str:
-        return f"/get"
+        return "/get"
 
     @classmethod
     def route_method(cls) -> List[str]:

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Generic, Optional, Type, Union
+from typing import Any, Dict, Generic, Type, Union
 
 from aibs_informatics_core.utils.logging import get_logger
 
@@ -8,7 +8,6 @@ from aibs_informatics_aws_lambda.handlers.notifications.model import Notificatio
 from aibs_informatics_aws_lambda.handlers.notifications.notifiers.model import (
     NOTIFIER_TARGET,
     NotifierResult,
-    NotifierTarget,
 )
 
 logger = get_logger(__name__)

@@ -2,7 +2,6 @@ import logging
 from datetime import timedelta
 from pathlib import Path
 from typing import List, TypeVar
-from xml.etree.ElementInclude import include
 
 from aibs_informatics_aws_utils.data_sync.file_system import BaseFileSystem, Node, get_file_system
 from aibs_informatics_aws_utils.efs import detect_mount_points, get_local_path

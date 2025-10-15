@@ -65,10 +65,12 @@ class BatchEFSConfiguration:
     volume: VolumeTypeDef = field(init=False)
 
     def __post_init__(self) -> None:
+        file_system = self.mount_point_config.file_system
+        name_or_id = file_system.get("Name", file_system["FileSystemId"])
         volume_name = "-".join(
             [
-                f'{self.mount_point_config.file_system.get("Name", self.mount_point_config.file_system["FileSystemId"])}',
-                f'{str(self.mount_path).strip("/").replace("/","-")}-vol',
+                f"{name_or_id}",
+                f"{str(self.mount_path).strip('/').replace('/', '-')}-vol",
             ]
         )
 
@@ -293,7 +295,7 @@ class DemandExecutionContextManager:
                 )
             )
         logger.info(
-            f"Generated {len(requests)} data sync requests for post-execution data sync: {requests}"
+            f"Generated {len(requests)} data sync requests for post-execution data sync: {requests}"  # noqa: E501
         )
         return requests
 
@@ -488,7 +490,7 @@ def get_batch_efs_configuration(
     )
 
 
-def generate_batch_job_builder(
+def generate_batch_job_builder(  # noqa: C901
     demand_execution: DemandExecution,
     env_base: EnvBase,
     working_path: EFSPath,
@@ -498,7 +500,7 @@ def generate_batch_job_builder(
     tmp_mount_point: Optional[MountPointConfiguration] = None,
     env_file_write_mode: EnvFileWriteMode = EnvFileWriteMode.ALWAYS,
 ) -> BatchJobBuilder:
-    logger.info(f"Constructing BatchJobBuilder instance")
+    logger.info("Constructing BatchJobBuilder instance")
 
     demand_execution = demand_execution.copy()
     efs_mount_points = [scratch_mount_point, shared_mount_point]
@@ -585,8 +587,9 @@ def generate_batch_job_builder(
 
             if env_size > 8192 * 0.9:
                 logger.info(
-                    f"Environment variables are too large to pass directly to container (> 90% of 8192). "
-                    f"Writing environment variables to file {efs_environment_file_uri}."
+                    f"Environment variables are too large to pass directly to container "
+                    "(> 90% of 8192). Writing environment variables to file "
+                    f"{efs_environment_file_uri}."
                 )
                 confirm_write = True
             else:
@@ -632,7 +635,7 @@ def generate_batch_job_builder(
     ]
     if tmp_mount_point:
         vol_configurations.append(BatchEFSConfiguration(tmp_mount_point, read_only=False))
-    logger.info(f"Constructing BatchJobBuilder instance...")
+    logger.info("Constructing BatchJobBuilder instance...")
     return BatchJobBuilder(
         image=demand_execution.execution_image,
         job_definition_name=env_base.get_job_name(

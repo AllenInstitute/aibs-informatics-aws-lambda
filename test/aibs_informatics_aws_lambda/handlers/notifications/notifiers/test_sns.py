@@ -1,7 +1,4 @@
-from unittest import mock
-
 from aibs_informatics_aws_utils.exceptions import AWSError
-from aibs_informatics_core.models.email_address import EmailAddress
 from aibs_informatics_test_resources import BaseTest
 
 from aibs_informatics_aws_lambda.handlers.notifications.model import NotificationContent

@@ -1,4 +1,3 @@
-from test.base import BaseTest
 from typing import Optional
 
 from aws_lambda_powertools.event_handler.api_gateway import Router
@@ -8,6 +7,7 @@ from moto import mock_sts
 
 from aibs_informatics_aws_lambda.common.api.resolver import ApiResolverBuilder
 from aibs_informatics_aws_lambda.common.models import DefaultLambdaContext
+from test.base import BaseTest
 
 
 @mock_sts

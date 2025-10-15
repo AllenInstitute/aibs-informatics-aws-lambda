@@ -124,7 +124,7 @@ class PrepareDemandScaffoldingHandler(
         Args:
             context_manager (DemandExecutionContextManager): context manager
         """
-        working_path = context_manager.container_working_path
+        working_path = context_manager.container_working_path  # noqa: F841
         # working_path.mkdir(parents=True, exist_ok=True)
 
 

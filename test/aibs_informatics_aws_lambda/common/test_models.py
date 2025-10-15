@@ -1,5 +1,3 @@
-from test.aibs_informatics_aws_lambda.common.test_handler import CounterHandler_ReqResp
-from test.base import does_not_raise
 from typing import Optional
 
 from aibs_informatics_core.utils.json import JSON
@@ -8,6 +6,8 @@ from pytest import mark, param, raises
 
 from aibs_informatics_aws_lambda.common.handler import LambdaEvent
 from aibs_informatics_aws_lambda.common.models import LambdaHandlerRequest, deserialize_handler
+from test.aibs_informatics_aws_lambda.common.test_handler import CounterHandler_ReqResp
+from test.base import does_not_raise
 
 
 def mock_handler(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:

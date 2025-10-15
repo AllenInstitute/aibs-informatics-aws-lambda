@@ -1,12 +1,11 @@
-from test.base import does_not_raise
-
 from aibs_informatics_core.models.email_address import EmailAddress
-from pytest import mark, param, raises
+from pytest import mark, param
 
 from aibs_informatics_aws_lambda.handlers.notifications.notifiers.model import (
     NotificationContent,
     SESEmailTarget,
 )
+from test.base import does_not_raise
 
 ADDR1 = "email1@fake_address.com"
 ADDR2 = "email2@fake_address.com"

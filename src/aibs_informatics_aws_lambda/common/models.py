@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass, field
-from typing import Optional, cast
+from typing import cast
 
 import marshmallow as mm
 from aibs_informatics_aws_utils.constants.lambda_ import (
