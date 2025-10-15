@@ -151,8 +151,6 @@ coverage-server: install ## Run coverage server
 .PHONY: coverage-server
 
 
-
-
 #####################
 ##@ Docker Commands
 #####################

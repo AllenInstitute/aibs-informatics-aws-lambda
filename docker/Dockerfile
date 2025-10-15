@@ -47,6 +47,9 @@ RUN --mount=type=ssh \
     uv export --frozen --no-dev --group docker --no-editable -o requirements-autogen.txt && \
     uv pip install -r requirements-autogen.txt --target ${LAYER_DIR}
 
+# Clean up build-time artifacts that might have been created (defensive)
+RUN find ${LAYER_DIR} -type d -name "__pycache__" -prune -exec rm -rf {} +
+
 # Copy entrypoint script alongside the vendored packages
 RUN cp ${REPO_ROOT}/docker/docker-entrypoint.sh ${LAYER_DIR}/docker-entrypoint.sh \
     && chmod +x ${LAYER_DIR}/docker-entrypoint.sh
@@ -81,8 +84,5 @@ COPY --from=builder /opt/lambda-task ${LAMBDA_TASK_ROOT}
 
 ENV PYTHONPATH="${LAMBDA_TASK_ROOT}:${PYTHONPATH}"
 ENV PATH="${LAMBDA_TASK_ROOT}/bin:${PATH}"
-
-# Clean up build-time artifacts that might have been copied (defensive)
-RUN find ${LAMBDA_TASK_ROOT} -type d -name "__pycache__" -prune -exec rm -rf {} +
 
 ENTRYPOINT [ "bash", "-c", "${LAMBDA_TASK_ROOT}/docker-entrypoint.sh" ]
