@@ -40,6 +40,38 @@ class LambdaHandler(
     BaseExecutor[REQUEST, RESPONSE],
     Generic[REQUEST, RESPONSE],
 ):
+    """Inherit from the LambdaHandler class to create a custom strongly typed lambda handler
+    that expects a REQUEST object and returns a RESPONSE object that follow the `ModelProtocol`.
+
+    Example usage:
+
+        ```python
+        from aibs_informatics_aps_utils.models.base.pydantic_model_base import PydanticModel
+
+        class MyLambdaRequestModel(PydanticModel):
+            first_input_field_to_lambda: str
+            second_input_field_to_lambda: int
+
+        # Example of if your lambda doesn't return a response
+        # class MyLambdaResponseModel(PydanticModel):
+        #    pass
+
+        # Example if your lambda returns a simple response
+        class MyLambdaResponseModel(PydanticModel):
+            lambda_specific_return_value: int
+
+        @dataclass
+        class MyCustomLambdaHandler(LambdaHandler[MyLambdaRequestModel, MyLambdaResponseModel]):
+
+            def handle(self, request: MyLambdaRequestModel) -> MyLambdaResponseModel:
+                lambda_calc_result = request.second_input_field_to_lambda + 1
+                return MyLambdaResponseModel(lambda_specific_return_value=lambda_calc_result)
+
+        ```
+
+    NOTE: Classes that inherit from `LambdaHandler` MUST specify the REQUEST and RESPONSE models!
+    """
+
     def __post_init__(self):
         self.context = LambdaContext()
         super().__post_init__()
