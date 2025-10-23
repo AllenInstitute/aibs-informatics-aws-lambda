@@ -636,6 +636,7 @@ def generate_batch_job_builder(  # noqa: C901
     if tmp_mount_point:
         vol_configurations.append(BatchEFSConfiguration(tmp_mount_point, read_only=False))
     logger.info("Constructing BatchJobBuilder instance...")
+    assert demand_execution.execution_platform.aws_batch is not None
     return BatchJobBuilder(
         image=demand_execution.execution_image,
         job_definition_name=env_base.get_job_name(
@@ -657,6 +658,9 @@ def generate_batch_job_builder(  # noqa: C901
         env_base=env_base,
         # TODO: need to make this configurable
         privileged=True,
+        job_role_arn=demand_execution.execution_platform.aws_batch.job_role
+        if demand_execution.execution_platform.aws_batch
+        else None,
     )
 
 
