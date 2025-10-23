@@ -29,6 +29,7 @@ class CreateDefinitionAndPrepareArgsRequest(SchemaModel):
     image: str = custom_field()
     job_definition_name: str = custom_field()
     job_queue_name: str = custom_field()
+    job_role_arn: Optional[str] = custom_field(default=None)
     job_name: Optional[str] = custom_field(default=None)
     command: List[str] = custom_field(default_factory=list)
     environment: Dict[str, str] = custom_field(default_factory=dict)

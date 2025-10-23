@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import (
@@ -15,15 +15,6 @@ from aibs_informatics_core.models.demand_execution import DemandExecution
 
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
 from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
-
-
-@dataclass
-class CreateDefinitionAndPrepareArgsResponse(SchemaModel):
-    job_name: str = custom_field()
-    job_definition_arn: Optional[str] = custom_field()
-    job_queue_arn: str = custom_field()
-    parameters: Dict[str, Any] = custom_field()
-    container_overrides: Dict[str, Any] = custom_field()
 
 
 @dataclass
