@@ -101,6 +101,7 @@ class PrepareDemandScaffoldingHandler(
                 volumes=batch_job_builder.volumes,
                 retry_strategy=build_retry_strategy(num_retries=5),
                 privileged=batch_job_builder.privileged,
+                job_role_arn=batch_job_builder.job_role_arn,
             ),
         )
 
