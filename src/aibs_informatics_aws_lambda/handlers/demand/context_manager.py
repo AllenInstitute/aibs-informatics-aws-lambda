@@ -211,7 +211,7 @@ class DemandExecutionContextManager:
 
 
         Returns:
-            Path: container path for working data path directory
+            container path for working data path directory
         """
         return self.scratch_vol_configuration.mount_point_config.as_mounted_path(
             self.demand_execution.execution_id
@@ -225,7 +225,7 @@ class DemandExecutionContextManager:
             /opt/efs/scratch/tmp
 
         Returns:
-            Path: container path for tmp volume
+            container path for tmp volume
         """
         if self.tmp_vol_configuration:
             return self.tmp_vol_configuration.mount_point_config.mount_point
@@ -239,7 +239,7 @@ class DemandExecutionContextManager:
             /opt/efs/shared
 
         Returns:
-            Path: container path for shared volume
+            container path for shared volume
         """
         return self.shared_vol_configuration.mount_point_config.mount_point
 
@@ -251,7 +251,7 @@ class DemandExecutionContextManager:
             efs://fs-12345678:/scratch/{EXECUTION_ID}
 
         Returns:
-            EFSPath: EFS URI for working data path directory
+            EFS URI for working data path directory
         """
         return get_efs_path(self.container_working_path, mount_points=self.efs_mount_points)
 
@@ -263,7 +263,7 @@ class DemandExecutionContextManager:
             efs://fs-12345678:/scratch/tmp
 
         Returns:
-            EFSPath: EFS URI for tmp data path directory
+            EFS URI for tmp data path directory
         """
         return get_efs_path(self.container_tmp_path, mount_points=self.efs_mount_points)
 
@@ -275,7 +275,7 @@ class DemandExecutionContextManager:
             efs://fs-12345678:/shared
 
         Returns:
-            EFSPath: EFS URI for shared data path directory
+            EFS URI for shared data path directory
         """
         return get_efs_path(self.container_shared_path, mount_points=self.efs_mount_points)
 
@@ -284,7 +284,7 @@ class DemandExecutionContextManager:
         """Returns a list of mount points for the EFS volumes used by the aws batch job
 
         Returns:
-            List[MountPointConfiguration]: list of mount point configurations
+            list of mount point configurations
         """
         mpcs = [
             self.scratch_vol_configuration.mount_point_config,
@@ -411,7 +411,7 @@ class DemandExecutionContextManager:
         """Generates remove data paths requests for post-execution data sync
 
         Returns:
-            List[RemoveDataPathsRequest]: list of remove data paths requests
+            list of remove data paths requests
         """
         requests = []
         if self.configuration.cleanup_inputs:
@@ -511,7 +511,7 @@ def update_demand_execution_parameter_inputs(
         isolate_inputs (bool): flag to determine if inputs should be isolated
 
     Returns:
-        DemandExecution: a demand execution with modified execution parameter inputs
+        a demand execution with modified execution parameter inputs
     """
 
     demand_execution = demand_execution.copy()
@@ -560,7 +560,7 @@ def update_demand_execution_parameter_outputs(
         container_working_path (Path): Path where the working directory is mounted.
 
     Returns:
-        DemandExecution: a demand execution with modified execution parameter inputs
+        a demand execution with modified execution parameter inputs
     """
 
     demand_execution = demand_execution.copy()

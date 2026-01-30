@@ -167,7 +167,7 @@ class LambdaHandler(
             record (SQSRecord): An SQS record
 
         Returns:
-            bool: True if handler should process request
+            True if handler should process request
         """
         return True
 
@@ -182,7 +182,7 @@ class LambdaHandler(
             record (SQSRecord): An SQS record
 
         Returns:
-            REQUEST: The expected Request object for this handler class
+            The expected Request object for this handler class
         """
         return cls.deserialize_request(json.loads(record["body"]))
 
@@ -269,7 +269,7 @@ class LambdaHandler(
             record (DynamoDBRecord): A DynamoDB record generated from a DynamoDB Stream
 
         Returns:
-            bool: True if handler should process request
+            True if handler should process request
         """
         return True
 
@@ -283,7 +283,7 @@ class LambdaHandler(
             record (DynamoDBRecord): A DynamoDB record generated from a DynamoDB Stream
 
         Returns:
-            REQUEST: Expected Request object
+            Expected Request object
         """
         raise NotImplementedError(  # pragma: no cover
             "You must implement this method if processing dynamoDB stream events"

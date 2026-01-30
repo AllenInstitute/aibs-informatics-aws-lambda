@@ -60,7 +60,7 @@ def get_s3_scratch_key(
             If None, a random UUID is generated.
 
     Returns:
-        S3Key: S3 Scratch key (not gauranteed to be empty)
+        S3 Scratch key (not gauranteed to be empty)
     """
     file_hash = filename or sha256_hexdigest(content=content)
     return S3Key(f"scratch/{unique_id or UniqueID.create()}/{file_hash}")
@@ -366,7 +366,7 @@ class PrepareBatchDataSyncHandler(
             batch_size_bytes_limit (int): Size limit in bytes for a batch of nodes.
 
         Returns:
-            List[List[Node]]: List of node batches (list of lists).
+            List of node batches (list of lists).
         """
 
         ## We will use a revised version of the bin packing problem:
