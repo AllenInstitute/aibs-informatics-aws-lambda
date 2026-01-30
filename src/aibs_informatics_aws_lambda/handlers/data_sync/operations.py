@@ -254,7 +254,8 @@ class PrepareBatchDataSyncHandler(
         Partitions the source data into optimally-sized batches.
 
         Args:
-            request (PrepareBatchDataSyncRequest): Request containing source path and configuration.
+            request (PrepareBatchDataSyncRequest):
+                Request containing source path and configuration.
 
         Returns:
             Response containing prepared batch requests.

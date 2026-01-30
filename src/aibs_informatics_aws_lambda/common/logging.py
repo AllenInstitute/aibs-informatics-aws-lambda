@@ -31,6 +31,7 @@ class LoggingMixins(HandlerMixins):
         log: Alias for the logger property.
         logger: The AWS Lambda Powertools Logger instance.
     """
+
     @property
     def log(self) -> Logger:
         """Alias for the logger property.

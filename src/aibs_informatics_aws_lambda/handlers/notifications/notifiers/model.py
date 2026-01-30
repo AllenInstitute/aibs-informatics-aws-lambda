@@ -46,13 +46,16 @@ class NotificationContentType(str, Enum):
 
 @dataclass
 class NotificationContent(SchemaModel):
-    """Content of a notification message.
+    (
+        """Content of a notification message.
 
     Attributes:
         subject: The subject line of the notification.
         message: The body content of the notification.
         content_type: The format of the message content.
-    """""
+    """
+        ""
+    )
 
     subject: str = custom_field(mm_field=StringField())
     message: str = custom_field(mm_field=StringField())
