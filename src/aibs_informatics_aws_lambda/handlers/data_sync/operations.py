@@ -56,7 +56,7 @@ def get_s3_scratch_key(
             If None, file hash is generated.
         content (Optional[JSON]): Optional content of file to put.
             Only used if filename is not provided. Defaults to None.
-        unique_id (Optional[UniqueID]): A unique ID used in key.
+        unique_id (Optional[UniqueID]): A unique ID used in key generation.
             If None, a random UUID is generated.
 
     Returns:
