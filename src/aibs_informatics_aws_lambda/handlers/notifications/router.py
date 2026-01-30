@@ -1,3 +1,9 @@
+"""Notification routing handler.
+
+Provides the main Lambda handler for routing notifications
+to appropriate delivery channels.
+"""
+
 from dataclasses import dataclass, field
 from typing import List
 
@@ -14,27 +20,45 @@ from aibs_informatics_aws_lambda.handlers.notifications.notifiers.sns import SNS
 
 @dataclass  # type: ignore[misc] # mypy #5374
 class NotificationRouter(LambdaHandler[NotificationRequest, NotificationResponse]):
-    """Abstract Base class for notification handlers
+    """Handler for routing notifications to appropriate delivery channels.
 
-    To use this class, create a NotificationEvent model to validate incoming events.
-    Create a parse_event class to create PublishRequests.
+    Routes notifications to different notifiers (SES, SNS, etc.) based on
+    the target specification using a chain-of-responsibility pattern.
 
-    PublishRequests are handled with a chain-of-responsibility model. Each publisher
-    checks if it can handle the PublishRequest, and if so it handles it, returning a
-    PublishReponse. If it can't handle it, the request continues to the next publisher.
+    Each notifier attempts to parse and handle the target. If successful,
+    it delivers the notification. If not, the next notifier is tried.
 
-    If desired, you may provide a `publishers` list to specify allowed publishers
+    Attributes:
+        notifiers: List of notifier instances to try in order.
 
+    Example:
+        ```python
+        handler = NotificationRouter.get_handler()
+        # Or with custom notifiers
+        handler = NotificationRouter(notifiers=[SESNotifier()]).get_handler()
+        ```
     """
 
     notifiers: List[Notifier] = field(default_factory=list)
 
     def __post_init__(self):
+        """Initialize the handler with default notifiers if none provided."""
         super().__post_init__()
         if not self.notifiers:
             self.notifiers = [SESNotifier(), SNSNotifier()]
 
     def handle(self, request: NotificationRequest) -> NotificationResponse:
+        """Route and deliver notifications to targets.
+
+        Attempts to deliver the notification content to each target
+        using the available notifiers.
+
+        Args:
+            request (NotificationRequest): Request containing content and target specifications.
+
+        Returns:
+            Response containing results for each target.
+        """
         results: List[NotifierResult] = []
         for target in request.targets:
             for notifier in self.notifiers:

@@ -1,3 +1,10 @@
+"""File system operation handlers.
+
+Provides Lambda handlers for file system operations including
+listing paths, getting statistics, scanning for outdated files,
+and removing paths.
+"""
+
 import logging
 from datetime import timedelta
 from pathlib import Path
@@ -32,7 +39,20 @@ FS = TypeVar("FS", bound=BaseFileSystem)
 
 
 class GetDataPathStatsHandler(LambdaHandler[GetDataPathStatsRequest, GetDataPathStatsResponse]):
+    """Handler for retrieving statistics about a data path.
+
+    Returns size, modification time, and child path information.
+    """
+
     def handle(self, request: GetDataPathStatsRequest) -> GetDataPathStatsResponse:
+        """Get statistics for the specified path.
+
+        Args:
+            request (GetDataPathStatsRequest): Request containing the path to analyze.
+
+        Returns:
+            Response containing path statistics and child information.
+        """
         root = get_file_system(request.path)
         node = root.node
         return GetDataPathStatsResponse(
@@ -46,7 +66,20 @@ class GetDataPathStatsHandler(LambdaHandler[GetDataPathStatsRequest, GetDataPath
 
 
 class ListDataPathsHandler(LambdaHandler[ListDataPathsRequest, ListDataPathsResponse]):
+    """Handler for listing paths under a root directory.
+
+    Supports include and exclude patterns for filtering results.
+    """
+
     def handle(self, request: ListDataPathsRequest) -> ListDataPathsResponse:
+        """List all paths under the specified root.
+
+        Args:
+            request (ListDataPathsRequest): Request containing the root path and optional patterns.
+
+        Returns:
+            Response containing the list of matching paths.
+        """
         root = get_file_system(request.path)
         paths: List[DataPath] = sorted([n.path for n in root.node.list_nodes()])
 
@@ -68,12 +101,25 @@ class ListDataPathsHandler(LambdaHandler[ListDataPathsRequest, ListDataPathsResp
 class OutdatedDataPathScannerHandler(
     LambdaHandler[OutdatedDataPathScannerRequest, OutdatedDataPathScannerResponse],
 ):
-    def handle(self, request: OutdatedDataPathScannerRequest) -> OutdatedDataPathScannerResponse:
-        """Determine paths to delete from EFS in a 2 step process
+    """Handler for scanning and identifying outdated data paths.
 
-        1) Determine stale file nodes whose days_since_last_accessed exceed our minimum
-        2) Sort stale nodes such that oldest are considered first and assess whether deletion of
-           the files represented by the node would make our total EFS size too small
+    Identifies stale files based on last access time while respecting
+    minimum size thresholds to maintain EFS throughput performance.
+    """
+
+    def handle(self, request: OutdatedDataPathScannerRequest) -> OutdatedDataPathScannerResponse:
+        """Scan for outdated paths to delete.
+
+        Uses a two-step process:
+        1. Identify stale nodes whose days_since_last_accessed exceeds the threshold.
+        2. Sort stale nodes oldest-first and select for deletion while
+           maintaining the minimum size requirement.
+
+        Args:
+            request (OutdatedDataPathScannerRequest): Request containing scan parameters.
+
+        Returns:
+            Response containing paths eligible for deletion.
         """
         fs = get_file_system(request.path)
 
@@ -120,7 +166,21 @@ class OutdatedDataPathScannerHandler(
 
 
 class RemoveDataPathsHandler(LambdaHandler[RemoveDataPathsRequest, RemoveDataPathsResponse]):
+    """Handler for removing data paths.
+
+    Supports removing local paths and EFS paths. S3 path removal
+    is not currently supported.
+    """
+
     def handle(self, request: RemoveDataPathsRequest) -> RemoveDataPathsResponse:
+        """Remove the specified paths.
+
+        Args:
+            request (RemoveDataPathsRequest): Request containing the list of paths to remove.
+
+        Returns:
+            Response containing the total bytes removed and paths processed.
+        """
         self.logger.info(f"Removing {len(request.paths)}")
 
         mount_points = None

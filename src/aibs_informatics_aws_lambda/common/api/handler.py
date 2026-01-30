@@ -1,3 +1,9 @@
+"""API Gateway Lambda handler base class.
+
+Provides base classes for creating strongly-typed Lambda handlers
+that integrate with API Gateway.
+"""
+
 __all__ = [
     "ApiLambdaHandler",
 ]
@@ -45,6 +51,36 @@ class ApiLambdaHandler(
     ApiRoute[API_REQUEST, API_RESPONSE],
     Generic[API_REQUEST, API_RESPONSE],
 ):
+    """Base class for API Gateway Lambda handlers.
+
+    Combines the LambdaHandler capabilities with API Gateway routing,
+    providing automatic request parsing, response formatting, and
+    integration with metrics and logging.
+
+    Type Parameters:
+        API_REQUEST: The request model type.
+        API_RESPONSE: The response model type.
+
+    Attributes:
+        _current_event: The current API Gateway proxy event being processed.
+
+    Example:
+        ```python
+        @dataclass
+        class MyApiHandler(ApiLambdaHandler[MyRequest, MyResponse]):
+            @classmethod
+            def route_rule(cls) -> str:
+                return "/users/{user_id}"
+
+            @classmethod
+            def route_method(cls) -> str:
+                return "GET"
+
+            def handle(self, request: MyRequest) -> MyResponse:
+                return MyResponse(...)
+        ```
+    """
+
     _current_event: Optional[BaseProxyEvent] = field(default=None, repr=False)
 
     def __post_init__(self):
@@ -52,30 +88,63 @@ class ApiLambdaHandler(
 
     @property
     def current_event(self) -> BaseProxyEvent:
+        """Get the current API Gateway proxy event.
+
+        Returns:
+            The current proxy event being processed.
+
+        Raises:
+            ValueError: If no event is currently set.
+        """
         if self._current_event is None:
             raise ValueError(f"Current event not set for {self}.")
         return self._current_event
 
     @current_event.setter
     def current_event(self, value: BaseProxyEvent):
+        """Set the current API Gateway proxy event.
+
+        Args:
+            value (BaseProxyEvent): The proxy event to set.
+        """
         self._current_event = value
 
     @property
     def api_gateway_proxy_event(self) -> APIGatewayProxyEvent:
+        """Get the current event as an APIGatewayProxyEvent.
+
+        Returns:
+            The current event as an APIGatewayProxyEvent instance.
+        """
         if isinstance(self.current_event, APIGatewayProxyEvent):
             return self.current_event
         return APIGatewayProxyEvent(self.current_event._data)
 
     @property
     def api_gateway_proxy_request_context(self) -> APIGatewayEventRequestContext:
+        """Get the request context from the current event.
+
+        Returns:
+            The API Gateway request context.
+        """
         return self.api_gateway_proxy_event.request_context
 
     @property
     def api_gateway_event_identity(self) -> APIGatewayEventIdentity:
+        """Get the identity information from the request context.
+
+        Returns:
+            The API Gateway event identity.
+        """
         return self.api_gateway_proxy_request_context.identity
 
     @property
     def api_gateway_caller(self) -> str:
+        """Get the caller identifier from the event identity.
+
+        Returns:
+            The caller or user identifier, or 'Unknown' if not available.
+        """
         return (
             self.api_gateway_event_identity.caller
             or self.api_gateway_event_identity.user
@@ -91,6 +160,22 @@ class ApiLambdaHandler(
         metrics: Optional[Union[EphemeralMetrics, Metrics]] = None,
         **kwargs,
     ) -> Callable:
+        """Register this handler with an API Gateway router.
+
+        Creates a route handler function and registers it with the router
+        using the handler's route rule and method.
+
+        Args:
+            router (BaseRouter): The router to register the handler with.
+            *args: Additional arguments passed to the handler constructor.
+            logger (Optional[Logger]): Optional logger instance. If None, creates a new one.
+            metrics (Optional[Union[EphemeralMetrics, Metrics]]): Optional metrics instance.
+                If None, creates a new one.
+            **kwargs: Additional keyword arguments passed to the handler constructor.
+
+        Returns:
+            The registered gateway handler function.
+        """
         logger = logger or cls.get_logger(service=cls.service_name())
         metrics = metrics or cls.get_metrics()
 
@@ -136,6 +221,19 @@ class ApiLambdaHandler(
     def _parse_event(
         cls, event: BaseProxyEvent, route_parameters: Dict[str, Any], logger: logging.Logger
     ) -> API_REQUEST:
+        """Parse an API Gateway event into a request object.
+
+        Extracts route parameters, query parameters, and request body
+        from the event and constructs the typed request object.
+
+        Args:
+            event (BaseProxyEvent): The API Gateway proxy event.
+            route_parameters (Dict[str, Any]): The route path parameters.
+            logger (logging.Logger): Logger for debug output.
+
+        Returns:
+            The parsed request object.
+        """
         logger.info("parsing event.")
         stringified_route_params = route_parameters
         stringified_query_params = event.query_string_parameters

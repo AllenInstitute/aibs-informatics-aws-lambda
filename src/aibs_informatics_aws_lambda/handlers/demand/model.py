@@ -1,3 +1,9 @@
+"""Demand execution data models.
+
+Defines the request, response, and configuration models for demand
+execution scaffolding and management.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional, Union
@@ -19,6 +25,14 @@ from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPaths
 
 @dataclass
 class FileSystemConfiguration(SchemaModel):
+    """Configuration for an EFS file system mount.
+
+    Attributes:
+        file_system: Optional file system ID or name.
+        access_point: Optional access point ID or name.
+        container_path: Optional custom container mount path.
+    """
+
     file_system: Optional[str] = None
     access_point: Optional[str] = None
     container_path: Optional[str] = None
@@ -26,6 +40,14 @@ class FileSystemConfiguration(SchemaModel):
 
 @dataclass
 class DemandFileSystemConfigurations(SchemaModel):
+    """Collection of file system configurations for demand execution.
+
+    Attributes:
+        shared: Configuration for the shared/input volume (read-only).
+        scratch: Configuration for the scratch/working volume (read-write).
+        tmp: Optional configuration for a dedicated tmp volume.
+    """
+
     shared: FileSystemConfiguration = custom_field(
         mm_field=FileSystemConfiguration.as_mm_field(), default_factory=FileSystemConfiguration
     )
@@ -38,6 +60,17 @@ class DemandFileSystemConfigurations(SchemaModel):
 
 
 class EnvFileWriteMode(str, Enum):
+    """Modes for writing environment files in batch jobs.
+
+    Controls whether environment variables are written to a file
+    on EFS or passed directly to the container.
+
+    Attributes:
+        NEVER: Never write env file, always pass variables directly.
+        ALWAYS: Always write env file to avoid variable size limits.
+        IF_REQUIRED: Write env file only if variables exceed size threshold.
+    """
+
     NEVER = "NEVER"
     ALWAYS = "ALWAYS"
     # TODO: revisit to see if IF_REQUIRED is really necessary or can be removed
@@ -46,21 +79,17 @@ class EnvFileWriteMode(str, Enum):
 
 @dataclass
 class DataSyncConfiguration(SchemaModel):
-    """
-    Configuration for how data sync should be run.
+    """Configuration for data synchronization behavior.
+
+    Controls how data is synced between S3 and EFS for demand executions.
 
     Attributes:
-        temporary_request_payload_path (Optional[S3Path]):
-            The path to the temporary request payload. This is useful if many requests will
-            be generated and the payloads are too large to be passed in the state machine
-            context object.
-        force (bool):
-            If True, the data will be synced even if it already exists and satisfies
-            the checksum or size check.
-        size_only (bool):
-            If True, only the size of the data will be checked when determining if the data
-            should be synced. If False, the checksum of the data will also be checked.
-
+        temporary_request_payload_path: Optional S3 path for storing large
+            request payloads that exceed state machine limits.
+        force: If True, sync data even if it already exists and passes
+            checksum/size validation.
+        size_only: If True, only check file sizes when validating sync.
+            If False, also verify checksums.
     """
 
     temporary_request_payload_path: Optional[S3Path] = custom_field(
@@ -72,39 +101,19 @@ class DataSyncConfiguration(SchemaModel):
 
 @dataclass
 class ContextManagerConfiguration(SchemaModel):
-    """
-    Configuration for managing the context in which a demand execution runs.
+    """Configuration for demand execution context management.
+
+    Controls behavior of input/output handling, cleanup, and environment
+    variable management.
 
     Attributes:
-        isolate_inputs (bool):
-            If True, input data will be written to working directory instead of the shared
-            scratch directory. This is useful if:
-            - you want to ensure that input data is not modified by other processes,
-            - can be modified by the demand execution,
-            - and can be cleaned up immediately after completion
-                (RO shared scratch data is not cleaned up).
-        cleanup_inputs (bool):
-            If True, input data will be cleaned up after execution. Note that this may
-            not work as expected if isolate_inputs is False, as inputs are typically
-            mounted as read-only. This will be clear when defining infrastructure code.
-        cleanup_working_dir (bool):
-            If True, the working directory will be cleaned up after execution. This is useful if
-            you want to ensure that no data is left behind in the working directory.
-        env_file_write_mode (EnvFileWriteMode):
-            Determines when environment files should be written instead of being added to the list
-            of env variables in batch job definition. Options are NEVER, ALWAYS, and IF_REQUIRED.
-            IF_REQUIRED is experimental and attempts to write env files only if the env variables
-            exceed a certain length.
-        input_data_sync_configuration (DataSyncConfiguration):
-            Configuration for syncing input data. The force flag and size_only flag are used to
-            determine how the data is synced. The temporary_request_payload_path should be used
-            if many requests will be generated and the payloads are too large to be passed
-            in the state machine context object.
-        output_data_sync_configuration (DataSyncConfiguration):
-            Configuration for syncing output data. The force flag and size_only flag are used to
-            determine how the data is synced. The temporary_request_payload_path should be used
-            if many requests will be generated and the payloads are too large to be passed
-            in the state machine context object.
+        isolate_inputs: If True, copy inputs to working directory instead
+            of using shared scratch. Useful for mutable inputs.
+        cleanup_inputs: If True, remove input data after execution.
+        cleanup_working_dir: If True, remove working directory after execution.
+        env_file_write_mode: How to handle environment variable files.
+        input_data_sync_configuration: Configuration for input data sync.
+        output_data_sync_configuration: Configuration for output data sync.
     """
 
     isolate_inputs: bool = custom_field(default=True)
@@ -123,6 +132,14 @@ class ContextManagerConfiguration(SchemaModel):
 
 @dataclass
 class PrepareDemandScaffoldingRequest(SchemaModel):
+    """Request for preparing demand execution scaffolding.
+
+    Attributes:
+        demand_execution: The demand execution to prepare infrastructure for.
+        file_system_configurations: EFS mount configurations.
+        context_manager_configuration: Execution context settings.
+    """
+
     demand_execution: DemandExecution = custom_field(mm_field=DemandExecution.as_mm_field())
     file_system_configurations: DemandFileSystemConfigurations = custom_field(
         mm_field=DemandFileSystemConfigurations.as_mm_field(),
@@ -136,6 +153,16 @@ class PrepareDemandScaffoldingRequest(SchemaModel):
 
 @dataclass
 class DemandExecutionSetupConfigs(SchemaModel):
+    """Setup configurations generated for a demand execution.
+
+    Contains the data sync requests and batch job configuration
+    needed to run the demand execution.
+
+    Attributes:
+        data_sync_requests: Requests for syncing input data.
+        batch_create_request: Request to create the batch job.
+    """
+
     data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
         mm_field=UnionField(
             [
@@ -156,6 +183,16 @@ class DemandExecutionSetupConfigs(SchemaModel):
 
 @dataclass
 class DemandExecutionCleanupConfigs(SchemaModel):
+    """Cleanup configurations generated for a demand execution.
+
+    Contains the data sync requests and path removal requests
+    to execute after the demand execution completes.
+
+    Attributes:
+        data_sync_requests: Requests for syncing output data.
+        remove_data_paths_requests: Requests to remove temporary data.
+    """
+
     data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
         mm_field=UnionField(
             [
@@ -176,6 +213,14 @@ class DemandExecutionCleanupConfigs(SchemaModel):
 
 @dataclass
 class PrepareDemandScaffoldingResponse(SchemaModel):
+    """Response from preparing demand execution scaffolding.
+
+    Attributes:
+        demand_execution: The updated demand execution with resolved paths.
+        setup_configs: Configurations for pre-execution setup.
+        cleanup_configs: Configurations for post-execution cleanup.
+    """
+
     demand_execution: DemandExecution = custom_field(mm_field=DemandExecution.as_mm_field())
     setup_configs: DemandExecutionSetupConfigs = custom_field(
         mm_field=DemandExecutionSetupConfigs.as_mm_field()

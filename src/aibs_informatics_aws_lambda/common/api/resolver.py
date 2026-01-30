@@ -1,3 +1,9 @@
+"""API Gateway resolver builder for Lambda handlers.
+
+Provides utilities for building API Gateway REST resolvers
+with automatic handler discovery and registration.
+"""
+
 __all__ = [
     "ApiResolverBuilder",
 ]
@@ -32,6 +38,23 @@ LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], JSONObject]
 
 @dataclass
 class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
+    """Builder for API Gateway REST resolvers with automatic handler registration.
+
+    Provides a convenient way to build API Gateway resolvers with built-in
+    middleware for validation, logging, and error handling.
+
+    Attributes:
+        app: The underlying APIGatewayRestResolver instance.
+        metric_name_prefix: Prefix for metrics names.
+
+    Example:
+        ```python
+        builder = ApiResolverBuilder()
+        builder.add_handlers(my_handlers_module)
+        handler = builder.get_lambda_handler()
+        ```
+    """
+
     app: APIGatewayRestResolver = field(default_factory=APIGatewayRestResolver)
 
     metric_name_prefix: ClassVar[str] = "ApiResolver"
@@ -68,6 +91,14 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
         self.app.not_found(self.handle_not_found)
 
     def handle_exception(self, e: Exception):
+        """Handle uncaught exceptions in request processing.
+
+        Args:
+            e (Exception): The exception that was raised.
+
+        Returns:
+            A Response with status 400 and error details.
+        """
         metadata = {"path": self.app.current_event.path}
         self.logger.exception(f"{e}", extra=metadata)
         return Response(
@@ -84,10 +115,27 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
         )
 
     def validate_event(self, event: APIGatewayProxyEvent) -> None:
+        """Validate the incoming API Gateway event.
+
+        Override this method to add custom validation logic.
+
+        Args:
+            event (APIGatewayProxyEvent): The API Gateway proxy event to validate.
+
+        Raises:
+            Exception: If validation fails.
+        """
         pass
 
     def update_logging_level(self, event: APIGatewayProxyEvent) -> None:
-        """Update the logging level based on the event headers"""
+        """Update the logging level based on request headers.
+
+        Checks for an 'X-Log-Level' header and adjusts the logger
+        level accordingly.
+
+        Args:
+            event (APIGatewayProxyEvent): The API Gateway proxy event.
+        """
         if log_level := event.headers.get("X-Log-Level"):
             try:
                 self.logger.setLevel(log_level)
@@ -95,12 +143,34 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
                 self.logger.warning(f"Failed to set log level to {log_level}: {e}")
 
     def handle_not_found(self, e: NotFoundError) -> Response:
+        """Handle requests to non-existent routes.
+
+        Args:
+            e (NotFoundError): The NotFoundError exception.
+
+        Returns:
+            A Response with status 418 and error message.
+        """
         msg = f"Could not find route {self.app.current_event.path}: {e.msg}"
         self.logger.exception(msg)
         self.metrics.add_count_metric("RouteNotFound", 1)
         return Response(status_code=418, content_type=content_types.TEXT_PLAIN, body=msg)
 
     def handle(self, event: LambdaEvent, context: LambdaContext) -> JSONObject:
+        """Handle an incoming API Gateway event.
+
+        Resolves the event to the appropriate handler and returns the response.
+
+        Args:
+            event (LambdaEvent): The Lambda event payload.
+            context (LambdaContext): The Lambda context.
+
+        Returns:
+            The JSON response from the resolved handler.
+
+        Raises:
+            Exception: If handler execution fails.
+        """
         start = datetime.now()
         try:
             self.logger.info(f"Handling API Lambda event: {event}")
@@ -115,6 +185,18 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
             raise e
 
     def get_lambda_handler(self, *args, **kwargs) -> LambdaHandlerType:
+        """Create a Lambda handler function for this resolver.
+
+        Wraps the handle method with logging context injection
+        and metrics collection.
+
+        Args:
+            *args: Positional arguments (unused).
+            **kwargs: Keyword arguments (unused).
+
+        Returns:
+            A callable Lambda handler function.
+        """
         lambda_handler = self.handle
 
         lambda_handler = self.logger.inject_lambda_context(correlation_id_path=API_GATEWAY_REST)(
@@ -130,12 +212,16 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
         router: Optional[BaseRouter] = None,
         prefix: Optional[str] = None,
     ):
-        """Dynamically adds all API Lambda handlers under package root to app
+        """Dynamically add all API Lambda handlers from a module.
+
+        Discovers all ApiLambdaHandler subclasses in the target module
+        and registers them with the router.
 
         Args:
-            router (BaseRouter): The router to which handlers add a route
-            root_mod_or_pkg (ModuleType): the root package or module under which are the
-                targeted handler classes to add to this router.
+            target_module (ModuleType): The module containing handler classes.
+            router (Optional[BaseRouter]): Optional router to add handlers to. If None with prefix,
+                creates a new Router.
+            prefix (Optional[str]): Optional URL prefix for all routes in the module.
         """
 
         if not router and not prefix:
@@ -160,6 +246,18 @@ def add_handlers_to_router(
     metrics: Optional[Union[EphemeralMetrics, Metrics]] = None,
     logger: Optional[Logger] = None,
 ):
+    """Add all API handlers from a module to a router.
+
+    Discovers ApiLambdaHandler subclasses in the target module and
+    registers each with the router.
+
+    Args:
+        router (BaseRouter): The router to register handlers with.
+        target_module (ModuleType): The module containing handler classes.
+        metrics (Optional[Union[EphemeralMetrics, Metrics]]): Optional metrics collector
+            for the handlers.
+        logger (Optional[Logger]): Optional logger for the handlers.
+    """
     target_api_handler_classes = get_target_handler_classes(target_module)
 
     # Add each lambda handler to the route.
@@ -168,10 +266,16 @@ def add_handlers_to_router(
 
 
 def get_target_handler_classes(target_module: ModuleType) -> List[ApiLambdaHandler]:
-    """Get all ApiLambdaHandler subclasses in the target module or package
+    """Get all ApiLambdaHandler subclasses in a module.
+
+    Recursively loads all modules from the target package and returns
+    all ApiLambdaHandler subclasses found.
+
+    Args:
+        target_module (ModuleType): The module or package to search.
 
     Returns:
-        List[ApiLambdaHandler]: All ApiLambdaHandler subclasses in this package
+        A list of ApiLambdaHandler subclasses found in the module.
     """
     # Load modules from package root.
     loaded_modules = load_all_modules_from_pkg(target_module, include_packages=True)

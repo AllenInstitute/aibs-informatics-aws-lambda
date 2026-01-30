@@ -40,36 +40,38 @@ class LambdaHandler(
     BaseExecutor[REQUEST, RESPONSE],
     Generic[REQUEST, RESPONSE],
 ):
-    """Inherit from the LambdaHandler class to create a custom strongly typed lambda handler
+    """Base class for creating strongly-typed AWS Lambda handlers.
+
+    Provides a foundation for Lambda functions with built-in support for:
+    - Request/response serialization and deserialization
+    - Structured logging via AWS Lambda Powertools
+    - CloudWatch metrics collection
+    - SQS batch processing
+    - DynamoDB Streams processing
+
+    Inherit from the LambdaHandler class to create a custom strongly typed lambda handler
     that expects a REQUEST object and returns a RESPONSE object that follow the `ModelProtocol`.
 
-    Example usage:
+    Type Parameters:
+        REQUEST: The request model type (must implement ModelProtocol).
+        RESPONSE: The response model type (must implement ModelProtocol).
 
+    Example:
         ```python
-        from aibs_informatics_aps_utils.models.base.pydantic_model_base import PydanticModel
-
-        class MyLambdaRequestModel(PydanticModel):
-            first_input_field_to_lambda: str
-            second_input_field_to_lambda: int
-
-        # Example of if your lambda doesn't return a response
-        # class MyLambdaResponseModel(PydanticModel):
-        #    pass
-
-        # Example if your lambda returns a simple response
-        class MyLambdaResponseModel(PydanticModel):
-            lambda_specific_return_value: int
+        @dataclass
+        class MyRequest(SchemaModel):
+            name: str
 
         @dataclass
-        class MyCustomLambdaHandler(LambdaHandler[MyLambdaRequestModel, MyLambdaResponseModel]):
+        class MyResponse(SchemaModel):
+            message: str
 
-            def handle(self, request: MyLambdaRequestModel) -> MyLambdaResponseModel:
-                lambda_calc_result = request.second_input_field_to_lambda + 1
-                return MyLambdaResponseModel(lambda_specific_return_value=lambda_calc_result)
+        class MyHandler(LambdaHandler[MyRequest, MyResponse]):
+            def handle(self, request: MyRequest) -> MyResponse:
+                return MyResponse(message=f"Hello, {request.name}!")
 
+        handler = MyHandler.get_handler()
         ```
-
-    NOTE: Classes that inherit from `LambdaHandler` MUST specify the REQUEST and RESPONSE models!
     """
 
     def __post_init__(self):
@@ -78,10 +80,24 @@ class LambdaHandler(
 
     @classmethod
     def load_input__remote(cls, remote_path: S3URI) -> JSON:
+        """Load input data from a remote S3 location.
+
+        Args:
+            remote_path (S3URI): The S3 URI to download the input from.
+
+        Returns:
+            The JSON content from the S3 object.
+        """
         return download_to_json_object(remote_path)
 
     @classmethod
     def write_output__remote(cls, output: JSON, remote_path: S3URI) -> None:
+        """Write output data to a remote S3 location.
+
+        Args:
+            output (JSON): The JSON content to upload.
+            remote_path (S3URI): The S3 URI to upload the output to.
+        """
         return upload_json(output, remote_path)
 
     # --------------------------------------------------------------------
@@ -90,10 +106,27 @@ class LambdaHandler(
 
     @classmethod
     def get_handler(cls, *args, **kwargs) -> LambdaHandlerType:
-        """Get a Lambda handler function for given handler class.
+        """Create a Lambda handler function for this handler class.
+
+        Creates a wrapped handler function that:
+        - Injects Lambda context for logging
+        - Instantiates the handler class
+        - Deserializes the incoming event
+        - Invokes the handle method
+        - Serializes and returns the response
+
+        Args:
+            *args: Positional arguments passed to the handler constructor.
+            **kwargs: Keyword arguments passed to the handler constructor.
 
         Returns:
-            Callable[[LambdaEvent, LambdaContext], Optional[JSON]]: Lambda handler function
+            A callable Lambda handler function suitable for AWS Lambda.
+
+        Example:
+            ```python
+            # In your Lambda module
+            handler = MyHandler.get_handler()
+            ```
         """
 
         logger = cls.get_logger(service=cls.service_name(), add_to_root=False)
@@ -157,13 +190,31 @@ class LambdaHandler(
     def get_sqs_batch_handler(
         cls, *args, queue_type: Literal["standard", "fifo"] = "standard", **kwargs
     ) -> LambdaHandlerType:
-        """Creates a handler for processing SQS batch records
+        """Create a handler for processing SQS batch records.
 
-        More info:
-        https://docs.powertools.aws.dev/lambda/python/2.26.1/utilities/batch/#processing-messages-from-sqs
+        Creates a Lambda handler that processes batches of SQS messages
+        with partial failure support, allowing successful messages to be
+        acknowledged even if some fail.
+
+        See Also:
+            https://docs.powertools.aws.dev/lambda/python/latest/utilities/batch/
+
+        Args:
+            *args: Positional arguments passed to the handler constructor.
+            queue_type (Literal["standard", "fifo"]): The SQS queue type - "standard" or "fifo".
+                Defaults to "standard".
+            **kwargs: Keyword arguments passed to the handler constructor.
 
         Returns:
-            Callable[[LambdaEvent, LambdaContext], Optional[JSON]]: [description]
+            A callable Lambda handler function for SQS batch processing.
+
+        Raises:
+            RuntimeError: If an invalid queue_type is provided.
+
+        Example:
+            ```python
+            handler = MyHandler.get_sqs_batch_handler(queue_type="fifo")
+            ```
         """
         if queue_type == "standard":
             processor = BatchProcessor(event_type=EventType.SQS)
@@ -240,12 +291,25 @@ class LambdaHandler(
 
     @classmethod
     def get_dynamodb_stream_handler(cls, *args, **kwargs) -> LambdaHandlerType:
-        """Creates a handler for processing DynamoDB stream events
-        More info:
-        https://awslabs.github.io/aws-lambda-powertools-python/1.25.1/utilities/batch/#processing-messages-from-dynamodb
+        """Create a handler for processing DynamoDB Stream events.
+
+        Creates a Lambda handler that processes batches of DynamoDB Stream
+        records with partial failure support.
+
+        See Also:
+            https://docs.powertools.aws.dev/lambda/python/latest/utilities/batch/
+
+        Args:
+            *args: Positional arguments passed to the handler constructor.
+            **kwargs: Keyword arguments passed to the handler constructor.
 
         Returns:
-            Callable[[LambdaEvent, LambdaContext], Optional[JSON]]: [description]
+            A callable Lambda handler function for DynamoDB Streams.
+
+        Example:
+            ```python
+            handler = MyHandler.get_dynamodb_stream_handler()
+            ```
         """
         processor = BatchProcessor(event_type=EventType.DynamoDBStreams)
         logger = cls.get_logger(cls.service_name())
