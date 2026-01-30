@@ -30,6 +30,7 @@ dev = [
     "aibs-informatics-test-resources[all]~=0.1.1",
     "boto3-stubs[athena,batch,ecs,essential,sns,stepfunctions]",
     "moto[lambda,stepfunctions,sts] ~= 4.0",
+    { include-group = 'docs' },
 ]
 
 docker = [
@@ -40,6 +41,13 @@ release = [
     "build",
     "bump-my-version",
     "wheel",
+]
+
+docs = [
+    "griffe-pydantic~=1.1",
+    "mkdocs>=1.6,<2.0",
+    "mkdocs-material>=9.5,<10.0",
+    "mkdocstrings[python]>=0.25,<0.26",
 ]
 
 [project.scripts]

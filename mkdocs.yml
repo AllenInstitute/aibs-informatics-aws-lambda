@@ -1,0 +1,98 @@
+site_name: AIBS Informatics AWS Lambda
+site_description: "Utility library for building validated and typed AWS Lambda functions at the Allen Institute for Brain Science."
+repo_url: https://github.com/AllenInstitute/aibs-informatics-aws-lambda
+repo_name: AllenInstitute/aibs-informatics-aws-lambda
+docs_dir: docs
+site_dir: build/documentation/site
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - content.code.annotate
+plugins:
+  - search
+  - autorefs:
+      link_titles: auto
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            extensions:
+              - griffe_pydantic:
+                  schema: true
+            docstring_style: google
+            show_source: true
+            separate_signature: true
+            heading_level: 2
+            filters:
+              - "!^_"
+            merge_init_into_class: true
+nav:
+  - Home: index.md
+  - User Guide:
+      - Getting Started: user-guide/getting-started.md
+      - CLI Usage: user-guide/cli-usage.md
+  - Developer Guide:
+      - Overview: developer/index.md
+  - API Reference:
+      - Overview: api/index.md
+      - Main: api/main.md
+      - Common:
+          - Overview: api/common/index.md
+          - Handler: api/common/handler.md
+          - Base: api/common/base.md
+          - Logging: api/common/logging.md
+          - Metrics: api/common/metrics.md
+          - Models: api/common/models.md
+          - API:
+              - Handler: api/common/api/handler.md
+              - Resolver: api/common/api/resolver.md
+      - Handlers:
+          - Overview: api/handlers/index.md
+          - Batch:
+              - Overview: api/handlers/batch/index.md
+              - Create: api/handlers/batch/create.md
+              - Model: api/handlers/batch/model.md
+          - Data Sync:
+              - Overview: api/handlers/data-sync/index.md
+              - Operations: api/handlers/data-sync/operations.md
+              - File System: api/handlers/data-sync/file-system.md
+              - Model: api/handlers/data-sync/model.md
+          - Demand:
+              - Overview: api/handlers/demand/index.md
+              - Scaffolding: api/handlers/demand/scaffolding.md
+              - Context Manager: api/handlers/demand/context-manager.md
+              - Model: api/handlers/demand/model.md
+          - ECR:
+              - Overview: api/handlers/ecr/index.md
+              - Replicate Image: api/handlers/ecr/replicate-image.md
+          - Notifications:
+              - Overview: api/handlers/notifications/index.md
+              - Router: api/handlers/notifications/router.md
+              - Model: api/handlers/notifications/model.md
+              - Notifiers:
+                  - Base: api/handlers/notifications/notifiers/base.md
+                  - SES: api/handlers/notifications/notifiers/ses.md
+                  - SNS: api/handlers/notifications/notifiers/sns.md
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+extra:
+  version:
+    provider: mkdocs
