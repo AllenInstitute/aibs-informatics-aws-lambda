@@ -32,5 +32,5 @@ Handlers for data synchronization and file system operations.
 ```python
 from aibs_informatics_aws_lambda.handlers.data_sync.operations import GetJSONFromFileHandler
 
-handler = GetJSONFromFileHandler().handler
+handler = GetJSONFromFileHandler().get_handler()
 ```

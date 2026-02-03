@@ -13,5 +13,5 @@ Handlers for ECR image operations.
 ```python
 from aibs_informatics_aws_lambda.handlers.ecr.replicate_image import ImageReplicatorHandler
 
-handler = ImageReplicatorHandler().handler
+handler = ImageReplicatorHandler().get_handler()
 ```

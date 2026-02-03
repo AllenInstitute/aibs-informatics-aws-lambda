@@ -14,5 +14,5 @@ Handlers for AWS Batch job definition and execution.
 ```python
 from aibs_informatics_aws_lambda.handlers.batch.create import CreateDefinitionAndPrepareArgsHandler
 
-handler = CreateDefinitionAndPrepareArgsHandler().handler
+handler = CreateDefinitionAndPrepareArgsHandler().get_handler()
 ```

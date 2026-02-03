@@ -23,5 +23,5 @@ class MyHandler(LambdaHandler):
         return {"status": "success"}
 
 # Export handler for AWS Lambda
-handler = MyHandler().handler
+handler = MyHandler().get_handler()
 ```

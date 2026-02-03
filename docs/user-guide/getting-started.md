@@ -23,15 +23,24 @@ uv add aibs-informatics-aws-lambda
 The `LambdaHandler` class provides a base class for creating strongly typed lambda functions with features like serialization/deserialization, logging, and metrics.
 
 ```python
+from dataclasses import dataclass
+from aibs_informatics_core.models.base import SchemaModel
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 
-class MyHandler(LambdaHandler):
-    def handle(self, event, context):
-        # Process the event
-        return {"status": "success"}
+@dataclass
+class MyRequest(SchemaModel):
+    name: str
+
+@dataclass
+class MyResponse(SchemaModel):
+    message: str
+
+class MyHandler(LambdaHandler[MyRequest, MyResponse]):
+    def handle(self, request: MyRequest) -> MyResponse:
+        return MyResponse(message=f"Hello, {request.name}!")
 
 # Create handler function for AWS Lambda
-handler = MyHandler().handler
+handler = MyHandler.get_handler()
 ```
 
 ### API Gateway Handlers
@@ -39,12 +48,32 @@ handler = MyHandler().handler
 For API Gateway integrations, use `ApiLambdaHandler`:
 
 ```python
+from dataclasses import dataclass
+from aibs_informatics_core.models.base import SchemaModel
 from aibs_informatics_aws_lambda.common.api.handler import ApiLambdaHandler
 
-class MyApiHandler(ApiLambdaHandler):
-    def handle(self, event, context):
-        # Process API Gateway event
-        return {"statusCode": 200, "body": "Hello World"}
+@dataclass
+class UserRequest(SchemaModel):
+    user_id: str
+
+@dataclass
+class UserResponse(SchemaModel):
+    name: str
+    email: str
+
+@dataclass
+class GetUserHandler(ApiLambdaHandler[UserRequest, UserResponse]):
+    @classmethod
+    def route_rule(cls) -> str:
+        return "/users/{user_id}"
+
+    @classmethod
+    def route_method(cls) -> str:
+        return "GET"
+
+    def handle(self, request: UserRequest) -> UserResponse:
+        # Fetch user and return response
+        return UserResponse(name="John Doe", email="john@example.com")
 ```
 
 ### Using Built-in Handlers
@@ -55,7 +84,7 @@ The library provides several ready-to-use handlers for common tasks:
 from aibs_informatics_aws_lambda.handlers.data_sync.operations import GetJSONFromFileHandler
 
 # Use directly as a Lambda handler
-handler = GetJSONFromFileHandler().handler
+handler = GetJSONFromFileHandler().get_handler()
 ```
 
 ## Next Steps

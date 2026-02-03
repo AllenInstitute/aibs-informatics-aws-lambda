@@ -22,5 +22,5 @@ Handlers for notification routing and delivery.
 ```python
 from aibs_informatics_aws_lambda.handlers.notifications.router import NotificationRouter
 
-handler = NotificationRouter().handler
+handler = NotificationRouter().get_handler()
 ```
