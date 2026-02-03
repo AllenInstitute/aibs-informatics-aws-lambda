@@ -43,10 +43,6 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
     Provides a convenient way to build API Gateway resolvers with built-in
     middleware for validation, logging, and error handling.
 
-    Attributes:
-        app: The underlying APIGatewayRestResolver instance.
-        metric_name_prefix: Prefix for metrics names.
-
     Example:
         ```python
         builder = ApiResolverBuilder()

@@ -242,8 +242,6 @@ class PrepareBatchDataSyncHandler(
     Analyzes the source path and partitions files into optimally-sized
     batches for parallel processing using the bin-packing algorithm.
 
-    Attributes:
-        DEFAULT_SOFT_MAX_BYTES: Default maximum bytes per batch (250 GiB).
     """
 
     DEFAULT_SOFT_MAX_BYTES: int = 250 * BYTES_PER_GIBIBYTE  # 250 GiB

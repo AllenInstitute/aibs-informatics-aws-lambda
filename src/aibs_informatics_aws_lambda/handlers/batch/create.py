@@ -34,6 +34,11 @@ class DockerImageUri(ValidatedStr):
     Validates and parses Docker image URIs from various registries
     including Docker Hub, ECR, and GitHub Container Registry.
 
+    Note:
+        This class is intended to be moved to ``aibs-informatics-core``
+        once it is considered stable; that refactor is tracked in the
+        team's external issue tracker.
+
     Attributes:
         regex_pattern: Pattern for validating Docker image URIs.
     """

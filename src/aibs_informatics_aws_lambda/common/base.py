@@ -9,8 +9,6 @@ class HandlerMixins:
     Provides access to the Lambda context and handler/service name utilities
     that are shared across all Lambda handlers.
 
-    Attributes:
-        context: The AWS Lambda context object for the current invocation.
     """
 
     @property

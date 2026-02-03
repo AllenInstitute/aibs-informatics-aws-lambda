@@ -47,16 +47,6 @@ class DefaultLambdaContext(LambdaContext):
     such as in Docker containers or for local testing. All fields can be
     configured via environment variables.
 
-    Attributes:
-        _function_name: The Lambda function name.
-        _function_version: The function version.
-        _invoked_function_arn: The function ARN.
-        _memory_limit_in_mb: Memory limit in megabytes.
-        _aws_request_id: The request ID.
-        _log_group_name: CloudWatch log group name.
-        _log_stream_name: CloudWatch log stream name.
-        _identity: Cognito identity information.
-        _client_context: Mobile SDK client context.
     """
 
     _function_name: str = field(

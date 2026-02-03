@@ -127,8 +127,6 @@ class MetricsMixins(HandlerMixins):
     Integrates AWS Lambda Powertools Metrics for automatic
     metric collection and publishing to CloudWatch.
 
-    Attributes:
-        metrics: The EnhancedMetrics instance for this handler.
     """
 
     @property

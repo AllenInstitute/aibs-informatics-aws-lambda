@@ -61,9 +61,6 @@ class ApiLambdaHandler(
         API_REQUEST: The request model type.
         API_RESPONSE: The response model type.
 
-    Attributes:
-        _current_event: The current API Gateway proxy event being processed.
-
     Example:
         ```python
         @dataclass
