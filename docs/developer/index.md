@@ -6,7 +6,7 @@ This guide provides information for developers who want to contribute to the AIB
 
 ### Prerequisites
 
-- Python 3.9 or higher
+- Python 3.11 or higher
 - Git
 - Make (optional, but recommended)
 - Docker (for testing Lambda containers)
@@ -20,16 +20,16 @@ cd aibs-informatics-aws-lambda
 
 ### Install Dependencies
 
-Using uv (recommended):
+Using make:
+
+```bash
+make install
+```
+
+Using uv (manual):
 
 ```bash
 uv sync --group dev
-```
-
-Using pip:
-
-```bash
-pip install -e ".[dev]"
 ```
 
 ## Project Structure
@@ -40,20 +40,7 @@ aibs-informatics-aws-lambda/
 │   └── aibs_informatics_aws_lambda/
 │       ├── main.py                 # CLI entry point
 │       ├── common/                 # Base classes and utilities
-│       │   ├── handler.py          # LambdaHandler base class
-│       │   ├── base.py             # Base utilities
-│       │   ├── logging.py          # Logging utilities
-│       │   ├── metrics.py          # Metrics utilities
-│       │   ├── models.py           # Common models
-│       │   └── api/                # API Gateway utilities
-│       │       ├── handler.py      # ApiLambdaHandler
-│       │       └── resolver.py     # ApiResolverBuilder
 │       └── handlers/               # Lambda handler implementations
-│           ├── batch/              # AWS Batch handlers
-│           ├── data_sync/          # Data sync handlers
-│           ├── demand/             # Demand execution handlers
-│           ├── ecr/                # ECR handlers
-│           └── notifications/      # Notification handlers
 ├── test/                           # Test files
 ├── docker/                         # Docker configuration
 ├── docs/                           # Documentation
@@ -115,7 +102,7 @@ class TypedHandler(LambdaHandler[MyRequest, MyResponse]):
 make test
 
 # Run tests with coverage
-make test-coverage
+make test coverage-server
 
 # Run specific test file
 pytest test/aibs_informatics_aws_lambda/handlers/test_data_sync.py
@@ -124,26 +111,20 @@ pytest test/aibs_informatics_aws_lambda/handlers/test_data_sync.py
 ## Building Documentation
 
 ```bash
-# Install documentation dependencies
-uv sync --group docs
-
 # Serve documentation locally
-mkdocs serve
+make docs-serve
 
 # Build documentation
-mkdocs build
+make docs-build
 ```
 
 ## Docker Development
 
-The package includes Docker support for Lambda container deployment:
+The package includes Docker support for Lambda container build:
 
 ```bash
 # Build the Docker image
-docker build -f docker/Dockerfile -t aibs-aws-lambda .
-
-# Run locally
-docker run -p 9000:8080 aibs-aws-lambda
+make docker-build
 ```
 
 ## Contributing

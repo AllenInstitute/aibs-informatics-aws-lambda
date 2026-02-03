@@ -62,12 +62,24 @@ pip install aibs-informatics-aws-lambda
 ### Basic Usage
 
 ```python
+from dataclasses import dataclass
+from aibs_informatics_core.models.base import SchemaModel
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 
-class MyHandler(LambdaHandler):
-    def handle(self, event, context):
-        # Process the event
-        return {"status": "success"}
+@dataclass
+class MyRequest(SchemaModel):
+    name: str
+
+@dataclass
+class MyResponse(SchemaModel):
+    message: str
+
+class MyHandler(LambdaHandler[MyRequest, MyResponse]):
+    def handle(self, request: MyRequest) -> MyResponse:
+        return MyResponse(message=f"Hello, {request.name}!")
+
+# Create handler function for AWS Lambda
+handler = MyHandler.get_handler()
 ```
 
 ### CLI Invocation
