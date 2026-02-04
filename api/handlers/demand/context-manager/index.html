@@ -1,0 +1,5201 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Utility library for building validated and typed AWS Lambda functions at the Allen Institute for Brain Science.">
+      
+      
+      
+      
+        <link rel="prev" href="../scaffolding/">
+      
+      
+        <link rel="next" href="../model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Context Manager - AIBS Informatics AWS Lambda</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#demand-context-manager" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="AIBS Informatics AWS Lambda" class="md-header__button md-logo" aria-label="AIBS Informatics AWS Lambda" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AIBS Informatics AWS Lambda
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Context Manager
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/AllenInstitute/aibs-informatics-aws-lambda" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AllenInstitute/aibs-informatics-aws-lambda
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../user-guide/getting-started/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../developer/" class="md-tabs__link">
+          
+  
+  
+  Developer Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../../" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="AIBS Informatics AWS Lambda" class="md-nav__button md-logo" aria-label="AIBS Informatics AWS Lambda" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AIBS Informatics AWS Lambda
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AllenInstitute/aibs-informatics-aws-lambda" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AllenInstitute/aibs-informatics-aws-lambda
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../user-guide/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../user-guide/cli-usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../developer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../main/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Main
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Common
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/handler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Handler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_3_7" id="__nav_4_3_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/api/handler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Handler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../common/api/resolver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resolver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Handlers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Handlers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4_2" id="__nav_4_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Batch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../batch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../batch/create/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Create
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../batch/model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4_3" id="__nav_4_4_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Sync
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Sync
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-sync/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-sync/operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-sync/file-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-sync/model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4_4_4" id="__nav_4_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demand
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_4_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Demand
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scaffolding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scaffolding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Context Manager
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Context Manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        context_manager
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BatchEFSConfiguration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BatchEFSConfiguration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.mount_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mount_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DemandExecutionContextManager
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DemandExecutionContextManager">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.batch_job_builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        batch_job_builder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.batch_job_queue_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        batch_job_queue_name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_shared_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        container_shared_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_tmp_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        container_tmp_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_working_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        container_working_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_mount_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        efs_mount_points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_shared_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        efs_shared_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_tmp_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        efs_tmp_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_working_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        efs_working_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.post_execution_data_sync_requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        post_execution_data_sync_requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.post_execution_remove_data_paths_requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        post_execution_remove_data_paths_requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.pre_execution_data_sync_requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pre_execution_data_sync_requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.from_demand_execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_demand_execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.generate_batch_job_builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_batch_job_builder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.get_batch_efs_configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_batch_efs_configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.get_batch_job_queue_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_batch_job_queue_name
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.update_demand_execution_parameter_inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_demand_execution_parameter_inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.update_demand_execution_parameter_outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_demand_execution_parameter_outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4_5" id="__nav_4_4_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ECR
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ECR
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ecr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ecr/replicate-image/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Replicate Image
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4_6" id="__nav_4_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/router/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Router
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4_6_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4_6_4" id="__nav_4_4_6_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifiers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_4_4_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifiers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/notifiers/base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/notifiers/ses/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SES
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/notifiers/sns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SNS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="demand-context-manager">Demand Context Manager<a class="headerlink" href="#demand-context-manager" title="Permanent link">&para;</a></h1>
+<p>Context management utilities for demand execution.</p>
+<hr />
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="aibs_informatics_aws_lambda.handlers.demand.context_manager"></a>
+    <div class="doc doc-contents first">
+
+        <p>Demand execution context management.</p>
+<p>Provides context managers and utilities for setting up and managing
+demand execution environments including EFS volumes, batch jobs,
+and data synchronization.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">BatchEFSConfiguration</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">BatchEFSConfiguration</span><span class="p">(</span><span class="n">mount_point_config</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Configuration for mounting an EFS volume in AWS Batch.</p>
+<p>Encapsulates the mount point configuration and generates the
+necessary AWS Batch volume and mount point type definitions.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.mount_point_config">mount_point_config</span></code></td>
+            <td>
+                  <code><span title="aibs_informatics_aws_utils.efs.MountPointConfiguration">MountPointConfiguration</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The underlying mount point configuration.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.read_only">read_only</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the mount should be read-only.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.mount_point">mount_point</span></code></td>
+            <td>
+                  <code><span title="mypy_boto3_batch.type_defs.MountPointTypeDef">MountPointTypeDef</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Generated AWS Batch mount point type definition.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.volume">volume</span></code></td>
+            <td>
+                  <code><span title="mypy_boto3_batch.type_defs.VolumeTypeDef">VolumeTypeDef</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Generated AWS Batch volume type definition.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code><span class="n">config</span> <span class="o">=</span> <span class="n">BatchEFSConfiguration</span><span class="o">.</span><span class="n">build</span><span class="p">(</span>
+    <span class="n">access_point</span><span class="o">=</span><span class="s2">&quot;fsap-12345&quot;</span><span class="p">,</span>
+    <span class="n">mount_path</span><span class="o">=</span><span class="s2">&quot;/opt/efs/scratch&quot;</span><span class="p">,</span>
+    <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</code></pre></div>
+</details>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.mount_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">mount_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.mount_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">mount_path</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get the mount path for this configuration.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The container path where this volume is mounted.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.build" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">build</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration.build" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">build</span><span class="p">(</span><span class="n">access_point</span><span class="p">,</span> <span class="n">mount_path</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Build a BatchEFSConfiguration from an access point.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>access_point</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The EFS access point ID.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mount_path</code>
+            </td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="pathlib.Path">Path</span>, <span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path where the volume will be mounted.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>read_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the mount should be read-only.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configured BatchEFSConfiguration instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/aibs_informatics_aws_lambda/handlers/demand/context_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">access_point</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mount_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">read_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a BatchEFSConfiguration from an access point.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        access_point (str): The EFS access point ID.</span>
+<span class="sd">        mount_path (Union[Path, str]): Path where the volume will be mounted.</span>
+<span class="sd">        read_only (bool): Whether the mount should be read-only.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Configured BatchEFSConfiguration instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mount_point_config</span> <span class="o">=</span> <span class="n">MountPointConfiguration</span><span class="o">.</span><span class="n">build</span><span class="p">(</span>
+        <span class="n">mount_point</span><span class="o">=</span><span class="n">mount_path</span><span class="p">,</span>
+        <span class="n">access_point</span><span class="o">=</span><span class="n">access_point</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">BatchEFSConfiguration</span><span class="p">(</span><span class="n">mount_point_config</span><span class="o">=</span><span class="n">mount_point_config</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="n">read_only</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">DemandExecutionContextManager</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">DemandExecutionContextManager</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="p">,</span>
+    <span class="n">scratch_vol_configuration</span><span class="p">,</span>
+    <span class="n">shared_vol_configuration</span><span class="p">,</span>
+    <span class="n">tmp_vol_configuration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">configuration</span><span class="o">=</span><span class="n">ContextManagerConfiguration</span><span class="p">(),</span>
+    <span class="n">env_base</span><span class="o">=</span><span class="n">EnvBase</span><span class="o">.</span><span class="n">from_env</span><span class="p">(),</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Manages the context and configuration for demand executions.</p>
+<p>Coordinates EFS volume configurations, data synchronization requests,
+and AWS Batch job building for demand executions.</p>
+<p>This class handles:
+- Path resolution between container and EFS paths
+- Pre-execution data sync setup (inputs)
+- Post-execution data sync setup (outputs)
+- Batch job builder configuration
+- Working directory and cleanup management</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.demand_execution">demand_execution</span></code></td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The demand execution to manage.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.scratch_vol_configuration">scratch_vol_configuration</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="BatchEFSConfiguration
+
+
+  
+      dataclass
+   (aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration)" href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration">BatchEFSConfiguration</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EFS configuration for scratch storage.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.shared_vol_configuration">shared_vol_configuration</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="BatchEFSConfiguration
+
+
+  
+      dataclass
+   (aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration)" href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration">BatchEFSConfiguration</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EFS configuration for shared/input storage.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.tmp_vol_configuration">tmp_vol_configuration</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="BatchEFSConfiguration
+
+
+  
+      dataclass
+   (aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration)" href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration">BatchEFSConfiguration</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional EFS configuration for temp storage.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.configuration">configuration</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="ContextManagerConfiguration
+
+
+  
+      dataclass
+   (aibs_informatics_aws_lambda.handlers.demand.model.ContextManagerConfiguration)" href="../model/#aibs_informatics_aws_lambda.handlers.demand.model.ContextManagerConfiguration">ContextManagerConfiguration</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Context manager configuration options.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.env_base">env_base</span></code></td>
+            <td>
+                  <code><span title="aibs_informatics_core.env.EnvBase">EnvBase</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Environment base for resource naming.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code><span class="n">context_manager</span> <span class="o">=</span> <span class="n">DemandExecutionContextManager</span><span class="o">.</span><span class="n">from_demand_execution</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="o">=</span><span class="n">execution</span><span class="p">,</span>
+    <span class="n">env_base</span><span class="o">=</span><span class="n">env_base</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">batch_builder</span> <span class="o">=</span> <span class="n">context_manager</span><span class="o">.</span><span class="n">batch_job_builder</span>
+</code></pre></div>
+</details>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.batch_job_builder" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">batch_job_builder</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.batch_job_builder" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">batch_job_builder</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get or create the batch job builder for this execution.</p>
+<p>Lazily creates the BatchJobBuilder on first access with
+all necessary configurations.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="aibs_informatics_aws_utils.batch.BatchJobBuilder">BatchJobBuilder</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configured BatchJobBuilder instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.batch_job_queue_name" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">batch_job_queue_name</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.batch_job_queue_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">batch_job_queue_name</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get the batch job queue name for this execution.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The AWS Batch job queue name.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_shared_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">container_shared_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_shared_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">container_shared_path</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the container path for the shared volume</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>/opt/efs/shared</p>
+</details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>container path for shared volume</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_tmp_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">container_tmp_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_tmp_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">container_tmp_path</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the container path for the tmp volume</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>/opt/efs/scratch/tmp</p>
+</details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>container path for tmp volume</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_working_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">container_working_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.container_working_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">container_working_path</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the container path for the working data path for the demand execution</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>/opt/efs/scratch/{EXECUTION_ID}</p>
+</details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>container path for working data path directory</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_mount_points" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">efs_mount_points</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_mount_points" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">efs_mount_points</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a list of mount points for the EFS volumes used by the aws batch job</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="aibs_informatics_aws_utils.efs.MountPointConfiguration">MountPointConfiguration</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>list of mount point configurations</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_shared_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">efs_shared_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_shared_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">efs_shared_path</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the global EFS path for shared (inputs) data path</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>efs://fs-12345678:/shared</p>
+</details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="aibs_informatics_core.models.aws.efs.EFSPath">EFSPath</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EFS URI for shared data path directory</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_tmp_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">efs_tmp_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_tmp_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">efs_tmp_path</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the global EFS path for tmp data path (scratch)</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>efs://fs-12345678:/scratch/tmp</p>
+</details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="aibs_informatics_core.models.aws.efs.EFSPath">EFSPath</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EFS URI for tmp data path directory</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_working_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">efs_working_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.efs_working_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">efs_working_path</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the global EFS path for working data path for the demand execution</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>efs://fs-12345678:/scratch/{EXECUTION_ID}</p>
+</details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="aibs_informatics_core.models.aws.efs.EFSPath">EFSPath</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EFS URI for working data path directory</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.post_execution_data_sync_requests" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">post_execution_data_sync_requests</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.post_execution_data_sync_requests" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">post_execution_data_sync_requests</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Generate data sync requests for post-execution output upload.</p>
+<p>Creates requests to sync output data from EFS to S3 after
+the batch job completes.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="aibs_informatics_core.models.data_sync.PrepareBatchDataSyncRequest">PrepareBatchDataSyncRequest</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of data sync requests for output data.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.post_execution_remove_data_paths_requests" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">post_execution_remove_data_paths_requests</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.post_execution_remove_data_paths_requests" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">post_execution_remove_data_paths_requests</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Generates remove data paths requests for post-execution data sync</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<a class="autorefs autorefs-internal" title="RemoveDataPathsRequest
+
+
+  
+      dataclass
+   (aibs_informatics_aws_lambda.handlers.data_sync.model.RemoveDataPathsRequest)" href="../../data-sync/model/#aibs_informatics_aws_lambda.handlers.data_sync.model.RemoveDataPathsRequest">RemoveDataPathsRequest</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>list of remove data paths requests</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.pre_execution_data_sync_requests" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pre_execution_data_sync_requests</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.pre_execution_data_sync_requests" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">pre_execution_data_sync_requests</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Generate data sync requests for pre-execution input staging.</p>
+<p>Creates requests to sync input data from S3 to EFS before
+the batch job runs.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="aibs_informatics_core.models.data_sync.PrepareBatchDataSyncRequest">PrepareBatchDataSyncRequest</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of data sync requests for input data.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.from_demand_execution" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_demand_execution</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.DemandExecutionContextManager.from_demand_execution" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_demand_execution</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="p">,</span> <span class="n">env_base</span><span class="p">,</span> <span class="n">configuration</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Create a context manager from a demand execution.</p>
+<p>Factory method that sets up default EFS configurations and
+creates the context manager.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>demand_execution</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The demand execution to manage.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>env_base</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.env.EnvBase">EnvBase</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Environment base for resource resolution.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>configuration</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ContextManagerConfiguration
+
+
+  
+      dataclass
+   (aibs_informatics_aws_lambda.handlers.demand.model.ContextManagerConfiguration)" href="../model/#aibs_informatics_aws_lambda.handlers.demand.model.ContextManagerConfiguration">ContextManagerConfiguration</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional context
+manager configuration.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configured DemandExecutionContextManager instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/aibs_informatics_aws_lambda/handlers/demand/context_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_demand_execution</span><span class="p">(</span>
+    <span class="bp">cls</span><span class="p">,</span>
+    <span class="n">demand_execution</span><span class="p">:</span> <span class="n">DemandExecution</span><span class="p">,</span>
+    <span class="n">env_base</span><span class="p">:</span> <span class="n">EnvBase</span><span class="p">,</span>
+    <span class="n">configuration</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ContextManagerConfiguration</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a context manager from a demand execution.</span>
+
+<span class="sd">    Factory method that sets up default EFS configurations and</span>
+<span class="sd">    creates the context manager.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        demand_execution (DemandExecution): The demand execution to manage.</span>
+<span class="sd">        env_base (EnvBase): Environment base for resource resolution.</span>
+<span class="sd">        configuration (Optional[ContextManagerConfiguration]): Optional context</span>
+<span class="sd">            manager configuration.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Configured DemandExecutionContextManager instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vol_configuration</span> <span class="o">=</span> <span class="n">get_batch_efs_configuration</span><span class="p">(</span>
+        <span class="n">env_base</span><span class="o">=</span><span class="n">env_base</span><span class="p">,</span>
+        <span class="n">container_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/opt/efs</span><span class="si">{</span><span class="n">EFS_SCRATCH_PATH</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">access_point_name</span><span class="o">=</span><span class="n">EFS_SCRATCH_ACCESS_POINT_NAME</span><span class="p">,</span>
+        <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">shared_vol_configuration</span> <span class="o">=</span> <span class="n">get_batch_efs_configuration</span><span class="p">(</span>
+        <span class="n">env_base</span><span class="o">=</span><span class="n">env_base</span><span class="p">,</span>
+        <span class="n">container_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/opt/efs</span><span class="si">{</span><span class="n">EFS_SHARED_PATH</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">access_point_name</span><span class="o">=</span><span class="n">EFS_SHARED_ACCESS_POINT_NAME</span><span class="p">,</span>
+        <span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">tmp_vol_configuration</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using following efs configuration: </span><span class="si">{</span><span class="n">vol_configuration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">DemandExecutionContextManager</span><span class="p">(</span>
+        <span class="n">demand_execution</span><span class="o">=</span><span class="n">demand_execution</span><span class="p">,</span>
+        <span class="n">scratch_vol_configuration</span><span class="o">=</span><span class="n">vol_configuration</span><span class="p">,</span>
+        <span class="n">shared_vol_configuration</span><span class="o">=</span><span class="n">shared_vol_configuration</span><span class="p">,</span>
+        <span class="n">tmp_vol_configuration</span><span class="o">=</span><span class="n">tmp_vol_configuration</span><span class="p">,</span>
+        <span class="n">configuration</span><span class="o">=</span><span class="n">configuration</span> <span class="ow">or</span> <span class="n">ContextManagerConfiguration</span><span class="p">(),</span>
+        <span class="n">env_base</span><span class="o">=</span><span class="n">env_base</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.generate_batch_job_builder" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">generate_batch_job_builder</span>
+
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.generate_batch_job_builder" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">generate_batch_job_builder</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="p">,</span>
+    <span class="n">env_base</span><span class="p">,</span>
+    <span class="n">working_path</span><span class="p">,</span>
+    <span class="n">tmp_path</span><span class="p">,</span>
+    <span class="n">scratch_mount_point</span><span class="p">,</span>
+    <span class="n">shared_mount_point</span><span class="p">,</span>
+    <span class="n">tmp_mount_point</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">env_file_write_mode</span><span class="o">=</span><span class="n">EnvFileWriteMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Generate a BatchJobBuilder for the demand execution.</p>
+<p>Creates a fully configured BatchJobBuilder with:
+- Command construction with pre-commands for setup
+- Environment variable handling (direct or via env file)
+- Volume and mount point configurations
+- Resource requirements from demand execution</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>demand_execution</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The demand execution to build a job for.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>env_base</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.env.EnvBase">EnvBase</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Environment base for resource naming.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>working_path</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.aws.efs.EFSPath">EFSPath</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EFS path for the working directory.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tmp_path</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.aws.efs.EFSPath">EFSPath</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>EFS path for temporary files.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>scratch_mount_point</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_aws_utils.efs.MountPointConfiguration">MountPointConfiguration</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Mount configuration for scratch volume.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>shared_mount_point</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_aws_utils.efs.MountPointConfiguration">MountPointConfiguration</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Mount configuration for shared volume.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tmp_mount_point</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="aibs_informatics_aws_utils.efs.MountPointConfiguration">MountPointConfiguration</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional mount configuration
+for tmp volume.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>env_file_write_mode</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="EnvFileWriteMode (aibs_informatics_aws_lambda.handlers.demand.model.EnvFileWriteMode)" href="../model/#aibs_informatics_aws_lambda.handlers.demand.model.EnvFileWriteMode">EnvFileWriteMode</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>How to handle environment variable files.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_aws_lambda.handlers.demand.model.EnvFileWriteMode.ALWAYS">ALWAYS</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="aibs_informatics_aws_utils.batch.BatchJobBuilder">BatchJobBuilder</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configured BatchJobBuilder ready for job submission.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If no command is specified in the demand execution.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/aibs_informatics_aws_lambda/handlers/demand/context_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span>
+<span class="normal">684</span>
+<span class="normal">685</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span>
+<span class="normal">720</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
+<span class="normal">747</span>
+<span class="normal">748</span>
+<span class="normal">749</span>
+<span class="normal">750</span>
+<span class="normal">751</span>
+<span class="normal">752</span>
+<span class="normal">753</span>
+<span class="normal">754</span>
+<span class="normal">755</span>
+<span class="normal">756</span>
+<span class="normal">757</span>
+<span class="normal">758</span>
+<span class="normal">759</span>
+<span class="normal">760</span>
+<span class="normal">761</span>
+<span class="normal">762</span>
+<span class="normal">763</span>
+<span class="normal">764</span>
+<span class="normal">765</span>
+<span class="normal">766</span>
+<span class="normal">767</span>
+<span class="normal">768</span>
+<span class="normal">769</span>
+<span class="normal">770</span>
+<span class="normal">771</span>
+<span class="normal">772</span>
+<span class="normal">773</span>
+<span class="normal">774</span>
+<span class="normal">775</span>
+<span class="normal">776</span>
+<span class="normal">777</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span>
+<span class="normal">781</span>
+<span class="normal">782</span>
+<span class="normal">783</span>
+<span class="normal">784</span>
+<span class="normal">785</span>
+<span class="normal">786</span>
+<span class="normal">787</span>
+<span class="normal">788</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span>
+<span class="normal">799</span>
+<span class="normal">800</span>
+<span class="normal">801</span>
+<span class="normal">802</span>
+<span class="normal">803</span>
+<span class="normal">804</span>
+<span class="normal">805</span>
+<span class="normal">806</span>
+<span class="normal">807</span>
+<span class="normal">808</span>
+<span class="normal">809</span>
+<span class="normal">810</span>
+<span class="normal">811</span>
+<span class="normal">812</span>
+<span class="normal">813</span>
+<span class="normal">814</span>
+<span class="normal">815</span>
+<span class="normal">816</span>
+<span class="normal">817</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_batch_job_builder</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+    <span class="n">demand_execution</span><span class="p">:</span> <span class="n">DemandExecution</span><span class="p">,</span>
+    <span class="n">env_base</span><span class="p">:</span> <span class="n">EnvBase</span><span class="p">,</span>
+    <span class="n">working_path</span><span class="p">:</span> <span class="n">EFSPath</span><span class="p">,</span>
+    <span class="n">tmp_path</span><span class="p">:</span> <span class="n">EFSPath</span><span class="p">,</span>
+    <span class="n">scratch_mount_point</span><span class="p">:</span> <span class="n">MountPointConfiguration</span><span class="p">,</span>
+    <span class="n">shared_mount_point</span><span class="p">:</span> <span class="n">MountPointConfiguration</span><span class="p">,</span>
+    <span class="n">tmp_mount_point</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MountPointConfiguration</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">env_file_write_mode</span><span class="p">:</span> <span class="n">EnvFileWriteMode</span> <span class="o">=</span> <span class="n">EnvFileWriteMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchJobBuilder</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a BatchJobBuilder for the demand execution.</span>
+
+<span class="sd">    Creates a fully configured BatchJobBuilder with:</span>
+<span class="sd">    - Command construction with pre-commands for setup</span>
+<span class="sd">    - Environment variable handling (direct or via env file)</span>
+<span class="sd">    - Volume and mount point configurations</span>
+<span class="sd">    - Resource requirements from demand execution</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        demand_execution (DemandExecution): The demand execution to build a job for.</span>
+<span class="sd">        env_base (EnvBase): Environment base for resource naming.</span>
+<span class="sd">        working_path (EFSPath): EFS path for the working directory.</span>
+<span class="sd">        tmp_path (EFSPath): EFS path for temporary files.</span>
+<span class="sd">        scratch_mount_point (MountPointConfiguration): Mount configuration for scratch volume.</span>
+<span class="sd">        shared_mount_point (MountPointConfiguration): Mount configuration for shared volume.</span>
+<span class="sd">        tmp_mount_point (Optional[MountPointConfiguration]): Optional mount configuration</span>
+<span class="sd">            for tmp volume.</span>
+<span class="sd">        env_file_write_mode (EnvFileWriteMode): How to handle environment variable files.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Configured BatchJobBuilder ready for job submission.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If no command is specified in the demand execution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Constructing BatchJobBuilder instance&quot;</span><span class="p">)</span>
+
+    <span class="n">demand_execution</span> <span class="o">=</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">efs_mount_points</span> <span class="o">=</span> <span class="p">[</span><span class="n">scratch_mount_point</span><span class="p">,</span> <span class="n">shared_mount_point</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">tmp_mount_point</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">efs_mount_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp_mount_point</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resolving local paths of working dir = </span><span class="si">{</span><span class="n">working_path</span><span class="si">}</span><span class="s2"> and tmp dir = </span><span class="si">{</span><span class="n">tmp_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">container_working_path</span> <span class="o">=</span> <span class="n">get_local_path</span><span class="p">(</span><span class="n">working_path</span><span class="p">,</span> <span class="n">mount_points</span><span class="o">=</span><span class="n">efs_mount_points</span><span class="p">)</span>
+    <span class="n">container_tmp_path</span> <span class="o">=</span> <span class="n">get_local_path</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="n">mount_points</span><span class="o">=</span><span class="n">efs_mount_points</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Setting container working directory = </span><span class="si">{</span><span class="n">container_working_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">EXECUTION_ID_VAR</span> <span class="o">=</span> <span class="s2">&quot;EXECUTION_ID&quot;</span>
+    <span class="n">WORKING_DIR_VAR</span> <span class="o">=</span> <span class="s2">&quot;WORKING_DIR&quot;</span>
+    <span class="n">TMPDIR_VAR</span> <span class="o">=</span> <span class="s2">&quot;TMPDIR&quot;</span>
+
+    <span class="n">environment</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">EXECUTION_ID_VAR</span><span class="p">:</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_id</span><span class="p">,</span>
+        <span class="n">WORKING_DIR_VAR</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">container_working_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">TMPDIR_VAR</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">container_tmp_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">job_param</span> <span class="ow">in</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_parameters</span><span class="o">.</span><span class="n">job_params</span><span class="p">:</span>
+        <span class="n">job_param</span><span class="o">.</span><span class="n">update_environment</span><span class="p">(</span><span class="n">environment</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Environment updated with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">environment</span><span class="p">)</span><span class="si">}</span><span class="s2"> environment variables.&quot;</span><span class="p">)</span>
+
+    <span class="n">pre_commands</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;mkdir -p $</span><span class="se">{{</span><span class="si">{</span><span class="n">WORKING_DIR_VAR</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">),</span>
+        <span class="sa">f</span><span class="s2">&quot;mkdir -p $</span><span class="se">{{</span><span class="si">{</span><span class="n">TMPDIR_VAR</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">),</span>
+        <span class="sa">f</span><span class="s2">&quot;cd $</span><span class="se">{{</span><span class="si">{</span><span class="n">WORKING_DIR_VAR</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial pre-commands: </span><span class="si">{</span><span class="n">pre_commands</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">command</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_parameters</span><span class="o">.</span><span class="n">command</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">command</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No command specified, trying to resolve from manifest&quot;</span><span class="p">)</span>
+        <span class="c1"># TODO: add logic to resolve default command from manifest</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must specify command for demand execution&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Command extracted from demand execution: </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1">##  Environment File Conditional Configuration Logic</span>
+    <span class="c1">#</span>
+    <span class="c1"># This step tries to write the environment variables to a file that will be mounted</span>
+    <span class="c1"># to the container at runtime. This only works if the local machine that runs this code</span>
+    <span class="c1"># has access to EFS file system.</span>
+    <span class="c1">#</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Attempting to create environment file for environment variables. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">working_path</span><span class="si">}</span><span class="s2"> directory to write file.&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># Here we define three path variables. They point to env file from the perspective of:</span>
+    <span class="c1">#   1. The container path</span>
+    <span class="c1">#   2. An EFS URI (pointing to location on EFS file system)</span>
+    <span class="c1">#   3. The (future) path on the local machine running this code.</span>
+    <span class="n">container_environment_file</span> <span class="o">=</span> <span class="n">container_working_path</span> <span class="o">/</span> <span class="s2">&quot;.demand.env&quot;</span>
+    <span class="n">efs_environment_file_uri</span> <span class="o">=</span> <span class="n">get_efs_path</span><span class="p">(</span>
+        <span class="n">container_environment_file</span><span class="p">,</span> <span class="n">mount_points</span><span class="o">=</span><span class="n">efs_mount_points</span>
+    <span class="p">)</span>
+    <span class="n">local_environment_file</span> <span class="o">=</span> <span class="n">get_local_path</span><span class="p">(</span><span class="n">efs_environment_file_uri</span><span class="p">,</span> <span class="n">raise_if_unmounted</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># If the local environment file is not None, then the file is writable from this local machine</span>
+    <span class="c1"># We will now write a portion of environment variables to files that can be written.</span>
+    <span class="k">if</span> <span class="n">local_environment_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">env_file_write_mode</span> <span class="o">==</span> <span class="n">EnvFileWriteMode</span><span class="o">.</span><span class="n">NEVER</span><span class="p">:</span>
+        <span class="c1"># If the environment file cannot be written to, then the environment variables are</span>
+        <span class="c1"># passed directly to the container. This is a fallback option and will fail if the</span>
+        <span class="c1"># environment variables are too long.</span>
+        <span class="k">if</span> <span class="n">local_environment_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Could not write environment variables to file </span><span class="si">{</span><span class="n">efs_environment_file_uri</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Environment file write mode set to NEVER.&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2"> Environment variables will be passed directly to the container. &quot;</span>
+            <span class="s2">&quot;THIS MAY CAUSE THE CONTAINER TO FAIL IF THE ENVIRONMENT VARIABLES &quot;</span>
+            <span class="s2">&quot;ARE LONGER THAN 8192 CHARACTERS!!!&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">env_file_write_mode</span> <span class="o">==</span> <span class="n">EnvFileWriteMode</span><span class="o">.</span><span class="n">IF_REQUIRED</span><span class="p">:</span>
+            <span class="n">env_size</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">environment</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+
+            <span class="k">if</span> <span class="n">env_size</span> <span class="o">&gt;</span> <span class="mi">8192</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Environment variables are too large to pass directly to container &quot;</span>
+                    <span class="s2">&quot;(&gt; 90</span><span class="si">% o</span><span class="s2">f 8192). Writing environment variables to file &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">efs_environment_file_uri</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">confirm_write</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">confirm_write</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">env_file_write_mode</span> <span class="o">==</span> <span class="n">EnvFileWriteMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing environment variables to file </span><span class="si">{</span><span class="n">efs_environment_file_uri</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">confirm_write</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">confirm_write</span><span class="p">:</span>
+            <span class="c1"># Steps for writing environment variables to file:</span>
+            <span class="c1">#   1. Identify all environment variables that are not referenced in the command</span>
+            <span class="c1">#       if not referenced, then add to environment file.</span>
+            <span class="c1">#   2. Write environment file</span>
+            <span class="c1">#   3. Add environment file to command</span>
+            <span class="n">ENVIRONMENT_FILE_VAR</span> <span class="o">=</span> <span class="s2">&quot;_ENVIRONMENT_FILE&quot;</span>
+
+            <span class="c1"># Step 1:, split environment variables based on reference are referenced in the command</span>
+            <span class="n">writable_environment</span> <span class="o">=</span> <span class="n">environment</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">required_environment</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">command</span> <span class="o">+</span> <span class="p">[</span><span class="n">_</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">pre_commands</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\$\{?([\w]+)\}?&quot;</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">writable_environment</span><span class="p">:</span>
+                        <span class="n">required_environment</span><span class="p">[</span><span class="n">match</span><span class="p">]</span> <span class="o">=</span> <span class="n">writable_environment</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+
+            <span class="c1"># Add the environment file variable to the required environment variables</span>
+            <span class="n">environment</span> <span class="o">=</span> <span class="n">required_environment</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">environment</span><span class="p">[</span><span class="n">ENVIRONMENT_FILE_VAR</span><span class="p">]</span> <span class="o">=</span> <span class="n">container_environment_file</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
+
+            <span class="c1"># Step 2: write to the environment file</span>
+            <span class="n">local_environment_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">write_env_file</span><span class="p">(</span><span class="n">writable_environment</span><span class="p">,</span> <span class="n">local_environment_file</span><span class="p">)</span>
+
+            <span class="c1"># Finally, add the environment file to the command</span>
+            <span class="n">pre_commands</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;. $</span><span class="se">{{</span><span class="si">{</span><span class="n">ENVIRONMENT_FILE_VAR</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">))</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="n">command_string</span> <span class="o">=</span> <span class="s2">&quot; &amp;&amp; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">pre_commands</span> <span class="o">+</span> <span class="p">[</span><span class="n">command</span><span class="p">]])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final command string created: &#39;</span><span class="si">{</span><span class="n">command_string</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="n">vol_configurations</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">BatchEFSConfiguration</span><span class="p">(</span><span class="n">scratch_mount_point</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="n">BatchEFSConfiguration</span><span class="p">(</span><span class="n">shared_mount_point</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">tmp_mount_point</span><span class="p">:</span>
+        <span class="n">vol_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BatchEFSConfiguration</span><span class="p">(</span><span class="n">tmp_mount_point</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Constructing BatchJobBuilder instance...&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_platform</span><span class="o">.</span><span class="n">aws_batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">BatchJobBuilder</span><span class="p">(</span>
+        <span class="n">image</span><span class="o">=</span><span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_image</span><span class="p">,</span>
+        <span class="n">job_definition_name</span><span class="o">=</span><span class="n">env_base</span><span class="o">.</span><span class="n">get_job_name</span><span class="p">(</span>
+            <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_type</span><span class="p">,</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">get_execution_hash</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">job_name</span><span class="o">=</span><span class="n">env_base</span><span class="o">.</span><span class="n">get_job_name</span><span class="p">(</span>
+            <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_type</span><span class="p">,</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">get_execution_hash</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">command</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/bin/bash&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="n">command_string</span><span class="p">],</span>
+        <span class="n">environment</span><span class="o">=</span><span class="n">environment</span><span class="p">,</span>
+        <span class="n">job_definition_tags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;USER&quot;</span><span class="p">:</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_metadata</span><span class="o">.</span><span class="n">user</span> <span class="ow">or</span> <span class="s2">&quot;unknown&quot;</span><span class="p">},</span>
+        <span class="n">resource_requirements</span><span class="o">=</span><span class="n">to_resource_requirements</span><span class="p">(</span>
+            <span class="n">gpu</span><span class="o">=</span><span class="n">demand_execution</span><span class="o">.</span><span class="n">resource_requirements</span><span class="o">.</span><span class="n">gpu</span><span class="p">,</span>
+            <span class="n">memory</span><span class="o">=</span><span class="n">demand_execution</span><span class="o">.</span><span class="n">resource_requirements</span><span class="o">.</span><span class="n">memory</span><span class="p">,</span>
+            <span class="n">vcpus</span><span class="o">=</span><span class="n">demand_execution</span><span class="o">.</span><span class="n">resource_requirements</span><span class="o">.</span><span class="n">vcpus</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">mount_points</span><span class="o">=</span><span class="p">[</span><span class="n">_</span><span class="o">.</span><span class="n">mount_point</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">vol_configurations</span><span class="p">],</span>
+        <span class="n">volumes</span><span class="o">=</span><span class="p">[</span><span class="n">_</span><span class="o">.</span><span class="n">volume</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">vol_configurations</span><span class="p">],</span>
+        <span class="n">env_base</span><span class="o">=</span><span class="n">env_base</span><span class="p">,</span>
+        <span class="c1"># TODO: need to make this configurable</span>
+        <span class="n">privileged</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">job_role_arn</span><span class="o">=</span><span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_platform</span><span class="o">.</span><span class="n">aws_batch</span><span class="o">.</span><span class="n">job_role</span>
+        <span class="k">if</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_platform</span><span class="o">.</span><span class="n">aws_batch</span>
+        <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.get_batch_efs_configuration" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_batch_efs_configuration</span>
+
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.get_batch_efs_configuration" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_batch_efs_configuration</span><span class="p">(</span>
+    <span class="n">env_base</span><span class="p">,</span>
+    <span class="n">container_path</span><span class="p">,</span>
+    <span class="n">access_point_name</span><span class="p">,</span>
+    <span class="n">file_system_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get a BatchEFSConfiguration by resolving resources from AWS.</p>
+<p>Resolves EFS file system and access point by name/tags and
+creates the corresponding batch configuration.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>env_base</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.env.EnvBase">EnvBase</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Environment base for tag-based resource resolution.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>container_path</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path where the volume will be mounted.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>access_point_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the EFS access point.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>file_system_name</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional file system name to resolve.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>read_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the mount should be read-only.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="BatchEFSConfiguration
+
+
+  
+      dataclass
+   (aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration)" href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.BatchEFSConfiguration">BatchEFSConfiguration</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configured BatchEFSConfiguration instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/aibs_informatics_aws_lambda/handlers/demand/context_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_batch_efs_configuration</span><span class="p">(</span>
+    <span class="n">env_base</span><span class="p">:</span> <span class="n">EnvBase</span><span class="p">,</span>
+    <span class="n">container_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">access_point_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">file_system_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">read_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchEFSConfiguration</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a BatchEFSConfiguration by resolving resources from AWS.</span>
+
+<span class="sd">    Resolves EFS file system and access point by name/tags and</span>
+<span class="sd">    creates the corresponding batch configuration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        env_base (EnvBase): Environment base for tag-based resource resolution.</span>
+<span class="sd">        container_path (str): Path where the volume will be mounted.</span>
+<span class="sd">        access_point_name (str): Name of the EFS access point.</span>
+<span class="sd">        file_system_name (Optional[str]): Optional file system name to resolve.</span>
+<span class="sd">        read_only (bool): Whether the mount should be read-only.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Configured BatchEFSConfiguration instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: add support for file_system_name (learn how to resolve file system name)</span>
+    <span class="k">if</span> <span class="n">file_system_name</span><span class="p">:</span>
+        <span class="n">file_system_name</span> <span class="o">=</span> <span class="n">env_base</span><span class="o">.</span><span class="n">get_resource_name</span><span class="p">(</span><span class="n">file_system_name</span><span class="p">)</span>
+        <span class="n">file_system</span> <span class="o">=</span> <span class="n">get_efs_file_system</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">file_system_name</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;env_base&quot;</span><span class="p">:</span> <span class="n">env_base</span><span class="p">})</span>
+        <span class="n">file_system_id</span> <span class="o">=</span> <span class="n">file_system</span><span class="p">[</span><span class="s2">&quot;FileSystemId&quot;</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Using file system </span><span class="si">{</span><span class="n">file_system_id</span><span class="si">}</span><span class="s2"> with name </span><span class="si">{</span><span class="n">file_system_name</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Will search for access point </span><span class="si">{</span><span class="n">access_point_name</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No file system name provided. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Will search for access point </span><span class="si">{</span><span class="n">access_point_name</span><span class="si">}</span><span class="s2"> directly.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">file_system_id</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">access_point</span> <span class="o">=</span> <span class="n">get_efs_access_point</span><span class="p">(</span>
+        <span class="n">file_system_id</span><span class="o">=</span><span class="n">file_system_id</span><span class="p">,</span>
+        <span class="n">access_point_name</span><span class="o">=</span><span class="n">access_point_name</span><span class="p">,</span>
+        <span class="n">access_point_tags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;env_base&quot;</span><span class="p">:</span> <span class="n">env_base</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using access point </span><span class="si">{</span><span class="n">access_point_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">BatchEFSConfiguration</span><span class="o">.</span><span class="n">build</span><span class="p">(</span>
+        <span class="n">access_point</span><span class="o">=</span><span class="n">access_point</span><span class="p">[</span><span class="s2">&quot;AccessPointId&quot;</span><span class="p">],</span>
+        <span class="n">mount_path</span><span class="o">=</span><span class="n">container_path</span><span class="p">,</span>
+        <span class="n">read_only</span><span class="o">=</span><span class="n">read_only</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.get_batch_job_queue_name" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_batch_job_queue_name</span>
+
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.get_batch_job_queue_name" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_batch_job_queue_name</span><span class="p">(</span><span class="n">demand_execution</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get the batch job queue name from a demand execution.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>demand_execution</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The demand execution to get the queue name from.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The AWS Batch job queue name.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the demand execution lacks an AWS Batch platform.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/aibs_informatics_aws_lambda/handlers/demand/context_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_batch_job_queue_name</span><span class="p">(</span><span class="n">demand_execution</span><span class="p">:</span> <span class="n">DemandExecution</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the batch job queue name from a demand execution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        demand_execution (DemandExecution): The demand execution to get the queue name from.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The AWS Batch job queue name.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the demand execution lacks an AWS Batch platform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">aws_batch_exec_platform</span> <span class="o">=</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_platform</span><span class="o">.</span><span class="n">aws_batch</span>
+    <span class="k">if</span> <span class="n">aws_batch_exec_platform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Demand execution does not have an AWS Batch execution platform&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">aws_batch_exec_platform</span><span class="o">.</span><span class="n">job_queue_name</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.update_demand_execution_parameter_inputs" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">update_demand_execution_parameter_inputs</span>
+
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.update_demand_execution_parameter_inputs" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">update_demand_execution_parameter_inputs</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="p">,</span>
+    <span class="n">container_shared_path</span><span class="p">,</span>
+    <span class="n">container_working_path</span><span class="p">,</span>
+    <span class="n">isolate_inputs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Modifies demand execution input destinations with the location of the volume configuration</p>
+<p>This updates the input destinations to a deterministic location under the volume configuration
+specified. This ensures that inputs shared between jobs can used the same cached results.</p>
+
+
+<details class="the-structure-of-the-path-for-any-input-param-is-comprised-of" open>
+  <summary>The structure of the path for any input param is comprised of</summary>
+  <ul>
+<li>volume's mount_path (where on container this volume is mounted)</li>
+<li>a sha256 hash value of the parmeter's remote value</li>
+</ul>
+</details>        <p>PATTERN: {MOUNT_PATH}/{SHA256_HASH(PARAM_REMOTE_VALUE)}</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>Given volume:
+    - mount path (/opt/efs/shared)
+Given execution parameter inputs:
+    - X (s3://bucket/prefix/A)
+    - Y (s3://bucket/prefix/A)
+    - Z (s3://bucket/prefix/B)
+Output:
+   - X -&gt; /opt/efs/shared/abcdef...AAAA
+   - Y -&gt; /opt/efs/shared/abcdef...AAAA
+   - Z -&gt; /opt/efs/shared/abcdef...BBBB</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>demand_execution</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Demand execution object to modify (copied)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>container_shared_path</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path where the shared volume is mounted.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>container_working_path</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path where the working directory is mounted.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>isolate_inputs</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>flag to determine if inputs should be isolated</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a demand execution with modified execution parameter inputs</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/aibs_informatics_aws_lambda/handlers/demand/context_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_demand_execution_parameter_inputs</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="p">:</span> <span class="n">DemandExecution</span><span class="p">,</span>
+    <span class="n">container_shared_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">container_working_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">isolate_inputs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DemandExecution</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Modifies demand execution input destinations with the location of the volume configuration</span>
+
+<span class="sd">    This updates the input destinations to a deterministic location under the volume configuration</span>
+<span class="sd">    specified. This ensures that inputs shared between jobs can used the same cached results.</span>
+
+<span class="sd">    The structure of the path for any input param is comprised of:</span>
+<span class="sd">        - volume&#39;s mount_path (where on container this volume is mounted)</span>
+<span class="sd">        - a sha256 hash value of the parmeter&#39;s remote value</span>
+
+<span class="sd">    PATTERN: {MOUNT_PATH}/{SHA256_HASH(PARAM_REMOTE_VALUE)}</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        Given volume:</span>
+<span class="sd">            - mount path (/opt/efs/shared)</span>
+<span class="sd">        Given execution parameter inputs:</span>
+<span class="sd">            - X (s3://bucket/prefix/A)</span>
+<span class="sd">            - Y (s3://bucket/prefix/A)</span>
+<span class="sd">            - Z (s3://bucket/prefix/B)</span>
+<span class="sd">        Output:</span>
+<span class="sd">           - X -&gt; /opt/efs/shared/abcdef...AAAA</span>
+<span class="sd">           - Y -&gt; /opt/efs/shared/abcdef...AAAA</span>
+<span class="sd">           - Z -&gt; /opt/efs/shared/abcdef...BBBB</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        demand_execution (DemandExecution): Demand execution object to modify (copied)</span>
+<span class="sd">        container_shared_path (Path): Path where the shared volume is mounted.</span>
+<span class="sd">        container_working_path (Path): Path where the working directory is mounted.</span>
+<span class="sd">        isolate_inputs (bool): flag to determine if inputs should be isolated</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        a demand execution with modified execution parameter inputs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">demand_execution</span> <span class="o">=</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">execution_params</span> <span class="o">=</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_parameters</span>
+    <span class="n">updated_params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">execution_params</span><span class="o">.</span><span class="n">downloadable_job_param_inputs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">isolate_inputs</span><span class="p">:</span>
+            <span class="n">local</span> <span class="o">=</span> <span class="n">container_working_path</span> <span class="o">/</span> <span class="n">param</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Isolating input </span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> from shared volume. Local path: </span><span class="si">{</span><span class="n">local</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">local</span> <span class="o">=</span> <span class="n">container_shared_path</span> <span class="o">/</span> <span class="n">sha256_hexdigest</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">remote_value</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using shared volume for input </span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. Local path: </span><span class="si">{</span><span class="n">local</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">new_resolvable</span> <span class="o">=</span> <span class="n">Resolvable</span><span class="p">(</span><span class="n">local</span><span class="o">=</span><span class="n">local</span><span class="o">.</span><span class="n">as_posix</span><span class="p">(),</span> <span class="n">remote</span><span class="o">=</span><span class="n">param</span><span class="o">.</span><span class="n">remote_value</span><span class="p">)</span>
+        <span class="n">updated_params</span><span class="p">[</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_resolvable</span>
+
+    <span class="n">execution_params</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="o">**</span><span class="n">updated_params</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">demand_execution</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="aibs_informatics_aws_lambda.handlers.demand.context_manager.update_demand_execution_parameter_outputs" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">update_demand_execution_parameter_outputs</span>
+
+
+<a href="#aibs_informatics_aws_lambda.handlers.demand.context_manager.update_demand_execution_parameter_outputs" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">update_demand_execution_parameter_outputs</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="p">,</span> <span class="n">container_working_path</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Modifies the demand execution output's local paths relative to the container working path</p>
+<p>This updates the output destinations to their absolute location under the container working
+path.</p>
+<p>PATTERN: {CONTAINER_WORKING_PATH}/{PARAM_VALUE}</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>Given volume:
+    - mount path working dir (/opt/efs/scratch/UUID)
+Given execution parameter outputs:
+    - X (s3://bucket/prefix/A)
+    - Y (s3://bucket/prefix/B)
+    - Z (s3://bucket/prefix/C)
+Output (local value):
+   - X -&gt; /opt/efs/scratch/UUID/X
+   - Y -&gt; /opt/efs/scratch/UUID/Y
+   - Z -&gt; /opt/efs/scratch/UUID/Z</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>demand_execution</code>
+            </td>
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Demand execution object to modify (copied)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>container_working_path</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path where the working directory is mounted.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="aibs_informatics_core.models.demand_execution.DemandExecution">DemandExecution</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a demand execution with modified execution parameter inputs</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/aibs_informatics_aws_lambda/handlers/demand/context_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_demand_execution_parameter_outputs</span><span class="p">(</span>
+    <span class="n">demand_execution</span><span class="p">:</span> <span class="n">DemandExecution</span><span class="p">,</span>
+    <span class="n">container_working_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DemandExecution</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Modifies the demand execution output&#39;s local paths relative to the container working path</span>
+
+<span class="sd">    This updates the output destinations to their absolute location under the container working</span>
+<span class="sd">    path.</span>
+
+<span class="sd">    PATTERN: {CONTAINER_WORKING_PATH}/{PARAM_VALUE}</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        Given volume:</span>
+<span class="sd">            - mount path working dir (/opt/efs/scratch/UUID)</span>
+<span class="sd">        Given execution parameter outputs:</span>
+<span class="sd">            - X (s3://bucket/prefix/A)</span>
+<span class="sd">            - Y (s3://bucket/prefix/B)</span>
+<span class="sd">            - Z (s3://bucket/prefix/C)</span>
+<span class="sd">        Output (local value):</span>
+<span class="sd">           - X -&gt; /opt/efs/scratch/UUID/X</span>
+<span class="sd">           - Y -&gt; /opt/efs/scratch/UUID/Y</span>
+<span class="sd">           - Z -&gt; /opt/efs/scratch/UUID/Z</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        demand_execution (DemandExecution): Demand execution object to modify (copied)</span>
+<span class="sd">        container_working_path (Path): Path where the working directory is mounted.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        a demand execution with modified execution parameter inputs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">demand_execution</span> <span class="o">=</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">execution_params</span> <span class="o">=</span> <span class="n">demand_execution</span><span class="o">.</span><span class="n">execution_parameters</span>
+    <span class="n">updated_params</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">Uploadable</span><span class="p">(</span>
+            <span class="n">local</span><span class="o">=</span><span class="p">(</span><span class="n">container_working_path</span> <span class="o">/</span> <span class="n">param</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">(),</span>
+            <span class="n">remote</span><span class="o">=</span><span class="n">param</span><span class="o">.</span><span class="n">remote_value</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">execution_params</span><span class="o">.</span><span class="n">uploadable_job_param_outputs</span>
+    <span class="p">}</span>
+    <span class="n">execution_params</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="o">**</span><span class="n">updated_params</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">demand_execution</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "content.code.annotate"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mkdocs"}}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
