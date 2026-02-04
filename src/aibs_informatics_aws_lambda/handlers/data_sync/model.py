@@ -1,3 +1,9 @@
+"""Data synchronization models.
+
+Defines the request and response models for data sync operations
+between S3, EFS, and local file systems.
+"""
+
 import re
 from dataclasses import dataclass
 from datetime import datetime
@@ -40,22 +46,45 @@ def DataPathField(*args, **kwargs):
 
 @dataclass
 class WithDataPath(SchemaModel):
+    """Base class for models that contain a data path.
+
+    Provides convenience properties for accessing the path as different types.
+
+    Attributes:
+        path: The data path (S3, EFS, or local).
+    """
+
     path: DataPath = custom_field(mm_field=DataPathField())
 
     @property
     def efs_path(self) -> Optional[EFSPath]:
+        """Get the path as an EFS path if applicable.
+
+        Returns:
+            The EFS path or None if not an EFS path.
+        """
         if isinstance(self.path, EFSPath):
             return self.path
         return None
 
     @property
     def s3_uri(self) -> Optional[S3Path]:
+        """Get the path as an S3 URI if applicable.
+
+        Returns:
+            The S3 path or None if not an S3 path.
+        """
         if isinstance(self.path, S3Path):
             return self.path
         return None
 
     @property
     def local_path(self) -> Optional[Path]:
+        """Get the path as a local path if applicable.
+
+        Returns:
+            The local path or None if not a local path.
+        """
         if isinstance(self.path, Path):
             return self.path
         return None
@@ -63,18 +92,16 @@ class WithDataPath(SchemaModel):
 
 @dataclass
 class ListDataPathsRequest(WithDataPath):
-    """List Data paths request
+    """Request for listing files under a data path.
 
-    Args:
-        path (DataPath): path under which to list files
-        include (Optional[str|list[str]]): Optionally can specify regex patterns to filter on what
-            to include. If providing multiple options, a path is returned if it matches *any* of
-            the include patterns. Exclude patterns override include patterns.
-            Defaults to None
-        exclude (Optional[str|list[str]]): Optionally can specify regex patterns to filter on what
-            to exclude. If providing multiple options, a path is omitted if it matches *any* of
-            the exclude patterns. Exclude patterns override include patterns.
-            Defaults to None
+    Supports filtering with include/exclude regex patterns.
+
+    Attributes:
+        path: The data path under which to list files.
+        include: Optional regex pattern(s) for files to include.
+            If multiple patterns, includes files matching any pattern.
+        exclude: Optional regex pattern(s) for files to exclude.
+            Exclude patterns take precedence over include patterns.
     """
 
     include: Optional[Union[str, List[str]]] = custom_field(
@@ -103,16 +130,35 @@ class ListDataPathsRequest(WithDataPath):
 
 @dataclass
 class ListDataPathsResponse(SchemaModel):
+    """Response containing listed data paths.
+
+    Attributes:
+        paths: List of data paths found.
+    """
+
     paths: List[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
 
 
 @dataclass
 class RemoveDataPathsRequest(SchemaModel):
+    """Request for removing data paths.
+
+    Attributes:
+        paths: List of data paths to remove.
+    """
+
     paths: List[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
 
 
 @dataclass
 class RemoveDataPathsResponse(SchemaModel):
+    """Response from removing data paths.
+
+    Attributes:
+        size_bytes_removed: Total bytes removed.
+        paths_removed: List of paths that were removed.
+    """
+
     size_bytes_removed: int = custom_field()
     paths_removed: List[DataPath] = custom_field(
         default_factory=list, mm_field=ListField(DataPathField())
@@ -121,6 +167,19 @@ class RemoveDataPathsResponse(SchemaModel):
 
 @dataclass
 class OutdatedDataPathScannerRequest(WithDataPath):
+    """Request for scanning outdated data paths.
+
+    Scans for paths that haven't been accessed within a specified time.
+
+    Attributes:
+        path: The root path to scan.
+        days_since_last_accessed: Minimum days since last access to be outdated.
+        max_depth: Maximum directory depth to scan.
+        min_depth: Minimum directory depth to scan.
+        min_size_bytes_allowed: Minimum size threshold for paths to include.
+        current_time: Reference time for calculating age.
+    """
+
     days_since_last_accessed: float = custom_field(default=0, mm_field=FloatField())
     max_depth: Optional[int] = custom_field(default=None, mm_field=IntegerField())
     min_depth: Optional[int] = custom_field(default=None, mm_field=IntegerField())
@@ -132,16 +191,36 @@ class OutdatedDataPathScannerRequest(WithDataPath):
 
 @dataclass
 class OutdatedDataPathScannerResponse(SchemaModel):
+    """Response containing outdated data paths.
+
+    Attributes:
+        paths: List of paths identified as outdated.
+    """
+
     paths: List[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
 
 
 @dataclass
 class GetDataPathStatsRequest(WithDataPath):
+    """Request for getting statistics about a data path.
+
+    Attributes:
+        path: The data path to get statistics for.
+    """
+
     pass
 
 
 @dataclass
 class GetDataPathStatsResponse(WithDataPath):
+    """Response containing data path statistics.
+
+    Attributes:
+        path: The data path.
+        path_stats: Statistics for the path.
+        children: Statistics for child paths keyed by name.
+    """
+
     path_stats: PathStats = custom_field(mm_field=PathStats.as_mm_field())
     children: Dict[str, PathStats] = custom_field(
         mm_field=DictField(keys=StringField(), values=PathStats.as_mm_field())

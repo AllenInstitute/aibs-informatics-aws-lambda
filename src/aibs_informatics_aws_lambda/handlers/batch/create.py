@@ -1,3 +1,9 @@
+"""AWS Batch job definition creation handlers.
+
+Provides Lambda handlers for creating and registering AWS Batch
+job definitions.
+"""
+
 import re
 from dataclasses import dataclass
 from typing import ClassVar, Optional
@@ -22,24 +28,57 @@ REPO_NAME = r"([a-z0-9]+(?:[-_\.\/][a-z0-9]+)*)"
 IMAGE_TAG_OR_SHA = r"(?::([\w.\-_]{1,127})|@sha256:([A-Fa-f0-9]{64}))"
 
 
-# TODO: move to aibs-informatics-core once this is stable
 class DockerImageUri(ValidatedStr):
+    """Validated string representing a Docker image URI.
+
+    Validates and parses Docker image URIs from various registries
+    including Docker Hub, ECR, and GitHub Container Registry.
+
+    Note:
+        This class is intended to be moved to ``aibs-informatics-core``
+        once it is considered stable; that refactor is tracked in the
+        team's external issue tracker.
+
+    Attributes:
+        regex_pattern: Pattern for validating Docker image URIs.
+    """
+
     regex_pattern: ClassVar[re.Pattern] = re.compile(f"^{REGISTRY}/{REPO_NAME}{IMAGE_TAG_OR_SHA}?")
 
     @property
     def registry(self) -> str:
+        """Get the registry portion of the image URI.
+
+        Returns:
+            The registry hostname.
+        """
         return self.get_match_groups()[0]
 
     @property
     def repo_name(self) -> str:
+        """Get the repository name.
+
+        Returns:
+            The repository name.
+        """
         return self.get_match_groups()[1]
 
     @property
     def tag(self) -> Optional[str]:
+        """Get the image tag if specified.
+
+        Returns:
+            The tag, or None if using a SHA digest.
+        """
         return self.get_match_groups()[2]
 
     @property
     def sha256(self) -> Optional[str]:
+        """Get the SHA256 digest if specified.
+
+        Returns:
+            The SHA256 digest, or None if using a tag.
+        """
         return self.get_match_groups()[3]
 
 
@@ -47,9 +86,27 @@ class DockerImageUri(ValidatedStr):
 class CreateDefinitionAndPrepareArgsHandler(
     LambdaHandler[CreateDefinitionAndPrepareArgsRequest, CreateDefinitionAndPrepareArgsResponse]
 ):
+    """Handler for creating AWS Batch job definitions.
+
+    Registers a job definition with AWS Batch and prepares
+    the arguments needed for job submission.
+    """
+
     def handle(
         self, request: CreateDefinitionAndPrepareArgsRequest
     ) -> CreateDefinitionAndPrepareArgsResponse:
+        """Create a job definition and prepare submission arguments.
+
+        Args:
+            request (CreateDefinitionAndPrepareArgsRequest): Request containing
+                job definition configuration.
+
+        Returns:
+            Response containing the job definition ARN and submission args.
+
+        Raises:
+            ValueError: If job_queue_name is not provided.
+        """
         job_def_builder = BatchJobBuilder(
             image=request.image
             if DockerImageUri.is_valid(request.image)

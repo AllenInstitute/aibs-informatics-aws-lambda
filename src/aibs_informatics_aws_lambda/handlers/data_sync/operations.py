@@ -1,3 +1,9 @@
+"""Data synchronization operation handlers.
+
+Provides Lambda handlers for reading, writing, and synchronizing
+data between local file systems and S3.
+"""
+
 import json
 from pathlib import Path
 from typing import List, Optional, Union, cast
@@ -46,15 +52,15 @@ def get_s3_scratch_key(
     be random if content is None).
 
     Args:
-        filename (Optional[str], optional): Optional name of file.
+        filename (Optional[str]): Optional name of file.
             If None, file hash is generated.
-        content (Optional[JSON], optional): Optional content of file to put.
+        content (Optional[JSON]): Optional content of file to put.
             Only used if filename is not provided. Defaults to None.
-        unique_id (Optional[UniqueID], optional): A unique ID used in .
+        unique_id (Optional[UniqueID]): A unique ID used in key generation.
             If None, a random UUID is generated.
 
     Returns:
-        S3Key: S3 Scratch key (not gauranteed to be empty)
+        S3 Scratch key (not gauranteed to be empty)
     """
     file_hash = filename or sha256_hexdigest(content=content)
     return S3Key(f"scratch/{unique_id or UniqueID.create()}/{file_hash}")
@@ -64,7 +70,23 @@ DEFAULT_BUCKET_NAME_ENV_VAR = "DEFAULT_BUCKET_NAME"
 
 
 class GetJSONFromFileHandler(LambdaHandler[GetJSONFromFileRequest, GetJSONFromFileResponse]):
+    """Handler for retrieving JSON content from a file.
+
+    Supports loading JSON from both local files and S3 locations.
+    """
+
     def handle(self, request: GetJSONFromFileRequest) -> GetJSONFromFileResponse:
+        """Load JSON content from the specified path.
+
+        Args:
+            request (GetJSONFromFileRequest): Request containing the file path.
+
+        Returns:
+            Response containing the loaded JSON content.
+
+        Raises:
+            Exception: If the content cannot be fetched.
+        """
         try:
             path = request.path
 
@@ -82,7 +104,24 @@ class GetJSONFromFileHandler(LambdaHandler[GetJSONFromFileRequest, GetJSONFromFi
 
 
 class PutJSONToFileHandler(LambdaHandler[PutJSONToFileRequest, PutJSONToFileResponse]):
+    """Handler for writing JSON content to a file.
+
+    Supports writing to both local files and S3 locations.
+    If no path is provided, generates a scratch S3 path.
+    """
+
     def handle(self, request: PutJSONToFileRequest) -> Optional[PutJSONToFileResponse]:
+        """Write JSON content to the specified path.
+
+        Args:
+            request (PutJSONToFileRequest): Request containing the content and optional path.
+
+        Returns:
+            Response containing the path where content was written.
+
+        Raises:
+            ValueError: If no path is provided and bucket name cannot be inferred.
+        """
         path, content = request.path, request.content
 
         if path is None:
@@ -113,14 +152,44 @@ class PutJSONToFileHandler(LambdaHandler[PutJSONToFileRequest, PutJSONToFileResp
 
 
 class DataSyncHandler(LambdaHandler[DataSyncRequest, DataSyncResponse]):
+    """Handler for synchronizing data between source and destination paths.
+
+    Supports syncing between local file systems and S3.
+    """
+
     def handle(self, request: DataSyncRequest) -> DataSyncResponse:
+        """Synchronize data from source to destination.
+
+        Args:
+            request (DataSyncRequest): Request containing source and destination paths.
+
+        Returns:
+            Response containing the sync result.
+        """
         sync_operations = DataSyncOperations(request)
         result = sync_operations.sync_task(request)
         return DataSyncResponse(request=request, result=result)
 
 
 class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResponse]):
+    """Handler for processing batches of data synchronization requests.
+
+    Processes multiple sync requests sequentially, with optional
+    partial failure handling.
+    """
+
     def handle(self, request: BatchDataSyncRequest) -> BatchDataSyncResponse:
+        """Process a batch of data sync requests.
+
+        Args:
+            request (BatchDataSyncRequest): Request containing a list of sync requests.
+
+        Returns:
+            Response containing aggregated results and any failed requests.
+
+        Raises:
+            Exception: If a sync fails and allow_partial_failure is False.
+        """
         self.logger.info(f"Received {len(request.requests)} requests to transfer")
         if isinstance(request.requests, S3URI):
             self.logger.info(f"Request is stored at {request.requests}... fetching content.")
@@ -168,9 +237,27 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
 class PrepareBatchDataSyncHandler(
     LambdaHandler[PrepareBatchDataSyncRequest, PrepareBatchDataSyncResponse]
 ):
+    """Handler for preparing batch data synchronization requests.
+
+    Analyzes the source path and partitions files into optimally-sized
+    batches for parallel processing using the bin-packing algorithm.
+
+    """
+
     DEFAULT_SOFT_MAX_BYTES: int = 250 * BYTES_PER_GIBIBYTE  # 250 GiB
 
     def handle(self, request: PrepareBatchDataSyncRequest) -> PrepareBatchDataSyncResponse:
+        """Prepare batch data sync requests.
+
+        Partitions the source data into optimally-sized batches.
+
+        Args:
+            request (PrepareBatchDataSyncRequest):
+                Request containing source path and configuration.
+
+        Returns:
+            Response containing prepared batch requests.
+        """
         self.logger.info("Preparing S3 Batch Sync Requests")
         root: Union[S3FileSystem, LocalFileSystem]
         if isinstance(request.source_path, S3URI):
@@ -273,11 +360,11 @@ class PrepareBatchDataSyncHandler(
             - nodes can have sizes greater than the limit
 
         Args:
-            nodes (List[Node]): List of batch
-            batch_size_bytes_limit (int): size limit in bytes for a batch of nodes
+            nodes (List[Node]): List of nodes to batch.
+            batch_size_bytes_limit (int): Size limit in bytes for a batch of nodes.
 
         Returns:
-            List[List[Node]]: List of node batches (list of lists)
+            List of node batches (list of lists).
         """
 
         ## We will use a revised version of the bin packing problem:

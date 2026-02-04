@@ -28,14 +28,21 @@ logger = get_service_logger(__name__)
 
 @logger.inject_lambda_context(log_event=True)
 def handle(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
-    """Router to OTF handler function invocation
+    """Route and execute a Lambda handler function invocation.
+
+    This function acts as a router that deserializes the incoming event,
+    loads the appropriate handler, and invokes it with the event payload.
 
     Args:
-        event (LambdaEvent): Serialized event
-        context (LambdaContext): context object
+        event: The Lambda event containing the handler reference and payload.
+            Must be a dictionary with handler and event fields.
+        context: The AWS Lambda context object providing runtime information.
 
     Returns:
-        Optional[JSON]: response
+        The response from the invoked handler, or None if no response.
+
+    Raises:
+        ValueError: If the event is not a dictionary type.
     """
     logger.info("Parsing event")
     if not isinstance(event, dict):
@@ -50,6 +57,30 @@ def handle(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
 
 
 def handle_cli(args: Optional[Sequence[str]] = None):
+    """Execute a Lambda handler from the command line interface.
+
+    Parses command line arguments to determine the handler to invoke,
+    the event payload, and optionally where to store the response.
+    Supports loading payloads from JSON strings, local files, or S3.
+
+    Args:
+        args: Optional sequence of command line arguments. If None,
+            uses sys.argv.
+
+    Raises:
+        ValueError: If handler or payload cannot be resolved from
+            arguments or environment variables.
+        ValueError: If response location is specified but invalid.
+
+    Example:
+        ```python
+        handle_cli([
+            '--handler', 'my_module.MyHandler',
+            '--payload', '{"key": "value"}',
+            '--response-location', '/tmp/response.json'
+        ])
+        ```
+    """
     logger.info("Processing request from CLI")
 
     parser = argparse.ArgumentParser(description="CLI AWS Lambda Handler")

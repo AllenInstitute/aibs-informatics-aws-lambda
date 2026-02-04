@@ -1,3 +1,10 @@
+"""Demand execution context management.
+
+Provides context managers and utilities for setting up and managing
+demand execution environments including EFS volumes, batch jobs,
+and data synchronization.
+"""
+
 import logging
 import re
 import sys
@@ -59,6 +66,27 @@ logger.setLevel(logging.INFO)
 
 @dataclass
 class BatchEFSConfiguration:
+    """Configuration for mounting an EFS volume in AWS Batch.
+
+    Encapsulates the mount point configuration and generates the
+    necessary AWS Batch volume and mount point type definitions.
+
+    Attributes:
+        mount_point_config: The underlying mount point configuration.
+        read_only: Whether the mount should be read-only.
+        mount_point: Generated AWS Batch mount point type definition.
+        volume: Generated AWS Batch volume type definition.
+
+    Example:
+        ```python
+        config = BatchEFSConfiguration.build(
+            access_point="fsap-12345",
+            mount_path="/opt/efs/scratch",
+            read_only=False
+        )
+        ```
+    """
+
     mount_point_config: MountPointConfiguration
     read_only: bool = False
     mount_point: MountPointTypeDef = field(init=False)
@@ -91,10 +119,25 @@ class BatchEFSConfiguration:
 
     @property
     def mount_path(self) -> Path:
+        """Get the mount path for this configuration.
+
+        Returns:
+            The container path where this volume is mounted.
+        """
         return self.mount_point_config.mount_point
 
     @classmethod
     def build(cls, access_point: str, mount_path: Union[Path, str], read_only: bool = False):
+        """Build a BatchEFSConfiguration from an access point.
+
+        Args:
+            access_point (str): The EFS access point ID.
+            mount_path (Union[Path, str]): Path where the volume will be mounted.
+            read_only (bool): Whether the mount should be read-only.
+
+        Returns:
+            Configured BatchEFSConfiguration instance.
+        """
         mount_point_config = MountPointConfiguration.build(
             mount_point=mount_path,
             access_point=access_point,
@@ -104,6 +147,36 @@ class BatchEFSConfiguration:
 
 @dataclass
 class DemandExecutionContextManager:
+    """Manages the context and configuration for demand executions.
+
+    Coordinates EFS volume configurations, data synchronization requests,
+    and AWS Batch job building for demand executions.
+
+    This class handles:
+    - Path resolution between container and EFS paths
+    - Pre-execution data sync setup (inputs)
+    - Post-execution data sync setup (outputs)
+    - Batch job builder configuration
+    - Working directory and cleanup management
+
+    Attributes:
+        demand_execution: The demand execution to manage.
+        scratch_vol_configuration: EFS configuration for scratch storage.
+        shared_vol_configuration: EFS configuration for shared/input storage.
+        tmp_vol_configuration: Optional EFS configuration for temp storage.
+        configuration: Context manager configuration options.
+        env_base: Environment base for resource naming.
+
+    Example:
+        ```python
+        context_manager = DemandExecutionContextManager.from_demand_execution(
+            demand_execution=execution,
+            env_base=env_base,
+        )
+        batch_builder = context_manager.batch_job_builder
+        ```
+    """
+
     demand_execution: DemandExecution
     scratch_vol_configuration: BatchEFSConfiguration
     shared_vol_configuration: BatchEFSConfiguration
@@ -112,6 +185,11 @@ class DemandExecutionContextManager:
     env_base: EnvBase = field(default_factory=EnvBase.from_env)
 
     def __post_init__(self):
+        """Initialize the context manager.
+
+        Sets up the batch job builder and updates demand execution
+        parameter inputs and outputs with resolved paths.
+        """
         self._batch_job_builder = None
         logging.info(f"Creating DemandExecutionContextManager {self}")
         self.demand_execution = update_demand_execution_parameter_inputs(
@@ -133,7 +211,7 @@ class DemandExecutionContextManager:
 
 
         Returns:
-            Path: container path for working data path directory
+            container path for working data path directory
         """
         return self.scratch_vol_configuration.mount_point_config.as_mounted_path(
             self.demand_execution.execution_id
@@ -147,7 +225,7 @@ class DemandExecutionContextManager:
             /opt/efs/scratch/tmp
 
         Returns:
-            Path: container path for tmp volume
+            container path for tmp volume
         """
         if self.tmp_vol_configuration:
             return self.tmp_vol_configuration.mount_point_config.mount_point
@@ -161,7 +239,7 @@ class DemandExecutionContextManager:
             /opt/efs/shared
 
         Returns:
-            Path: container path for shared volume
+            container path for shared volume
         """
         return self.shared_vol_configuration.mount_point_config.mount_point
 
@@ -173,7 +251,7 @@ class DemandExecutionContextManager:
             efs://fs-12345678:/scratch/{EXECUTION_ID}
 
         Returns:
-            EFSPath: EFS URI for working data path directory
+            EFS URI for working data path directory
         """
         return get_efs_path(self.container_working_path, mount_points=self.efs_mount_points)
 
@@ -185,7 +263,7 @@ class DemandExecutionContextManager:
             efs://fs-12345678:/scratch/tmp
 
         Returns:
-            EFSPath: EFS URI for tmp data path directory
+            EFS URI for tmp data path directory
         """
         return get_efs_path(self.container_tmp_path, mount_points=self.efs_mount_points)
 
@@ -197,7 +275,7 @@ class DemandExecutionContextManager:
             efs://fs-12345678:/shared
 
         Returns:
-            EFSPath: EFS URI for shared data path directory
+            EFS URI for shared data path directory
         """
         return get_efs_path(self.container_shared_path, mount_points=self.efs_mount_points)
 
@@ -206,7 +284,7 @@ class DemandExecutionContextManager:
         """Returns a list of mount points for the EFS volumes used by the aws batch job
 
         Returns:
-            List[MountPointConfiguration]: list of mount point configurations
+            list of mount point configurations
         """
         mpcs = [
             self.scratch_vol_configuration.mount_point_config,
@@ -218,6 +296,14 @@ class DemandExecutionContextManager:
 
     @property
     def batch_job_builder(self) -> BatchJobBuilder:
+        """Get or create the batch job builder for this execution.
+
+        Lazily creates the BatchJobBuilder on first access with
+        all necessary configurations.
+
+        Returns:
+            Configured BatchJobBuilder instance.
+        """
         if not self._batch_job_builder:
             self._batch_job_builder = generate_batch_job_builder(
                 demand_execution=self.demand_execution,
@@ -235,10 +321,23 @@ class DemandExecutionContextManager:
 
     @property
     def batch_job_queue_name(self) -> str:
+        """Get the batch job queue name for this execution.
+
+        Returns:
+            The AWS Batch job queue name.
+        """
         return get_batch_job_queue_name(self.demand_execution)
 
     @property
     def pre_execution_data_sync_requests(self) -> List[PrepareBatchDataSyncRequest]:
+        """Generate data sync requests for pre-execution input staging.
+
+        Creates requests to sync input data from S3 to EFS before
+        the batch job runs.
+
+        Returns:
+            List of data sync requests for input data.
+        """
         requests = []
         temporary_request_payload_root = (
             self.configuration.input_data_sync_configuration.temporary_request_payload_path
@@ -272,6 +371,14 @@ class DemandExecutionContextManager:
 
     @property
     def post_execution_data_sync_requests(self) -> List[PrepareBatchDataSyncRequest]:
+        """Generate data sync requests for post-execution output upload.
+
+        Creates requests to sync output data from EFS to S3 after
+        the batch job completes.
+
+        Returns:
+            List of data sync requests for output data.
+        """
         requests = []
         temporary_request_payload_root = (
             self.configuration.output_data_sync_configuration.temporary_request_payload_path
@@ -304,7 +411,7 @@ class DemandExecutionContextManager:
         """Generates remove data paths requests for post-execution data sync
 
         Returns:
-            List[RemoveDataPathsRequest]: list of remove data paths requests
+            list of remove data paths requests
         """
         requests = []
         if self.configuration.cleanup_inputs:
@@ -324,6 +431,20 @@ class DemandExecutionContextManager:
         env_base: EnvBase,
         configuration: Optional[ContextManagerConfiguration] = None,
     ):
+        """Create a context manager from a demand execution.
+
+        Factory method that sets up default EFS configurations and
+        creates the context manager.
+
+        Args:
+            demand_execution (DemandExecution): The demand execution to manage.
+            env_base (EnvBase): Environment base for resource resolution.
+            configuration (Optional[ContextManagerConfiguration]): Optional context
+                manager configuration.
+
+        Returns:
+            Configured DemandExecutionContextManager instance.
+        """
         vol_configuration = get_batch_efs_configuration(
             env_base=env_base,
             container_path=f"/opt/efs{EFS_SCRATCH_PATH}",
@@ -385,11 +506,12 @@ def update_demand_execution_parameter_inputs(
 
     Args:
         demand_execution (DemandExecution): Demand execution object to modify (copied)
-        vol_configuration (BatchEFSConfiguration): volume configuration
+        container_shared_path (Path): Path where the shared volume is mounted.
+        container_working_path (Path): Path where the working directory is mounted.
         isolate_inputs (bool): flag to determine if inputs should be isolated
 
     Returns:
-        DemandExecution: a demand execution with modified execution parameter inputs
+        a demand execution with modified execution parameter inputs
     """
 
     demand_execution = demand_execution.copy()
@@ -435,10 +557,10 @@ def update_demand_execution_parameter_outputs(
 
     Args:
         demand_execution (DemandExecution): Demand execution object to modify (copied)
-        vol_configuration (BatchEFSConfiguration): volume configuration
+        container_working_path (Path): Path where the working directory is mounted.
 
     Returns:
-        DemandExecution: a demand execution with modified execution parameter inputs
+        a demand execution with modified execution parameter inputs
     """
 
     demand_execution = demand_execution.copy()
@@ -461,6 +583,21 @@ def get_batch_efs_configuration(
     file_system_name: Optional[str] = None,
     read_only: bool = False,
 ) -> BatchEFSConfiguration:
+    """Get a BatchEFSConfiguration by resolving resources from AWS.
+
+    Resolves EFS file system and access point by name/tags and
+    creates the corresponding batch configuration.
+
+    Args:
+        env_base (EnvBase): Environment base for tag-based resource resolution.
+        container_path (str): Path where the volume will be mounted.
+        access_point_name (str): Name of the EFS access point.
+        file_system_name (Optional[str]): Optional file system name to resolve.
+        read_only (bool): Whether the mount should be read-only.
+
+    Returns:
+        Configured BatchEFSConfiguration instance.
+    """
     # TODO: add support for file_system_name (learn how to resolve file system name)
     if file_system_name:
         file_system_name = env_base.get_resource_name(file_system_name)
@@ -500,6 +637,31 @@ def generate_batch_job_builder(  # noqa: C901
     tmp_mount_point: Optional[MountPointConfiguration] = None,
     env_file_write_mode: EnvFileWriteMode = EnvFileWriteMode.ALWAYS,
 ) -> BatchJobBuilder:
+    """Generate a BatchJobBuilder for the demand execution.
+
+    Creates a fully configured BatchJobBuilder with:
+    - Command construction with pre-commands for setup
+    - Environment variable handling (direct or via env file)
+    - Volume and mount point configurations
+    - Resource requirements from demand execution
+
+    Args:
+        demand_execution (DemandExecution): The demand execution to build a job for.
+        env_base (EnvBase): Environment base for resource naming.
+        working_path (EFSPath): EFS path for the working directory.
+        tmp_path (EFSPath): EFS path for temporary files.
+        scratch_mount_point (MountPointConfiguration): Mount configuration for scratch volume.
+        shared_mount_point (MountPointConfiguration): Mount configuration for shared volume.
+        tmp_mount_point (Optional[MountPointConfiguration]): Optional mount configuration
+            for tmp volume.
+        env_file_write_mode (EnvFileWriteMode): How to handle environment variable files.
+
+    Returns:
+        Configured BatchJobBuilder ready for job submission.
+
+    Raises:
+        ValueError: If no command is specified in the demand execution.
+    """
     logger.info("Constructing BatchJobBuilder instance")
 
     demand_execution = demand_execution.copy()
@@ -665,6 +827,17 @@ def generate_batch_job_builder(  # noqa: C901
 
 
 def get_batch_job_queue_name(demand_execution: DemandExecution):
+    """Get the batch job queue name from a demand execution.
+
+    Args:
+        demand_execution (DemandExecution): The demand execution to get the queue name from.
+
+    Returns:
+        The AWS Batch job queue name.
+
+    Raises:
+        ValueError: If the demand execution lacks an AWS Batch platform.
+    """
     aws_batch_exec_platform = demand_execution.execution_platform.aws_batch
     if aws_batch_exec_platform is None:
         raise ValueError("Demand execution does not have an AWS Batch execution platform")

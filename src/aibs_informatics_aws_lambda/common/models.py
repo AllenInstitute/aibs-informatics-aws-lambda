@@ -1,3 +1,8 @@
+"""Data models for Lambda handler configuration and execution.
+
+Provides models for Lambda context, handler requests, and serialization utilities.
+"""
+
 import inspect
 from dataclasses import dataclass, field
 from typing import cast
@@ -36,11 +41,12 @@ AWS_LAMBDA_FUNCTION_NAME = "unknown"
 
 @dataclass
 class DefaultLambdaContext(LambdaContext):
-    """Standard implementation of LambdaContext object
+    """Standard implementation of LambdaContext for non-Lambda environments.
 
-    This class is necessary to provide a 'mock' lambda context
-    when running our lambda functions in a docker container
-    (so that their AWS Lambda powertools decorations will work)
+    Provides a mock Lambda context for running handlers outside of AWS Lambda,
+    such as in Docker containers or for local testing. All fields can be
+    configured via environment variables.
+
     """
 
     _function_name: str = field(
@@ -82,10 +88,38 @@ class DefaultLambdaContext(LambdaContext):
 
 
 def serialize_handler(handler: LambdaHandlerType) -> str:
+    """Serialize a Lambda handler to its qualified name.
+
+    Args:
+        handler (LambdaHandlerType): The Lambda handler function or class.
+
+    Returns:
+        The fully qualified module path of the handler.
+    """
     return get_qualified_name(handler)
 
 
 def deserialize_handler(handler: str) -> LambdaHandlerType:
+    """Deserialize a handler from its qualified name.
+
+    Loads a handler from its fully qualified module path. Supports both
+    function handlers and LambdaHandler subclasses.
+
+    Args:
+        handler (str): The fully qualified handler path (e.g., 'module.submodule.HandlerClass').
+
+    Returns:
+        The Lambda handler function ready to be invoked.
+
+    Raises:
+        ValueError: If the handler cannot be deserialized or is not a valid handler type.
+
+    Example:
+        ```python
+        handler = deserialize_handler('my_module.MyHandler')
+        response = handler(event, context)
+        ```
+    """
     handler_components = handler.split(".")
 
     handler_module = as_module_type(".".join(handler_components[:-1]))
@@ -106,6 +140,16 @@ def deserialize_handler(handler: str) -> LambdaHandlerType:
 
 @dataclass
 class LambdaHandlerRequest(SchemaModel):
+    """Request model for dynamic Lambda handler invocation.
+
+    Contains the handler reference and event payload for routing
+    Lambda invocations to the appropriate handler.
+
+    Attributes:
+        handler: The Lambda handler function to invoke.
+        event: The event payload to pass to the handler.
+    """
+
     handler: LambdaHandlerType = custom_field(
         mm_field=mm.fields.Function(
             lambda obj: serialize_handler(obj.handler), deserialize_handler

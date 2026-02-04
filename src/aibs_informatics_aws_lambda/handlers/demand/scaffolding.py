@@ -1,3 +1,9 @@
+"""Demand execution scaffolding handler.
+
+Provides Lambda handlers for preparing demand execution scaffolding,
+including file system setup and batch job configuration.
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
@@ -32,7 +38,35 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
 class PrepareDemandScaffoldingHandler(
     LambdaHandler[PrepareDemandScaffoldingRequest, PrepareDemandScaffoldingResponse]
 ):
+    """Handler for preparing demand execution scaffolding.
+
+    Sets up the necessary infrastructure for demand executions including:
+    - EFS volume configurations for scratch, shared, and tmp storage
+    - Pre-execution data sync requests for input data
+    - Post-execution data sync requests for output data
+    - Batch job builder configuration
+
+    Example:
+        ```python
+        handler = PrepareDemandScaffoldingHandler.get_handler()
+        response = handler(event, context)
+        ```
+    """
+
     def handle(self, request: PrepareDemandScaffoldingRequest) -> PrepareDemandScaffoldingResponse:
+        """Prepare scaffolding for a demand execution.
+
+        Sets up EFS configurations, creates the execution context manager,
+        and generates setup and cleanup configurations.
+
+        Args:
+            request (PrepareDemandScaffoldingRequest): Request containing demand execution
+                details and file system configurations.
+
+        Returns:
+            Response containing the updated demand execution and
+            setup/cleanup configurations.
+        """
         scratch_vol_configuration = construct_batch_efs_configuration(
             env_base=self.env_base,
             file_system=request.file_system_configurations.scratch.file_system,
@@ -136,6 +170,22 @@ def construct_batch_efs_configuration(
     access_point: Optional[str],
     read_only: bool = False,
 ) -> BatchEFSConfiguration:
+    """Construct a BatchEFSConfiguration for a volume.
+
+    Creates a mount point configuration based on the provided file system
+    and access point parameters, resolving resources by tags if names
+    are provided.
+
+    Args:
+        env_base (EnvBase): Environment base for resource name resolution.
+        container_path (Union[Path, str]): Path where the volume will be mounted in the container.
+        file_system (Optional[str]): File system ID or name (optional, resolved via tags).
+        access_point (Optional[str]): Access point ID or name (optional, resolved via tags).
+        read_only (bool): Whether the mount should be read-only.
+
+    Returns:
+        Configured BatchEFSConfiguration for use with AWS Batch.
+    """
     mount_point_config = MountPointConfiguration.build(
         mount_point=container_path,
         access_point=access_point,
