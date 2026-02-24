@@ -12,7 +12,7 @@ __all__ = [
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from aibs_informatics_core.models.base import (
     EnumField,
@@ -64,7 +64,7 @@ class NotificationContent(SchemaModel):
     )
 
     @classmethod
-    def _parse_fields(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
         for key_alias in MESSAGE_KEY_ALIASES:
             if key_alias in data and "message" not in data:
                 data["message"] = data[key_alias]
@@ -82,7 +82,7 @@ class NotificationRequest(SchemaModel):
     """
 
     content: NotificationContent = custom_field(mm_field=NotificationContent.as_mm_field())
-    targets: List[Union[SESEmailTarget, SNSTopicTarget]] = custom_field(
+    targets: list[SESEmailTarget | SNSTopicTarget] = custom_field(
         mm_field=ListField(
             UnionField([(_, _.as_mm_field()) for _ in [SESEmailTarget, SNSTopicTarget]]),  # type: ignore[list-item, misc]
         ),
@@ -97,4 +97,4 @@ class NotificationResponse(SchemaModel):
         results: List of results for each notification target.
     """
 
-    results: List[NotifierResult] = custom_field(mm_field=ListField(NotifierResult.as_mm_field()))
+    results: list[NotifierResult] = custom_field(mm_field=ListField(NotifierResult.as_mm_field()))

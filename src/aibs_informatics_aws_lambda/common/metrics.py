@@ -5,7 +5,6 @@ using AWS Lambda Powertools.
 """
 
 from datetime import datetime
-from typing import Optional, Union
 
 from aws_lambda_powertools.metrics import EphemeralMetrics, Metrics, MetricUnit
 
@@ -17,10 +16,10 @@ DEFAULT_TIME_START = datetime.now()
 
 
 def add_duration_metric(
-    start: Optional[datetime] = None,
-    end: Optional[datetime] = None,
+    start: datetime | None = None,
+    end: datetime | None = None,
     name: str = "",
-    metrics: Optional[Union[EphemeralMetrics, Metrics]] = None,
+    metrics: EphemeralMetrics | Metrics | None = None,
 ):
     """Add a duration metric to the metrics collector.
 
@@ -44,7 +43,7 @@ def add_duration_metric(
     )
 
 
-def add_success_metric(name: str = "", metrics: Optional[Union[EphemeralMetrics, Metrics]] = None):
+def add_success_metric(name: str = "", metrics: EphemeralMetrics | Metrics | None = None):
     """Record a successful operation metric.
 
     Adds metrics indicating success (1) and failure (0) counts.
@@ -60,7 +59,7 @@ def add_success_metric(name: str = "", metrics: Optional[Union[EphemeralMetrics,
     metrics.add_metric(name=f"{name}Failure", unit=MetricUnit.Count, value=0)
 
 
-def add_failure_metric(name: str = "", metrics: Optional[Union[EphemeralMetrics, Metrics]] = None):
+def add_failure_metric(name: str = "", metrics: EphemeralMetrics | Metrics | None = None):
     """Record a failed operation metric.
 
     Adds metrics indicating success (0) and failure (1) counts.
@@ -93,7 +92,7 @@ class EnhancedMetrics(Metrics):
         self.add_metric(name=name, unit=MetricUnit.Count, value=value)
 
     def add_duration_metric(
-        self, start: Optional[datetime] = None, end: Optional[datetime] = None, name: str = ""
+        self, start: datetime | None = None, end: datetime | None = None, name: str = ""
     ):
         """Add a duration metric.
 
@@ -154,8 +153,8 @@ class MetricsMixins(HandlerMixins):
     @classmethod
     def get_metrics(
         cls,
-        service: Optional[str] = None,
-        namespace: Optional[str] = None,
+        service: str | None = None,
+        namespace: str | None = None,
         **additional_dimensions: str,
     ) -> EnhancedMetrics:
         """Create a new EnhancedMetrics instance.

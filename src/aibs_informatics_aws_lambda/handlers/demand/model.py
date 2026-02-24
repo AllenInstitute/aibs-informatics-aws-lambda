@@ -6,7 +6,6 @@ execution scaffolding and management.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Union
 
 from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import (
@@ -33,9 +32,9 @@ class FileSystemConfiguration(SchemaModel):
         container_path: Optional custom container mount path.
     """
 
-    file_system: Optional[str] = None
-    access_point: Optional[str] = None
-    container_path: Optional[str] = None
+    file_system: str | None = None
+    access_point: str | None = None
+    container_path: str | None = None
 
 
 @dataclass
@@ -54,7 +53,7 @@ class DemandFileSystemConfigurations(SchemaModel):
     scratch: FileSystemConfiguration = custom_field(
         mm_field=FileSystemConfiguration.as_mm_field(), default_factory=FileSystemConfiguration
     )
-    tmp: Optional[FileSystemConfiguration] = custom_field(
+    tmp: FileSystemConfiguration | None = custom_field(
         mm_field=FileSystemConfiguration.as_mm_field(), default=None
     )
 
@@ -92,7 +91,7 @@ class DataSyncConfiguration(SchemaModel):
             If False, also verify checksums.
     """
 
-    temporary_request_payload_path: Optional[S3Path] = custom_field(
+    temporary_request_payload_path: S3Path | None = custom_field(
         default=None, mm_field=S3Path.as_mm_field()
     )
     force: bool = custom_field(default=False)
@@ -163,7 +162,7 @@ class DemandExecutionSetupConfigs(SchemaModel):
         batch_create_request: Request to create the batch job.
     """
 
-    data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
+    data_sync_requests: list[DataSyncRequest | PrepareBatchDataSyncRequest] = custom_field(
         mm_field=UnionField(
             [
                 # NOTE: PrepareBatchDataSyncRequest is a subclass of DataSyncRequest
@@ -193,7 +192,7 @@ class DemandExecutionCleanupConfigs(SchemaModel):
         remove_data_paths_requests: Requests to remove temporary data.
     """
 
-    data_sync_requests: List[Union[DataSyncRequest, PrepareBatchDataSyncRequest]] = custom_field(
+    data_sync_requests: list[DataSyncRequest | PrepareBatchDataSyncRequest] = custom_field(
         mm_field=UnionField(
             [
                 # NOTE: PrepareBatchDataSyncRequest is a subclass of DataSyncRequest
@@ -206,7 +205,7 @@ class DemandExecutionCleanupConfigs(SchemaModel):
             ]
         )
     )
-    remove_data_paths_requests: List[RemoveDataPathsRequest] = custom_field(
+    remove_data_paths_requests: list[RemoveDataPathsRequest] = custom_field(
         mm_field=ListField(RemoveDataPathsRequest.as_mm_field()), default_factory=list
     )
 

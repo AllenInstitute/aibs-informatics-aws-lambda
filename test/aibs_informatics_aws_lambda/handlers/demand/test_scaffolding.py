@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest import mock
 
 from aibs_informatics_aws_utils.efs import MountPointConfiguration
@@ -370,7 +370,7 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
             ),
         ]
 
-    def get_file_system(self, file_system_id: str) -> Dict[str, Any]:
+    def get_file_system(self, file_system_id: str) -> dict[str, Any]:
         return {
             "FileSystemId": file_system_id,  # ID of the EFS file system
             "CreationToken": "string",  # Unique string to ensure idempotent creation
@@ -386,7 +386,7 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
 
     def get_access_point(
         self, access_point_id: str, file_system_id: str, **tags
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "AccessPointId": access_point_id,  # ID of the EFS access point
             "ClientToken": "string",  # Unique string to ensure idempotent creation

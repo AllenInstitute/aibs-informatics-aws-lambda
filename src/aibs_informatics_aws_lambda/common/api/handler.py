@@ -9,9 +9,10 @@ __all__ = [
 ]
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, cast
+from typing import Any, Generic, Optional, TypeVar, Union, cast
 
 from aibs_informatics_core.models.api.http_parameters import HTTPParameters
 from aibs_informatics_core.models.api.route import ApiRoute
@@ -78,7 +79,7 @@ class ApiLambdaHandler(
         ```
     """
 
-    _current_event: Optional[BaseProxyEvent] = field(default=None, repr=False)
+    _current_event: BaseProxyEvent | None = field(default=None, repr=False)
 
     def __post_init__(self):
         super().__post_init__()
@@ -153,8 +154,8 @@ class ApiLambdaHandler(
         cls,
         router: BaseRouter,
         *args,
-        logger: Optional[Logger] = None,
-        metrics: Optional[Union[EphemeralMetrics, Metrics]] = None,
+        logger: Logger | None = None,
+        metrics: EphemeralMetrics | Metrics | None = None,
         **kwargs,
     ) -> Callable:
         """Register this handler with an API Gateway router.
@@ -216,7 +217,7 @@ class ApiLambdaHandler(
 
     @classmethod
     def _parse_event(
-        cls, event: BaseProxyEvent, route_parameters: Dict[str, Any], logger: logging.Logger
+        cls, event: BaseProxyEvent, route_parameters: dict[str, Any], logger: logging.Logger
     ) -> API_REQUEST:
         """Parse an API Gateway event into a request object.
 

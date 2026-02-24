@@ -10,7 +10,7 @@ from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 from re import Pattern
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 from aibs_informatics_aws_utils.data_sync.file_system import PathStats
 from aibs_informatics_core.models.aws.efs import EFSPath
@@ -57,7 +57,7 @@ class WithDataPath(SchemaModel):
     path: DataPath = custom_field(mm_field=DataPathField())
 
     @property
-    def efs_path(self) -> Optional[EFSPath]:
+    def efs_path(self) -> EFSPath | None:
         """Get the path as an EFS path if applicable.
 
         Returns:
@@ -68,7 +68,7 @@ class WithDataPath(SchemaModel):
         return None
 
     @property
-    def s3_uri(self) -> Optional[S3Path]:
+    def s3_uri(self) -> S3Path | None:
         """Get the path as an S3 URI if applicable.
 
         Returns:
@@ -79,7 +79,7 @@ class WithDataPath(SchemaModel):
         return None
 
     @property
-    def local_path(self) -> Optional[Path]:
+    def local_path(self) -> Path | None:
         """Get the path as a local path if applicable.
 
         Returns:
@@ -104,25 +104,25 @@ class ListDataPathsRequest(WithDataPath):
             Exclude patterns take precedence over include patterns.
     """
 
-    include: Optional[Union[str, List[str]]] = custom_field(
+    include: str | list[str] | None = custom_field(
         default=None,
         mm_field=UnionField([(str, StringField()), (list, ListField(StringField()))]),
     )
-    exclude: Optional[Union[str, List[str]]] = custom_field(
+    exclude: str | list[str] | None = custom_field(
         default=None,
         mm_field=UnionField([(str, StringField()), (list, ListField(StringField()))]),
     )
 
     @cached_property
-    def include_patterns(self) -> Optional[List[Pattern]]:
+    def include_patterns(self) -> list[Pattern] | None:
         return self._get_patterns(self.include)
 
     @cached_property
-    def exclude_patterns(self) -> Optional[List[Pattern]]:
+    def exclude_patterns(self) -> list[Pattern] | None:
         return self._get_patterns(self.exclude)
 
     @staticmethod
-    def _get_patterns(value: Optional[Union[str, List[str]]]) -> Optional[List[Pattern]]:
+    def _get_patterns(value: str | list[str] | None) -> list[Pattern] | None:
         if not value:
             return None
         return [re.compile(p) for p in ([value] if isinstance(value, str) else value)]
@@ -136,7 +136,7 @@ class ListDataPathsResponse(SchemaModel):
         paths: List of data paths found.
     """
 
-    paths: List[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
+    paths: list[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
 
 
 @dataclass
@@ -147,7 +147,7 @@ class RemoveDataPathsRequest(SchemaModel):
         paths: List of data paths to remove.
     """
 
-    paths: List[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
+    paths: list[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
 
 
 @dataclass
@@ -160,7 +160,7 @@ class RemoveDataPathsResponse(SchemaModel):
     """
 
     size_bytes_removed: int = custom_field()
-    paths_removed: List[DataPath] = custom_field(
+    paths_removed: list[DataPath] = custom_field(
         default_factory=list, mm_field=ListField(DataPathField())
     )
 
@@ -181,8 +181,8 @@ class OutdatedDataPathScannerRequest(WithDataPath):
     """
 
     days_since_last_accessed: float = custom_field(default=0, mm_field=FloatField())
-    max_depth: Optional[int] = custom_field(default=None, mm_field=IntegerField())
-    min_depth: Optional[int] = custom_field(default=None, mm_field=IntegerField())
+    max_depth: int | None = custom_field(default=None, mm_field=IntegerField())
+    min_depth: int | None = custom_field(default=None, mm_field=IntegerField())
     min_size_bytes_allowed: int = custom_field(default=0, mm_field=IntegerField())
     current_time: datetime = custom_field(
         default_factory=get_current_time, mm_field=CustomAwareDateTime()
@@ -197,7 +197,7 @@ class OutdatedDataPathScannerResponse(SchemaModel):
         paths: List of paths identified as outdated.
     """
 
-    paths: List[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
+    paths: list[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
 
 
 @dataclass
@@ -222,6 +222,6 @@ class GetDataPathStatsResponse(WithDataPath):
     """
 
     path_stats: PathStats = custom_field(mm_field=PathStats.as_mm_field())
-    children: Dict[str, PathStats] = custom_field(
+    children: dict[str, PathStats] = custom_field(
         mm_field=DictField(keys=StringField(), values=PathStats.as_mm_field())
     )

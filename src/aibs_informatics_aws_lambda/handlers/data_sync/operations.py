@@ -6,7 +6,7 @@ data between local file systems and S3.
 
 import json
 from pathlib import Path
-from typing import List, Optional, Union, cast
+from typing import cast
 
 from aibs_informatics_aws_utils.data_sync import (
     DataSyncOperations,
@@ -40,9 +40,9 @@ from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 
 
 def get_s3_scratch_key(
-    filename: Optional[str] = None,
-    content: Optional[JSON] = None,
-    unique_id: Optional[UniqueID] = None,
+    filename: str | None = None,
+    content: JSON | None = None,
+    unique_id: UniqueID | None = None,
 ) -> S3Key:
     """Generates a scratch file s3 key
 
@@ -110,7 +110,7 @@ class PutJSONToFileHandler(LambdaHandler[PutJSONToFileRequest, PutJSONToFileResp
     If no path is provided, generates a scratch S3 path.
     """
 
-    def handle(self, request: PutJSONToFileRequest) -> Optional[PutJSONToFileResponse]:
+    def handle(self, request: PutJSONToFileRequest) -> PutJSONToFileResponse | None:
         """Write JSON content to the specified path.
 
         Args:
@@ -259,7 +259,7 @@ class PrepareBatchDataSyncHandler(
             Response containing prepared batch requests.
         """
         self.logger.info("Preparing S3 Batch Sync Requests")
-        root: Union[S3FileSystem, LocalFileSystem]
+        root: S3FileSystem | LocalFileSystem
         if isinstance(request.source_path, S3URI):
             root = S3FileSystem.from_path(request.source_path)
         else:
@@ -273,12 +273,12 @@ class PrepareBatchDataSyncHandler(
         self.logger.info(f"Partitioning batch size bytes limit: {batch_size_bytes_limit}")
         nodes = root.partition(size_bytes_limit=batch_size_bytes_limit)
 
-        batch_data_sync_requests: List[BatchDataSyncRequest] = []
+        batch_data_sync_requests: list[BatchDataSyncRequest] = []
 
         node_batches = self.build_node_batches(nodes, batch_size_bytes_limit)
         self.logger.info(f"Batched {len(nodes)} nodes into {len(node_batches)} batches")
         for node_batch in node_batches:
-            data_sync_requests: List[DataSyncRequest] = []
+            data_sync_requests: list[DataSyncRequest] = []
             for node in sorted(node_batch):
                 data_sync_requests.append(
                     DataSyncRequest(
@@ -316,9 +316,7 @@ class PrepareBatchDataSyncHandler(
             return PrepareBatchDataSyncResponse(requests=batch_data_sync_requests)
 
     @classmethod
-    def build_source_path(
-        cls, request: PrepareBatchDataSyncRequest, node: Node
-    ) -> Union[S3URI, Path]:
+    def build_source_path(cls, request: PrepareBatchDataSyncRequest, node: Node) -> S3URI | Path:
         if isinstance(request.source_path, S3URI):
             return S3URI.build(bucket_name=request.source_path.bucket, key=node.path)
         else:
@@ -327,7 +325,7 @@ class PrepareBatchDataSyncHandler(
     @classmethod
     def build_destination_path(
         cls, request: PrepareBatchDataSyncRequest, node: Node
-    ) -> Union[S3URI, Path]:
+    ) -> S3URI | Path:
         source_path = request.source_path
         source_prefix = source_path.key if isinstance(source_path, S3URI) else f"{source_path}"
         relative_path = removeprefix(node.path, prefix=source_prefix).lstrip("/")
@@ -347,8 +345,8 @@ class PrepareBatchDataSyncHandler(
 
     @classmethod
     def build_node_batches(
-        cls, nodes: List[Node], batch_size_bytes_limit: int
-    ) -> List[List[Node]]:
+        cls, nodes: list[Node], batch_size_bytes_limit: int
+    ) -> list[list[Node]]:
         """Batch nodes based on threshold
 
         This is a version of the classic "Bin Packing" problem.
@@ -375,7 +373,7 @@ class PrepareBatchDataSyncHandler(
 
         # Step 2:   Group nodes in order to maximize the data synced per request
         #           (bin packing problem)
-        node_batches: List[List[Node]] = []
+        node_batches: list[list[Node]] = []
 
         # (Optimize) Convert all nodes that are larger than the threshold into single requests.
         while unbatched_nodes and unbatched_nodes[0].size_bytes > batch_size_bytes_limit:

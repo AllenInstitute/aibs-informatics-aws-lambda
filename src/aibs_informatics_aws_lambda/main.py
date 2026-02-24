@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from aibs_informatics_aws_utils.constants.lambda_ import (
     AWS_LAMBDA_EVENT_PAYLOAD_KEY,
@@ -27,7 +27,7 @@ logger = get_service_logger(__name__)
 
 
 @logger.inject_lambda_context(log_event=True)
-def handle(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
+def handle(event: LambdaEvent, context: LambdaContext) -> JSON | None:
     """Route and execute a Lambda handler function invocation.
 
     This function acts as a router that deserializes the incoming event,
@@ -56,7 +56,7 @@ def handle(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
     return response
 
 
-def handle_cli(args: Optional[Sequence[str]] = None):
+def handle_cli(args: Sequence[str] | None = None):
     """Execute a Lambda handler from the command line interface.
 
     Parses command line arguments to determine the handler to invoke,

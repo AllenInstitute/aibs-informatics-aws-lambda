@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aibs_informatics_core.env import EnvBase
 from aibs_informatics_core.utils.json import JSON
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -15,7 +13,7 @@ from aibs_informatics_aws_lambda.main import (
 from test.base import BaseTest
 
 
-def mock_handler(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
+def mock_handler(event: LambdaEvent, context: LambdaContext) -> JSON | None:
     if isinstance(event, dict):
         if event.get("fail", False):
             raise ValueError("something went wrong")

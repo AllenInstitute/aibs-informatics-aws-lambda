@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Union
 
 import boto3
 from aibs_informatics_aws_utils.constants.efs import (
@@ -61,13 +60,13 @@ EFS_SCRATCH_MOUNT_PATH = Path("/mnt/efs")
 
 
 def get_any_demand_execution(
-    execution_id: Optional[str] = None,
-    execution_type: Optional[str] = None,
-    execution_image: Optional[str] = None,
-    execution_parameters: Optional[DemandExecutionParameters] = None,
-    execution_metadata: Optional[DemandExecutionMetadata] = None,
-    execution_resource_requirements: Optional[DemandResourceRequirements] = None,
-    execution_platform: Optional[ExecutionPlatform] = None,
+    execution_id: str | None = None,
+    execution_type: str | None = None,
+    execution_image: str | None = None,
+    execution_parameters: DemandExecutionParameters | None = None,
+    execution_metadata: DemandExecutionMetadata | None = None,
+    execution_resource_requirements: DemandResourceRequirements | None = None,
+    execution_platform: ExecutionPlatform | None = None,
 ) -> DemandExecution:
     return DemandExecution(
         execution_id=execution_id or DEMAND_ID,
@@ -97,7 +96,7 @@ def get_or_create_file_system_fixture(efs):
     _cache = {}
 
     def get_or_create_file_system(
-        file_system_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None
+        file_system_name: str | None = None, tags: dict[str, str] | None = None
     ) -> str:
         file_system_name = file_system_name or "test_file_system"
         if file_system_name not in _cache:
@@ -118,7 +117,7 @@ def create_access_point_fixture(efs):
         file_system_id: str,
         access_point_name: str,
         path: str,
-        tags: Optional[Dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
     ):
         tags_list = [{"Key": k, "Value": v} for k, v in (tags or {}).items()]
         tags_list.insert(0, {"Key": "Name", "Value": access_point_name})
@@ -375,7 +374,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         return boto3.client("efs")
 
     def create_file_system(
-        self, file_system_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None
+        self, file_system_name: str | None = None, tags: dict[str, str] | None = None
     ):
         file_system_name = file_system_name or "fs"
         if file_system_name not in self._file_store_name_id_map:
@@ -391,10 +390,10 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
     def create_access_point(
         self,
         access_point_name: str,
-        access_point_path: Union[Path, str] = Path("/"),
-        file_system_id: Optional[str] = None,
-        file_system_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        access_point_path: Path | str = Path("/"),
+        file_system_id: str | None = None,
+        file_system_name: str | None = None,
+        tags: dict[str, str] | None = None,
     ):
         file_system_id = file_system_id or self.create_file_system(file_system_name)
         access_point_path = Path(access_point_path)

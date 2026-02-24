@@ -5,7 +5,7 @@ Defines the target, content, and result models for notification delivery.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, TypeVar, Union
+from typing import Any, TypeVar
 
 import marshmallow as mm
 from aibs_informatics_core.models.aws.sns import SNSTopicArn
@@ -62,7 +62,7 @@ class NotificationContent(SchemaModel):
 
     @classmethod
     @mm.pre_load
-    def _parse_fields(cls, data: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _parse_fields(cls, data: dict[str, Any], **kwargs) -> dict[str, Any]:
         for key_alias in MESSAGE_KEY_ALIASES:
             if key_alias in data and "message" not in data:
                 data["message"] = data[key_alias]
@@ -108,13 +108,13 @@ class SESEmailTarget(NotifierTarget):
         recipients: List of email addresses to send to.
     """
 
-    recipients: List[EmailAddress] = custom_field(
+    recipients: list[EmailAddress] = custom_field(
         mm_field=ListField(CustomStringField(EmailAddress))
     )
 
     @classmethod
     @mm.pre_load
-    def _parse_recipient_fields(cls, data: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _parse_recipient_fields(cls, data: dict[str, Any], **kwargs) -> dict[str, Any]:
         recipients = []
 
         for key_alias in ["recipients", "recipient", "addresses", "address"]:
@@ -155,13 +155,13 @@ class NotifierResult(SchemaModel):
         response: The raw response from the delivery service.
     """
 
-    target: Union[dict, NotifierTarget] = custom_field(mm_field=RawField())
+    target: dict | NotifierTarget = custom_field(mm_field=RawField())
     success: bool = custom_field(mm_field=BooleanField())
     response: JSON = custom_field(mm_field=RawField())
 
     @classmethod
     @mm.post_dump
-    def _serialize_target(cls, data: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _serialize_target(cls, data: dict[str, Any], **kwargs) -> dict[str, Any]:
         target = data.pop("target")
         if isinstance(target, NotifierTarget):
             target = target.to_dict()

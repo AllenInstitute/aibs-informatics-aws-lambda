@@ -6,7 +6,7 @@ delivery to different channels.
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Generic, Type, Union
+from typing import Any, Generic
 
 from aibs_informatics_core.utils.logging import get_logger
 
@@ -41,7 +41,7 @@ class Notifier(Generic[NOTIFIER_TARGET]):
     """
 
     @classmethod
-    def notifier_target_class(cls) -> Type[NOTIFIER_TARGET]:
+    def notifier_target_class(cls) -> type[NOTIFIER_TARGET]:
         """Get the target class type for this notifier.
 
         Returns:
@@ -63,7 +63,7 @@ class Notifier(Generic[NOTIFIER_TARGET]):
         raise NotImplementedError("Please implement `notify` method")  # pragma: no cover
 
     @classmethod
-    def parse_target(cls, target: Union[Dict[str, Any], NOTIFIER_TARGET]) -> NOTIFIER_TARGET:
+    def parse_target(cls, target: dict[str, Any] | NOTIFIER_TARGET) -> NOTIFIER_TARGET:
         """Parse a target from a dictionary or validate an existing target.
 
         Args:

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Literal
+from typing import Literal
 
 from aibs_informatics_core.models.api.route import ApiRoute
 from aibs_informatics_core.models.base import SchemaModel
@@ -29,7 +29,7 @@ class HealthCheckRoute(ApiRoute[HealthCheckRequest, HealthCheckResponse]):
         return "/health"
 
     @classmethod
-    def route_method(cls) -> List[str]:
+    def route_method(cls) -> list[str]:
         return ["GET"]
 
 
@@ -56,7 +56,7 @@ class GetRequest(SchemaModel):
 
 @dataclass
 class GetResponse(SchemaModel):
-    values: List[str]
+    values: list[str]
 
 
 class GetRoute(ApiRoute[GetRequest, GetResponse]):
@@ -65,7 +65,7 @@ class GetRoute(ApiRoute[GetRequest, GetResponse]):
         return "/get"
 
     @classmethod
-    def route_method(cls) -> List[str]:
+    def route_method(cls) -> list[str]:
         return ["GET"]
 
 
