@@ -1,7 +1,8 @@
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Generic, Literal, Optional, TypeVar, Union, cast
+from typing import Generic, Literal, Optional, TypeVar, Union, cast
 
 from aibs_informatics_aws_utils.s3 import download_to_json_object, upload_json
 from aibs_informatics_core.executors.base import BaseExecutor
@@ -132,7 +133,7 @@ class LambdaHandler(
         logger = cls.get_logger(service=cls.service_name(), add_to_root=False)
 
         @logger.inject_lambda_context(log_event=True)
-        def handler(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
+        def handler(event: LambdaEvent, context: LambdaContext) -> JSON | None:
             lambda_handler = cls(*args, **kwargs)  # type: ignore[call-arg]
             logger.info(f"Instantiated {lambda_handler}.")
             lambda_handler.log = logger
@@ -229,7 +230,7 @@ class LambdaHandler(
         logger = cls.get_logger(cls.service_name())
 
         # Create a record handler for each record in batch.
-        def record_handler(record: SQSRecord) -> Optional[JSON]:
+        def record_handler(record: SQSRecord) -> JSON | None:
             if not cls.should_process_sqs_record(record):
                 logger.info(f"SQS record {record} elected not to be processed.")
                 return None
@@ -315,7 +316,7 @@ class LambdaHandler(
         logger = cls.get_logger(cls.service_name())
 
         # Create a record handler for each record in batch.
-        def record_handler(record: DynamoDBRecord) -> Optional[JSON]:
+        def record_handler(record: DynamoDBRecord) -> JSON | None:
             if not cls.should_process_dynamodb_record(record):
                 logger.info(f"DynamoDB record {record} will not be processed.")
                 return None

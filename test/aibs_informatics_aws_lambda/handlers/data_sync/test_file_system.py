@@ -1,7 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
 from time import sleep
-from typing import Tuple, Union
 
 from aibs_informatics_aws_utils.data_sync.file_system import LocalFileSystem, PathStats
 
@@ -26,7 +25,7 @@ from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 
 
 class BaseFileSystemHandlerTestCase(LambdaHandlerTestCase):
-    def add_files_to_file_system(self, root: Path, *paths: Tuple[Union[Path, str], int]) -> Path:
+    def add_files_to_file_system(self, root: Path, *paths: tuple[Path | str, int]) -> Path:
         full_paths = [(root / p, sz) for p, sz in paths]
 
         for path, sz in full_paths:

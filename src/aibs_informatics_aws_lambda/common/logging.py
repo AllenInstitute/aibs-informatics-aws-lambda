@@ -5,7 +5,6 @@ structured logging with AWS Lambda Powertools.
 """
 
 import logging
-from typing import Optional, Union
 
 from aibs_informatics_core.utils.logging import get_all_handlers
 from aws_lambda_powertools.logging import Logger
@@ -73,7 +72,7 @@ class LoggingMixins(HandlerMixins):
         self._logger = value
 
     @classmethod
-    def get_logger(cls, service: Optional[str] = None, add_to_root: bool = False) -> Logger:
+    def get_logger(cls, service: str | None = None, add_to_root: bool = False) -> Logger:
         """Create a new Logger instance.
 
         Args:
@@ -95,7 +94,7 @@ class LoggingMixins(HandlerMixins):
 
 
 def get_service_logger(
-    service: Optional[str] = None, child: bool = False, add_to_root: bool = False
+    service: str | None = None, child: bool = False, add_to_root: bool = False
 ) -> Logger:
     """Create a service logger with optional root logger integration.
 
@@ -114,7 +113,7 @@ def get_service_logger(
 
 
 def add_handler_to_logger(
-    source_logger: Logger, target_logger: Union[str, logging.Logger, None] = None
+    source_logger: Logger, target_logger: str | logging.Logger | None = None
 ):
     """Add a source logger's handler to a target logger.
 

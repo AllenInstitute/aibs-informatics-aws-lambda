@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aibs_informatics_core.utils.json import JSON
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from pytest import mark, param, raises
@@ -10,7 +8,7 @@ from test.aibs_informatics_aws_lambda.common.test_handler import CounterHandler_
 from test.base import does_not_raise
 
 
-def mock_handler(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
+def mock_handler(event: LambdaEvent, context: LambdaContext) -> JSON | None:
     if isinstance(event, dict):
         if event.get("fail", False):
             raise ValueError("something went wrong")
@@ -36,7 +34,7 @@ DUMMY_VARIABLE = 1
         ),
     ],
 )
-def test__get_qualified_name(value, expected: Optional[LambdaHandlerRequest], raise_expectation):
+def test__get_qualified_name(value, expected: LambdaHandlerRequest | None, raise_expectation):
     with raise_expectation:
         actual = LambdaHandlerRequest.from_dict(value)
 

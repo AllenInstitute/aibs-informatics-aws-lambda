@@ -11,7 +11,7 @@ import sys
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING
 
 from aibs_informatics_aws_utils.batch import (
     BatchJobBuilder,
@@ -127,7 +127,7 @@ class BatchEFSConfiguration:
         return self.mount_point_config.mount_point
 
     @classmethod
-    def build(cls, access_point: str, mount_path: Union[Path, str], read_only: bool = False):
+    def build(cls, access_point: str, mount_path: Path | str, read_only: bool = False):
         """Build a BatchEFSConfiguration from an access point.
 
         Args:
@@ -180,7 +180,7 @@ class DemandExecutionContextManager:
     demand_execution: DemandExecution
     scratch_vol_configuration: BatchEFSConfiguration
     shared_vol_configuration: BatchEFSConfiguration
-    tmp_vol_configuration: Optional[BatchEFSConfiguration] = None
+    tmp_vol_configuration: BatchEFSConfiguration | None = None
     configuration: ContextManagerConfiguration = field(default_factory=ContextManagerConfiguration)
     env_base: EnvBase = field(default_factory=EnvBase.from_env)
 
@@ -280,7 +280,7 @@ class DemandExecutionContextManager:
         return get_efs_path(self.container_shared_path, mount_points=self.efs_mount_points)
 
     @property
-    def efs_mount_points(self) -> List[MountPointConfiguration]:
+    def efs_mount_points(self) -> list[MountPointConfiguration]:
         """Returns a list of mount points for the EFS volumes used by the aws batch job
 
         Returns:
@@ -329,7 +329,7 @@ class DemandExecutionContextManager:
         return get_batch_job_queue_name(self.demand_execution)
 
     @property
-    def pre_execution_data_sync_requests(self) -> List[PrepareBatchDataSyncRequest]:
+    def pre_execution_data_sync_requests(self) -> list[PrepareBatchDataSyncRequest]:
         """Generate data sync requests for pre-execution input staging.
 
         Creates requests to sync input data from S3 to EFS before
@@ -370,7 +370,7 @@ class DemandExecutionContextManager:
         return requests
 
     @property
-    def post_execution_data_sync_requests(self) -> List[PrepareBatchDataSyncRequest]:
+    def post_execution_data_sync_requests(self) -> list[PrepareBatchDataSyncRequest]:
         """Generate data sync requests for post-execution output upload.
 
         Creates requests to sync output data from EFS to S3 after
@@ -407,7 +407,7 @@ class DemandExecutionContextManager:
         return requests
 
     @property
-    def post_execution_remove_data_paths_requests(self) -> List[RemoveDataPathsRequest]:
+    def post_execution_remove_data_paths_requests(self) -> list[RemoveDataPathsRequest]:
         """Generates remove data paths requests for post-execution data sync
 
         Returns:
@@ -429,7 +429,7 @@ class DemandExecutionContextManager:
         cls,
         demand_execution: DemandExecution,
         env_base: EnvBase,
-        configuration: Optional[ContextManagerConfiguration] = None,
+        configuration: ContextManagerConfiguration | None = None,
     ):
         """Create a context manager from a demand execution.
 
@@ -580,7 +580,7 @@ def get_batch_efs_configuration(
     env_base: EnvBase,
     container_path: str,
     access_point_name: str,
-    file_system_name: Optional[str] = None,
+    file_system_name: str | None = None,
     read_only: bool = False,
 ) -> BatchEFSConfiguration:
     """Get a BatchEFSConfiguration by resolving resources from AWS.
@@ -634,7 +634,7 @@ def generate_batch_job_builder(  # noqa: C901
     tmp_path: EFSPath,
     scratch_mount_point: MountPointConfiguration,
     shared_mount_point: MountPointConfiguration,
-    tmp_mount_point: Optional[MountPointConfiguration] = None,
+    tmp_mount_point: MountPointConfiguration | None = None,
     env_file_write_mode: EnvFileWriteMode = EnvFileWriteMode.ALWAYS,
 ) -> BatchJobBuilder:
     """Generate a BatchJobBuilder for the demand execution.
@@ -678,7 +678,7 @@ def generate_batch_job_builder(  # noqa: C901
     WORKING_DIR_VAR = "WORKING_DIR"
     TMPDIR_VAR = "TMPDIR"
 
-    environment: Dict[str, str] = {
+    environment: dict[str, str] = {
         EXECUTION_ID_VAR: demand_execution.execution_id,
         WORKING_DIR_VAR: f"{container_working_path}",
         TMPDIR_VAR: f"{container_tmp_path}",
@@ -770,7 +770,7 @@ def generate_batch_job_builder(  # noqa: C901
 
             # Step 1:, split environment variables based on reference are referenced in the command
             writable_environment = environment.copy()
-            required_environment: Dict[str, str] = {}
+            required_environment: dict[str, str] = {}
             for arg in command + [_ for c in pre_commands for _ in c]:
                 for match in re.findall(r"\$\{?([\w]+)\}?", arg):
                     if match in writable_environment:

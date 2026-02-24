@@ -6,7 +6,6 @@ including file system setup and batch job configuration.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
 
 from aibs_informatics_aws_utils.batch import build_retry_strategy
 from aibs_informatics_aws_utils.constants.efs import (
@@ -165,9 +164,9 @@ class PrepareDemandScaffoldingHandler(
 
 def construct_batch_efs_configuration(
     env_base: EnvBase,
-    container_path: Union[Path, str],
-    file_system: Optional[str],
-    access_point: Optional[str],
+    container_path: Path | str,
+    file_system: str | None,
+    access_point: str | None,
     read_only: bool = False,
 ) -> BatchEFSConfiguration:
     """Construct a BatchEFSConfiguration for a volume.

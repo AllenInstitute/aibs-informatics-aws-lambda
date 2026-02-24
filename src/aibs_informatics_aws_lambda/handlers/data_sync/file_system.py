@@ -8,7 +8,7 @@ and removing paths.
 import logging
 from datetime import timedelta
 from pathlib import Path
-from typing import List, TypeVar
+from typing import TypeVar
 
 from aibs_informatics_aws_utils.data_sync.file_system import BaseFileSystem, Node, get_file_system
 from aibs_informatics_aws_utils.efs import detect_mount_points, get_local_path
@@ -81,7 +81,7 @@ class ListDataPathsHandler(LambdaHandler[ListDataPathsRequest, ListDataPathsResp
             Response containing the list of matching paths.
         """
         root = get_file_system(request.path)
-        paths: List[DataPath] = sorted([n.path for n in root.node.list_nodes()])
+        paths: list[DataPath] = sorted([n.path for n in root.node.list_nodes()])
 
         if request.include_patterns or request.exclude_patterns:
             new_paths = []
@@ -123,9 +123,9 @@ class OutdatedDataPathScannerHandler(
         """
         fs = get_file_system(request.path)
 
-        stale_nodes: List[Node] = []
+        stale_nodes: list[Node] = []
         days_since_last_accessed = timedelta(days=request.days_since_last_accessed)
-        unvisited_nodes: List[Node] = [fs.node]
+        unvisited_nodes: list[Node] = [fs.node]
 
         self.logger.info(
             f"Checking for nodes older than {request.days_since_last_accessed} days. "
@@ -151,7 +151,7 @@ class OutdatedDataPathScannerHandler(
         # many files and allows us to maintain a minimum desired EFS throughput performance.
         # For more details see: https://docs.aws.amazon.com/efs/latest/ug/performance.html
         current_efs_size_bytes = fs.node.size_bytes
-        paths_to_delete: List[str] = []
+        paths_to_delete: list[str] = []
 
         # Sort so newest nodes are first, nodes are considered starting from the list end (oldest)
         nodes_to_delete = sorted(stale_nodes, key=lambda n: n.last_modified, reverse=True)
