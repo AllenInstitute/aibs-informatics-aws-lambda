@@ -35,8 +35,9 @@ class TestMain(BaseTest):
 
     def test__handle__succeeds(self):
         event = {"response": False}
-        response = handle(
-            LambdaHandlerRequest(mock_handler, event).to_dict(), DefaultLambdaContext()
+        handle(
+            LambdaHandlerRequest(handler=mock_handler, event=event).to_dict(),
+            DefaultLambdaContext(),
         )
 
     def test__handle_cli__succeeds__resolves_args_from_env__no_response(self):

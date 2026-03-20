@@ -4,17 +4,13 @@ Defines the request and response models for creating and
 managing AWS Batch job definitions and submissions.
 """
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from aibs_informatics_core.models.aws.batch import ResourceRequirements
 from aibs_informatics_core.models.base import (
-    DictField,
-    ListField,
-    SchemaModel,
-    UnionField,
-    custom_field,
+    PydanticBaseModel,
 )
+from pydantic import Field
 
 if TYPE_CHECKING:  # pragma: no cover
     from mypy_boto3_batch.type_defs import (
@@ -30,8 +26,7 @@ else:
     VolumeTypeDef = dict
 
 
-@dataclass
-class CreateDefinitionAndPrepareArgsRequest(SchemaModel):
+class CreateDefinitionAndPrepareArgsRequest(PydanticBaseModel):
     """Request for creating a batch job definition and preparing submission args.
 
     Attributes:
@@ -50,31 +45,24 @@ class CreateDefinitionAndPrepareArgsRequest(SchemaModel):
         privileged: Whether to run in privileged mode.
     """
 
-    image: str = custom_field()
-    job_definition_name: str = custom_field()
-    job_queue_name: str = custom_field()
-    job_role_arn: str | None = custom_field(default=None)
-    job_name: str | None = custom_field(default=None)
-    command: list[str] = custom_field(default_factory=list)
-    environment: dict[str, str] = custom_field(default_factory=dict)
-    job_definition_tags: dict[str, str] = custom_field(default_factory=dict)
-    resource_requirements: list[ResourceRequirementTypeDef] | ResourceRequirements = custom_field(
+    image: str
+    job_definition_name: str
+    job_queue_name: str
+    job_role_arn: str | None = None
+    job_name: str | None = None
+    command: list[str] = Field(default_factory=list)
+    environment: dict[str, str] = Field(default_factory=dict)
+    job_definition_tags: dict[str, str] = Field(default_factory=dict)
+    resource_requirements: list[ResourceRequirementTypeDef] | ResourceRequirements = Field(
         default_factory=list,
-        mm_field=UnionField(
-            [
-                (list, ListField(DictField)),
-                (ResourceRequirements, ResourceRequirements.as_mm_field()),
-            ]
-        ),
     )
-    mount_points: list[MountPointTypeDef] = custom_field(default_factory=list)
-    volumes: list[VolumeTypeDef] = custom_field(default_factory=list)
-    retry_strategy: RetryStrategyTypeDef | None = custom_field(default=None)
-    privileged: bool = custom_field(default=False)
+    mount_points: list[MountPointTypeDef] = Field(default_factory=list)
+    volumes: list[VolumeTypeDef] = Field(default_factory=list)
+    retry_strategy: RetryStrategyTypeDef | None = None
+    privileged: bool = Field(default=False)
 
 
-@dataclass
-class CreateDefinitionAndPrepareArgsResponse(SchemaModel):
+class CreateDefinitionAndPrepareArgsResponse(PydanticBaseModel):
     """Response from creating a batch job definition.
 
     Contains the prepared arguments for submitting the batch job.
@@ -87,8 +75,8 @@ class CreateDefinitionAndPrepareArgsResponse(SchemaModel):
         container_overrides: Container override settings.
     """
 
-    job_name: str = custom_field()
-    job_definition_arn: str | None = custom_field()
-    job_queue_arn: str = custom_field()
-    parameters: dict[str, Any] = custom_field()
-    container_overrides: dict[str, Any] = custom_field()
+    job_name: str
+    job_definition_arn: str | None
+    job_queue_arn: str
+    parameters: dict[str, Any]
+    container_overrides: dict[str, Any]

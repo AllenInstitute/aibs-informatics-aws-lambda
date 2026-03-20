@@ -15,7 +15,7 @@ from aibs_informatics_aws_utils.data_sync import (
     S3FileSystem,
 )
 from aibs_informatics_aws_utils.s3 import SCRATCH_EXTRA_ARGS, download_to_json, upload_json
-from aibs_informatics_core.models.aws.s3 import S3URI, S3Key
+from aibs_informatics_core.models.aws.s3 import S3Key, S3Path
 from aibs_informatics_core.models.data_sync import (
     BatchDataSyncRequest,
     BatchDataSyncResponse,
@@ -91,7 +91,7 @@ class GetJSONFromFileHandler(LambdaHandler[GetJSONFromFileRequest, GetJSONFromFi
             path = request.path
 
             self.logger.info(f"Fetching content from {path}")
-            if isinstance(path, S3URI):
+            if isinstance(path, S3Path):
                 self.logger.info("Downloading from S3")
                 content = download_to_json(s3_path=path)
             else:
@@ -131,7 +131,7 @@ class PutJSONToFileHandler(LambdaHandler[PutJSONToFileRequest, PutJSONToFileResp
                     "No path provided and Could not infer bucket "
                     f"name from {DEFAULT_BUCKET_NAME_ENV_VAR} environment variable"
                 )
-            path = S3URI.build(
+            path = S3Path.build(
                 bucket_name=bucket_name,
                 key=get_s3_scratch_key(
                     content=content,
@@ -141,7 +141,7 @@ class PutJSONToFileHandler(LambdaHandler[PutJSONToFileRequest, PutJSONToFileResp
 
         self.logger.info(f"Writing content to {path}")
         self.logger.info(f"Content to write: {content}")
-        if isinstance(path, S3URI):
+        if isinstance(path, S3Path):
             self.logger.info("Uploading to S3")
             upload_json(content, s3_path=path, extra_args=SCRATCH_EXTRA_ARGS)
         else:
@@ -190,14 +190,14 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
         Raises:
             Exception: If a sync fails and allow_partial_failure is False.
         """
-        self.logger.info(f"Received {len(request.requests)} requests to transfer")
-        if isinstance(request.requests, S3URI):
+        if isinstance(request.requests, S3Path):
             self.logger.info(f"Request is stored at {request.requests}... fetching content.")
             _ = download_to_json(request.requests)
             assert isinstance(_, list)
             batch_requests = [DataSyncRequest.from_dict(__) for __ in _]
         else:
             batch_requests = request.requests
+        self.logger.info(f"Received {len(batch_requests)} requests to transfer")
 
         batch_result = BatchDataSyncResult()
         response = BatchDataSyncResponse(result=batch_result, failed_requests=[])
@@ -260,7 +260,7 @@ class PrepareBatchDataSyncHandler(
         """
         self.logger.info("Preparing S3 Batch Sync Requests")
         root: S3FileSystem | LocalFileSystem
-        if isinstance(request.source_path, S3URI):
+        if isinstance(request.source_path, S3Path):
             root = S3FileSystem.from_path(request.source_path)
         else:
             root = LocalFileSystem.from_path(request.source_path)
@@ -316,18 +316,18 @@ class PrepareBatchDataSyncHandler(
             return PrepareBatchDataSyncResponse(requests=batch_data_sync_requests)
 
     @classmethod
-    def build_source_path(cls, request: PrepareBatchDataSyncRequest, node: Node) -> S3URI | Path:
-        if isinstance(request.source_path, S3URI):
-            return S3URI.build(bucket_name=request.source_path.bucket, key=node.path)
+    def build_source_path(cls, request: PrepareBatchDataSyncRequest, node: Node) -> S3Path | Path:
+        if isinstance(request.source_path, S3Path):
+            return S3Path.build(bucket_name=request.source_path.bucket, key=node.path)
         else:
             return Path(node.path)
 
     @classmethod
     def build_destination_path(
         cls, request: PrepareBatchDataSyncRequest, node: Node
-    ) -> S3URI | Path:
+    ) -> S3Path | Path:
         source_path = request.source_path
-        source_prefix = source_path.key if isinstance(source_path, S3URI) else f"{source_path}"
+        source_prefix = source_path.key if isinstance(source_path, S3Path) else f"{source_path}"
         relative_path = removeprefix(node.path, prefix=source_prefix).lstrip("/")
 
         # NOTE: This is because Path instances omit the file separator.
@@ -335,8 +335,8 @@ class PrepareBatchDataSyncHandler(
         #       We should figure out a cleaner solution but this will have to do.
         if node.has_children():
             relative_path += "/"
-        if isinstance(request.destination_path, S3URI):
-            return S3URI.build(
+        if isinstance(request.destination_path, S3Path):
+            return S3Path.build(
                 bucket_name=request.destination_path.bucket,
                 key=request.destination_path.key + relative_path,
             )

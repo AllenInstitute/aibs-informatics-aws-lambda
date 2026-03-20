@@ -23,16 +23,13 @@ uv add aibs-informatics-aws-lambda
 The `LambdaHandler` class provides a base class for creating strongly typed lambda functions with features like serialization/deserialization, logging, and metrics.
 
 ```python
-from dataclasses import dataclass
-from aibs_informatics_core.models.base import SchemaModel
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 
-@dataclass
-class MyRequest(SchemaModel):
+class MyRequest(PydanticBaseModel):
     name: str
 
-@dataclass
-class MyResponse(SchemaModel):
+class MyResponse(PydanticBaseModel):
     message: str
 
 class MyHandler(LambdaHandler[MyRequest, MyResponse]):
@@ -49,15 +46,13 @@ For API Gateway integrations, use `ApiLambdaHandler`:
 
 ```python
 from dataclasses import dataclass
-from aibs_informatics_core.models.base import SchemaModel
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_aws_lambda.common.api.handler import ApiLambdaHandler
 
-@dataclass
-class UserRequest(SchemaModel):
+class UserRequest(PydanticBaseModel):
     user_id: str
 
-@dataclass
-class UserResponse(SchemaModel):
+class UserResponse(PydanticBaseModel):
     name: str
     email: str
 

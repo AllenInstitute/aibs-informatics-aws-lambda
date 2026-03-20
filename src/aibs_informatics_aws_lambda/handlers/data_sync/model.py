@@ -5,47 +5,27 @@ between S3, EFS, and local file systems.
 """
 
 import re
-from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 from re import Pattern
-from typing import Union
+from typing import TypeAlias
 
 from aibs_informatics_aws_utils.data_sync.file_system import PathStats
 from aibs_informatics_core.models.aws.efs import EFSPath
 from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import (
-    CustomAwareDateTime,
-    DictField,
-    FloatField,
-    IntegerField,
-    ListField,
-    PathField,
-    SchemaModel,
-    StringField,
-    UnionField,
-    custom_field,
+    PydanticBaseModel,
 )
 from aibs_informatics_core.utils.time import get_current_time
+from pydantic import Field
 
-DataPath = Union[S3Path, EFSPath, Path, str]
-
-
-def DataPathField(*args, **kwargs):
-    return UnionField(
-        [
-            (S3Path, S3Path.as_mm_field()),
-            ((EFSPath, str), EFSPath.as_mm_field()),
-            ((Path, str), PathField()),
-        ],
-        *args,
-        **kwargs,
-    )
+# Order matters for this union - S3Path and EFSPath have custom validation logic that would
+# allow them to be parsed from a string
+DataPath: TypeAlias = S3Path | EFSPath | Path | str
 
 
-@dataclass
-class WithDataPath(SchemaModel):
+class WithDataPath(PydanticBaseModel):
     """Base class for models that contain a data path.
 
     Provides convenience properties for accessing the path as different types.
@@ -54,7 +34,7 @@ class WithDataPath(SchemaModel):
         path: The data path (S3, EFS, or local).
     """
 
-    path: DataPath = custom_field(mm_field=DataPathField())
+    path: DataPath = Field(union_mode="left_to_right")
 
     @property
     def efs_path(self) -> EFSPath | None:
@@ -68,8 +48,8 @@ class WithDataPath(SchemaModel):
         return None
 
     @property
-    def s3_uri(self) -> S3Path | None:
-        """Get the path as an S3 URI if applicable.
+    def s3_path(self) -> S3Path | None:
+        """Get the path as an S3 path if applicable.
 
         Returns:
             The S3 path or None if not an S3 path.
@@ -90,7 +70,6 @@ class WithDataPath(SchemaModel):
         return None
 
 
-@dataclass
 class ListDataPathsRequest(WithDataPath):
     """Request for listing files under a data path.
 
@@ -104,14 +83,8 @@ class ListDataPathsRequest(WithDataPath):
             Exclude patterns take precedence over include patterns.
     """
 
-    include: str | list[str] | None = custom_field(
-        default=None,
-        mm_field=UnionField([(str, StringField()), (list, ListField(StringField()))]),
-    )
-    exclude: str | list[str] | None = custom_field(
-        default=None,
-        mm_field=UnionField([(str, StringField()), (list, ListField(StringField()))]),
-    )
+    include: str | list[str] | None = None
+    exclude: str | list[str] | None = None
 
     @cached_property
     def include_patterns(self) -> list[Pattern] | None:
@@ -128,30 +101,27 @@ class ListDataPathsRequest(WithDataPath):
         return [re.compile(p) for p in ([value] if isinstance(value, str) else value)]
 
 
-@dataclass
-class ListDataPathsResponse(SchemaModel):
+class ListDataPathsResponse(PydanticBaseModel):
     """Response containing listed data paths.
 
     Attributes:
         paths: List of data paths found.
     """
 
-    paths: list[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
+    paths: list[DataPath] = Field(default_factory=list)
 
 
-@dataclass
-class RemoveDataPathsRequest(SchemaModel):
+class RemoveDataPathsRequest(PydanticBaseModel):
     """Request for removing data paths.
 
     Attributes:
         paths: List of data paths to remove.
     """
 
-    paths: list[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
+    paths: list[DataPath] = Field(default_factory=list)
 
 
-@dataclass
-class RemoveDataPathsResponse(SchemaModel):
+class RemoveDataPathsResponse(PydanticBaseModel):
     """Response from removing data paths.
 
     Attributes:
@@ -159,13 +129,10 @@ class RemoveDataPathsResponse(SchemaModel):
         paths_removed: List of paths that were removed.
     """
 
-    size_bytes_removed: int = custom_field()
-    paths_removed: list[DataPath] = custom_field(
-        default_factory=list, mm_field=ListField(DataPathField())
-    )
+    size_bytes_removed: int
+    paths_removed: list[DataPath] = Field(default_factory=list)
 
 
-@dataclass
 class OutdatedDataPathScannerRequest(WithDataPath):
     """Request for scanning outdated data paths.
 
@@ -180,27 +147,23 @@ class OutdatedDataPathScannerRequest(WithDataPath):
         current_time: Reference time for calculating age.
     """
 
-    days_since_last_accessed: float = custom_field(default=0, mm_field=FloatField())
-    max_depth: int | None = custom_field(default=None, mm_field=IntegerField())
-    min_depth: int | None = custom_field(default=None, mm_field=IntegerField())
-    min_size_bytes_allowed: int = custom_field(default=0, mm_field=IntegerField())
-    current_time: datetime = custom_field(
-        default_factory=get_current_time, mm_field=CustomAwareDateTime()
-    )
+    days_since_last_accessed: float = 0.0
+    max_depth: int | None = None
+    min_depth: int | None = None
+    min_size_bytes_allowed: int = 0
+    current_time: datetime = Field(default_factory=get_current_time)
 
 
-@dataclass
-class OutdatedDataPathScannerResponse(SchemaModel):
+class OutdatedDataPathScannerResponse(PydanticBaseModel):
     """Response containing outdated data paths.
 
     Attributes:
         paths: List of paths identified as outdated.
     """
 
-    paths: list[DataPath] = custom_field(default_factory=list, mm_field=ListField(DataPathField()))
+    paths: list[DataPath] = Field(default_factory=list)
 
 
-@dataclass
 class GetDataPathStatsRequest(WithDataPath):
     """Request for getting statistics about a data path.
 
@@ -211,7 +174,6 @@ class GetDataPathStatsRequest(WithDataPath):
     pass
 
 
-@dataclass
 class GetDataPathStatsResponse(WithDataPath):
     """Response containing data path statistics.
 
@@ -221,7 +183,5 @@ class GetDataPathStatsResponse(WithDataPath):
         children: Statistics for child paths keyed by name.
     """
 
-    path_stats: PathStats = custom_field(mm_field=PathStats.as_mm_field())
-    children: dict[str, PathStats] = custom_field(
-        mm_field=DictField(keys=StringField(), values=PathStats.as_mm_field())
-    )
+    path_stats: PathStats
+    children: dict[str, PathStats] = Field(default_factory=dict)
