@@ -2,7 +2,7 @@ import json
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Generic, Literal, Optional, TypeVar, cast
+from typing import Generic, Literal, Optional, TypeAlias, TypeVar, cast
 
 from aibs_informatics_aws_utils.s3 import download_to_json_object, upload_json
 from aibs_informatics_core.executors.base import BaseExecutor
@@ -20,14 +20,13 @@ from aws_lambda_powertools.utilities.batch.types import PartialItemFailureRespon
 from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import DynamoDBRecord
 from aws_lambda_powertools.utilities.data_classes.sqs_event import SQSRecord
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from pydantic import JsonValue
 
 from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
 
-LambdaEvent = JsonValue
-LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], Optional[JsonValue]]
+LambdaEvent: TypeAlias = JSON
+LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], Optional[JSON]]
 
 logger = logging.getLogger(__name__)
 

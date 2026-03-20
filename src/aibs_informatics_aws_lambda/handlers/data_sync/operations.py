@@ -15,7 +15,7 @@ from aibs_informatics_aws_utils.data_sync import (
     S3FileSystem,
 )
 from aibs_informatics_aws_utils.s3 import SCRATCH_EXTRA_ARGS, download_to_json, upload_json
-from aibs_informatics_core.models.aws.s3 import S3Path, S3Key
+from aibs_informatics_core.models.aws.s3 import S3Key, S3Path
 from aibs_informatics_core.models.data_sync import (
     BatchDataSyncRequest,
     BatchDataSyncResponse,
