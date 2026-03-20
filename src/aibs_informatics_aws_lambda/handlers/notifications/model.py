@@ -55,7 +55,9 @@ class NotificationContent(PydanticBaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _parse_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+    def _parse_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
         for key_alias in MESSAGE_KEY_ALIASES:
             if key_alias in data and "message" not in data:
                 data["message"] = data[key_alias]

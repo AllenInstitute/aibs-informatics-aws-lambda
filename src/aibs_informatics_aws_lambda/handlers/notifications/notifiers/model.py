@@ -145,7 +145,9 @@ class NotifierResult(PydanticBaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _serialize_target(cls, data: dict[str, Any]) -> dict[str, Any]:
+    def _serialize_target(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
         target = data.pop("target")
         if isinstance(target, NotifierTarget):
             target = target.to_dict()
