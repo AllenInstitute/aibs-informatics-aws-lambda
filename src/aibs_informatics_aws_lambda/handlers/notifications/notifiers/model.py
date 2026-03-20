@@ -97,7 +97,10 @@ class SESEmailTarget(NotifierTarget):
 
     @model_validator(mode="before")
     @classmethod
-    def _parse_recipient_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+    def _parse_recipient_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
         recipients = []
 
         for key_alias in ["recipients", "recipient", "addresses", "address"]:
