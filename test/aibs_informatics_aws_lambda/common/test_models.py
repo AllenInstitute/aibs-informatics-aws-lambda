@@ -73,7 +73,7 @@ def test__deserialize_handler__handles_callable_passthrough():
 
 
 def test__deserialize_handler__raises_for_non_callable():
-    with raises(AssertionError, match="expected a callable"):
+    with raises(ValueError, match="expected a callable"):
         deserialize_handler(42)  # type: ignore[arg-type]
 
 
@@ -94,8 +94,7 @@ def test__serialize_handler__class_handler_to_qualified_name():
     result = request.to_dict()
     # The serialized handler should resolve to the module-level variable
     assert (
-        result["handler"]
-        == "test.aibs_informatics_aws_lambda.common.test_models.counter_handler"
+        result["handler"] == "test.aibs_informatics_aws_lambda.common.test_models.counter_handler"
     )
 
 

@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Literal
 
 from aibs_informatics_core.models.api.route import ApiRoute
@@ -45,14 +44,12 @@ class HealthCheckHandler(
 # ------------------------------
 
 
-@dataclass
 class GetRequest(PydanticBaseModel):
     """Can be used as a Getter"""
 
     id: str
 
 
-@dataclass
 class GetResponse(PydanticBaseModel):
     values: list[str]
 

@@ -190,7 +190,6 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
         Raises:
             Exception: If a sync fails and allow_partial_failure is False.
         """
-        self.logger.info(f"Received {len(request.requests)} requests to transfer")
         if isinstance(request.requests, S3Path):
             self.logger.info(f"Request is stored at {request.requests}... fetching content.")
             _ = download_to_json(request.requests)
@@ -198,6 +197,7 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
             batch_requests = [DataSyncRequest.from_dict(__) for __ in _]
         else:
             batch_requests = request.requests
+        self.logger.info(f"Received {len(batch_requests)} requests to transfer")
 
         batch_result = BatchDataSyncResult()
         response = BatchDataSyncResponse(result=batch_result, failed_requests=[])

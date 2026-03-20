@@ -147,10 +147,11 @@ def deserialize_handler(handler: str | LambdaHandlerType) -> LambdaHandlerType:
         ```
     """
     if not isinstance(handler, str):
-        assert callable(handler), (
-            f"Invalid handler type: expected a callable or fully qualified handler path string, "
-            f"got {type(handler).__name__}."
-        )
+        if not callable(handler):
+            raise ValueError(
+                f"Invalid handler type: expected a callable or fully qualified handler path "
+                f"string, got {type(handler).__name__}."
+            )
         return cast(LambdaHandlerType, handler)
     handler_components = handler.split(".")
 
