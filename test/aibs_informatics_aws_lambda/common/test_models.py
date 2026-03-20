@@ -92,10 +92,10 @@ counter_handler = CounterHandler_ReqResp.get_handler()
 def test__serialize_handler__class_handler_to_qualified_name():
     request = LambdaHandlerRequest(handler=counter_handler, event={})
     result = request.to_dict()
-    # The serialized handler should be the class qualified name
+    # The serialized handler should resolve to the module-level variable
     assert (
         result["handler"]
-        == "test.aibs_informatics_aws_lambda.common.test_handler.CounterHandler_ReqResp"
+        == "test.aibs_informatics_aws_lambda.common.test_models.counter_handler"
     )
 
 

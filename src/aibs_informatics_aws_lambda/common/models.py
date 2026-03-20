@@ -91,16 +91,37 @@ class DefaultLambdaContext(LambdaContext):
 def serialize_handler(handler: LambdaHandlerType) -> str:
     """Serialize a Lambda handler to its qualified name.
 
+    For closures (e.g., from ``LambdaHandler.get_handler()``), the function's
+    ``__qualname__`` points to the closure definition site rather than the
+    module-level variable that holds it. This searches ``sys.modules`` for a
+    global variable that references the exact handler object, so that
+    constructor arguments passed to ``get_handler()`` are preserved on
+    round-trip.
+
     Args:
         handler (LambdaHandlerType): The Lambda handler function or class.
 
     Returns:
         The fully qualified module path of the handler.
     """
-    # If the handler was produced by LambdaHandler.get_handler(), use the originating class
-    handler_class = getattr(handler, "_handler_class", None)
-    if handler_class is not None:
-        return get_qualified_name(handler_class)
+    # For closures, try to find a module-level variable referencing this handler
+    if "<locals>" in getattr(handler, "__qualname__", ""):
+        import sys
+
+        for module_name, module in sys.modules.items():
+            if module is None:
+                continue
+            try:
+                module_dict = vars(module)
+            except TypeError:
+                continue
+            for attr_name, attr_value in module_dict.items():
+                if attr_value is handler:
+                    return f"{module_name}.{attr_name}"
+        # Fall back to the originating class if the variable wasn't found
+        handler_class = getattr(handler, "_handler_class", None)
+        if handler_class is not None:
+            return get_qualified_name(handler_class)
     return get_qualified_name(handler)
 
 
