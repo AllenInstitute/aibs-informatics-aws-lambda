@@ -155,6 +155,7 @@ class LambdaHandler(
 
             return None
 
+        handler._handler_class = cls  # type: ignore[attr-defined]
         return handler
 
     @classmethod

@@ -11,14 +11,12 @@ from aibs_informatics_aws_lambda.common.api.handler import ApiLambdaHandler
 # ------------------------------
 
 
-@dataclass
 class HealthCheckRequest(PydanticBaseModel):
     """Can be used as a No-op"""
 
     raise_exception: bool = False
 
 
-@dataclass
 class HealthCheckResponse(PydanticBaseModel):
     status: Literal["OK"] = "OK"
 

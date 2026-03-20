@@ -4,7 +4,6 @@ Defines the request and response models for creating and
 managing AWS Batch job definitions and submissions.
 """
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from aibs_informatics_core.models.aws.batch import ResourceRequirements
@@ -27,7 +26,6 @@ else:
     VolumeTypeDef = dict
 
 
-@dataclass
 class CreateDefinitionAndPrepareArgsRequest(PydanticBaseModel):
     """Request for creating a batch job definition and preparing submission args.
 
@@ -64,7 +62,6 @@ class CreateDefinitionAndPrepareArgsRequest(PydanticBaseModel):
     privileged: bool = Field(default=False)
 
 
-@dataclass
 class CreateDefinitionAndPrepareArgsResponse(PydanticBaseModel):
     """Response from creating a batch job definition.
 

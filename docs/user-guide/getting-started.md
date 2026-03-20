@@ -46,7 +46,7 @@ For API Gateway integrations, use `ApiLambdaHandler`:
 
 ```python
 from dataclasses import dataclass
-from aibs_informatics_core.models.base import SchemaModel
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_aws_lambda.common.api.handler import ApiLambdaHandler
 
 class UserRequest(PydanticBaseModel):

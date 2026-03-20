@@ -97,6 +97,10 @@ def serialize_handler(handler: LambdaHandlerType) -> str:
     Returns:
         The fully qualified module path of the handler.
     """
+    # If the handler was produced by LambdaHandler.get_handler(), use the originating class
+    handler_class = getattr(handler, "_handler_class", None)
+    if handler_class is not None:
+        return get_qualified_name(handler_class)
     return get_qualified_name(handler)
 
 
@@ -159,6 +163,6 @@ class LambdaHandlerRequest(PydanticBaseModel):
     handler: Annotated[
         LambdaHandlerType,
         BeforeValidator(deserialize_handler),
-        PlainSerializer(lambda obj: serialize_handler(obj.handler)),
+        PlainSerializer(lambda handler: serialize_handler(handler)),
     ]
     event: LambdaEvent

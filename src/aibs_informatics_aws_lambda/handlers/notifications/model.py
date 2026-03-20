@@ -14,6 +14,7 @@ from enum import StrEnum
 from typing import Any
 
 from aibs_informatics_core.models.base import PydanticBaseModel
+from pydantic import model_validator
 
 from aibs_informatics_aws_lambda.handlers.notifications.notifiers.model import (
     NotifierResult,
@@ -52,6 +53,7 @@ class NotificationContent(PydanticBaseModel):
     message: str
     content_type: NotificationContentType = NotificationContentType.PLAIN_TEXT
 
+    @model_validator(mode="before")
     @classmethod
     def _parse_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
         for key_alias in MESSAGE_KEY_ALIASES:

@@ -209,4 +209,6 @@ class RemoveDataPathsHandler(LambdaHandler[RemoveDataPathsRequest, RemoveDataPat
                     paths_removed.append(path)
                 except FileNotFoundError as e:
                     self.logger.warning(f"File at {path} does not exist anymore. Reason: {e}")
-        return RemoveDataPathsResponse(size_bytes_removed, paths_removed)
+        return RemoveDataPathsResponse(
+            size_bytes_removed=size_bytes_removed, paths_removed=paths_removed
+        )

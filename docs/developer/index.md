@@ -76,7 +76,7 @@ class MyCustomHandler(LambdaHandler):
 
 ```python
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
-from aibs_informatics_core.models import PydanticBaseModel
+from aibs_informatics_core.models.base import PydanticBaseModel
 
 class MyRequest(PydanticBaseModel):
     input_path: str

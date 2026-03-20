@@ -34,7 +34,7 @@ class WithDataPath(PydanticBaseModel):
         path: The data path (S3, EFS, or local).
     """
 
-    path: DataPath
+    path: DataPath = Field(union_mode="left_to_right")
 
     @property
     def efs_path(self) -> EFSPath | None:
@@ -48,8 +48,8 @@ class WithDataPath(PydanticBaseModel):
         return None
 
     @property
-    def s3_uri(self) -> S3Path | None:
-        """Get the path as an S3 URI if applicable.
+    def s3_path(self) -> S3Path | None:
+        """Get the path as an S3 path if applicable.
 
         Returns:
             The S3 path or None if not an S3 path.

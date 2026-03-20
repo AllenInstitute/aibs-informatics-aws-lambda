@@ -81,7 +81,7 @@ class CounterHandler_ReqNoResp_Tests(LambdaHandlerTestCase):
         return handler
 
     def test__handler__handles_valid_request_and_returns_no_response(self):
-        self.assertHandles(self.get_handler(), CounterRequest(1).to_dict(), None)
+        self.assertHandles(self.get_handler(), CounterRequest(count=1).to_dict(), None)
 
     def test__handler__handles_invalid_request_and_raises_error(self):
         with self.assertRaises(Exception):
@@ -117,8 +117,8 @@ class CounterHandler_ReqResp_Tests(LambdaHandlerTestCase):
         handler = CounterHandler_ReqResp.get_sqs_batch_handler()
         event = {
             "Records": [
-                {"body": CounterRequest(1).to_json()},
-                {"body": CounterRequest(0).to_json()},
+                {"body": CounterRequest(count=1).to_json()},
+                {"body": CounterRequest(count=0).to_json()},
             ]
         }
         self.assertHandles(handler, event, {"batchItemFailures": []})
