@@ -50,8 +50,9 @@ class DefaultLambdaContext(LambdaContext):
     """
 
     _function_name: str = field(
-        default_factory=lambda: get_env_var(AWS_LAMBDA_FUNCTION_NAME_KEY)
-        or DEFAULT_AWS_LAMBDA_FUNCTION_NAME
+        default_factory=lambda: (
+            get_env_var(AWS_LAMBDA_FUNCTION_NAME_KEY) or DEFAULT_AWS_LAMBDA_FUNCTION_NAME
+        )
     )
     _function_version: str = field(
         default_factory=lambda: get_env_var(AWS_LAMBDA_FUNCTION_VERSION_KEY, default_value="1.0")

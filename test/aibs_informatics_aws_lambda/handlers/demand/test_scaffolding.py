@@ -168,8 +168,8 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         "aibs_informatics_aws_lambda.handlers.demand.scaffolding.construct_batch_efs_configuration"
     )
     def test__handle__simple_case(self, mock_construct_batch_efs_configuration) -> None:
-        mock_construct_batch_efs_configuration.side_effect = (
-            lambda *args, **kwargs: BatchEFSConfiguration(
+        mock_construct_batch_efs_configuration.side_effect = lambda *args, **kwargs: (
+            BatchEFSConfiguration(
                 mount_point_config=MountPointConfiguration(
                     file_system=self.get_file_system("fs-123456789012"),
                     access_point=self.get_access_point("fsap-123456789012", "fs-123456789012"),
@@ -271,8 +271,8 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         "aibs_informatics_aws_lambda.handlers.demand.scaffolding.construct_batch_efs_configuration"
     )
     def test__handle__file_system_overrides(self, mock_construct_batch_efs_configuration) -> None:
-        mock_construct_batch_efs_configuration.side_effect = (
-            lambda *args, **kwargs: BatchEFSConfiguration(
+        mock_construct_batch_efs_configuration.side_effect = lambda *args, **kwargs: (
+            BatchEFSConfiguration(
                 mount_point_config=MountPointConfiguration(
                     file_system=self.get_file_system("fs-123456789012"),
                     access_point=self.get_access_point("fsap-123456789012", "fs-123456789012"),
