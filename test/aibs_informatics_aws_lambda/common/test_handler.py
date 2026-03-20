@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-
 from aibs_informatics_core.env import ENV_BASE_KEY
-from aibs_informatics_core.models.base import IntegerField, SchemaModel, custom_field
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import (
     DynamoDBRecordEventName,
 )
@@ -11,25 +9,22 @@ from aibs_informatics_aws_lambda.common.handler import DynamoDBRecord, LambdaHan
 from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase, LambdaHandlerType
 
 
-@dataclass
-class NoResponse(SchemaModel):
+class NoResponse(PydanticBaseModel):
     pass
 
 
-@dataclass
-class CounterRequest(SchemaModel):
-    count: int = custom_field(mm_field=IntegerField())
+class CounterRequest(PydanticBaseModel):
+    count: int
 
 
-@dataclass
-class CounterResponse(SchemaModel):
-    count: int = custom_field(mm_field=IntegerField())
+class CounterResponse(PydanticBaseModel):
+    count: int
 
 
 class CounterHandler_ReqResp(LambdaHandler[CounterRequest, CounterResponse]):
     def handle(self, request: CounterRequest) -> CounterResponse:
         self.log.info(f"Hey look the count is {request.count}")
-        response = CounterResponse(request.count + 1)
+        response = CounterResponse(count=request.count + 1)
         self.log.info(f"Hey look the count is now {response.count}")
         return response
 
@@ -110,8 +105,8 @@ class CounterHandler_ReqResp_Tests(LambdaHandlerTestCase):
     def test__handler__handles_valid_request_and_returns_response(self):
         self.assertHandles(
             self.get_handler(),
-            CounterRequest(1).to_dict(),
-            CounterResponse(2).to_dict(),
+            CounterRequest(count=1).to_dict(),
+            CounterResponse(count=2).to_dict(),
         )
 
     def test__handler__handles_invalid_request_and_raises_error(self):
@@ -143,7 +138,7 @@ class CounterHandler_ReqResp_Tests(LambdaHandlerTestCase):
                     "dynamodb": {
                         "NewImage": {
                             k: type_serializer.serialize(v)
-                            for k, v in CounterRequest(1).to_dict().items()
+                            for k, v in CounterRequest(count=1).to_dict().items()
                         },
                     },
                     "eventName": "INSERT",
@@ -154,7 +149,7 @@ class CounterHandler_ReqResp_Tests(LambdaHandlerTestCase):
                     "dynamodb": {
                         "NewImage": {
                             k: type_serializer.serialize(v)
-                            for k, v in CounterRequest(1).to_dict().items()
+                            for k, v in CounterRequest(count=1).to_dict().items()
                         },
                     },
                     "eventName": "MODIFY",

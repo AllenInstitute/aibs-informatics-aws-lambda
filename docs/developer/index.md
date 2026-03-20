@@ -75,17 +75,14 @@ class MyCustomHandler(LambdaHandler):
 ### Handler with Request/Response Models
 
 ```python
-from dataclasses import dataclass
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
-from aibs_informatics_core.models import SchemaModel
+from aibs_informatics_core.models import PydanticBaseModel
 
-@dataclass
-class MyRequest(SchemaModel):
+class MyRequest(PydanticBaseModel):
     input_path: str
     output_path: str
 
-@dataclass
-class MyResponse(SchemaModel):
+class MyResponse(PydanticBaseModel):
     status: str
     files_processed: int
 

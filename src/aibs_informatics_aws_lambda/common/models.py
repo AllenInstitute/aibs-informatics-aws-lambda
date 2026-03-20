@@ -5,9 +5,8 @@ Provides models for Lambda context, handler requests, and serialization utilitie
 
 import inspect
 from dataclasses import dataclass, field
-from typing import cast
+from typing import Annotated, cast
 
-import marshmallow as mm
 from aibs_informatics_aws_utils.constants.lambda_ import (
     AWS_LAMBDA_FUNCTION_ARN_KEY,
     AWS_LAMBDA_FUNCTION_MEMORY_SIZE_KEY,
@@ -19,12 +18,13 @@ from aibs_informatics_aws_utils.constants.lambda_ import (
     DEFAULT_AWS_LAMBDA_FUNCTION_NAME,
 )
 from aibs_informatics_aws_utils.core import get_account_id, get_region
-from aibs_informatics_core.models.base import DictField, SchemaModel, custom_field
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_core.utils.modules import as_module_type, get_qualified_name
 from aibs_informatics_core.utils.os_operations import get_env_var
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.typing.lambda_client_context import LambdaClientContext
 from aws_lambda_powertools.utilities.typing.lambda_cognito_identity import LambdaCognitoIdentity
+from pydantic import BeforeValidator, PlainSerializer
 
 from aibs_informatics_aws_lambda.common.handler import (
     LambdaEvent,
@@ -100,7 +100,7 @@ def serialize_handler(handler: LambdaHandlerType) -> str:
     return get_qualified_name(handler)
 
 
-def deserialize_handler(handler: str) -> LambdaHandlerType:
+def deserialize_handler(handler: str | LambdaHandlerType) -> LambdaHandlerType:
     """Deserialize a handler from its qualified name.
 
     Loads a handler from its fully qualified module path. Supports both
@@ -121,6 +121,12 @@ def deserialize_handler(handler: str) -> LambdaHandlerType:
         response = handler(event, context)
         ```
     """
+    if not isinstance(handler, str):
+        assert callable(handler), (
+            f"Invalid handler type: expected a callable or fully qualified handler path string, "
+            f"got {type(handler).__name__}."
+        )
+        return cast(LambdaHandlerType, handler)
     handler_components = handler.split(".")
 
     handler_module = as_module_type(".".join(handler_components[:-1]))
@@ -139,8 +145,7 @@ def deserialize_handler(handler: str) -> LambdaHandlerType:
         )
 
 
-@dataclass
-class LambdaHandlerRequest(SchemaModel):
+class LambdaHandlerRequest(PydanticBaseModel):
     """Request model for dynamic Lambda handler invocation.
 
     Contains the handler reference and event payload for routing
@@ -151,9 +156,9 @@ class LambdaHandlerRequest(SchemaModel):
         event: The event payload to pass to the handler.
     """
 
-    handler: LambdaHandlerType = custom_field(
-        mm_field=mm.fields.Function(
-            lambda obj: serialize_handler(obj.handler), deserialize_handler
-        )
-    )
-    event: LambdaEvent = custom_field(mm_field=DictField())
+    handler: Annotated[
+        LambdaHandlerType,
+        BeforeValidator(deserialize_handler),
+        PlainSerializer(lambda obj: serialize_handler(obj.handler)),
+    ]
+    event: LambdaEvent

@@ -2,11 +2,11 @@ import json
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Generic, Literal, Optional, TypeVar, Union, cast
+from typing import Generic, Literal, Optional, TypeVar, cast
 
 from aibs_informatics_aws_utils.s3 import download_to_json_object, upload_json
 from aibs_informatics_core.executors.base import BaseExecutor
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import ModelProtocol
 from aibs_informatics_core.utils.json import JSON
 from aws_lambda_powertools.utilities.batch import (
@@ -20,13 +20,15 @@ from aws_lambda_powertools.utilities.batch.types import PartialItemFailureRespon
 from aws_lambda_powertools.utilities.data_classes.dynamo_db_stream_event import DynamoDBRecord
 from aws_lambda_powertools.utilities.data_classes.sqs_event import SQSRecord
 from aws_lambda_powertools.utilities.typing import LambdaContext
+from pydantic import JsonValue
 
 from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
 
-LambdaEvent = Union[JSON]  # type: ignore # https://github.com/python/mypy/issues/7866
-LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], Optional[JSON]]
+LambdaEvent = JsonValue
+LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], Optional[JsonValue]]
+
 logger = logging.getLogger(__name__)
 
 REQUEST = TypeVar("REQUEST", bound=ModelProtocol)
@@ -59,12 +61,10 @@ class LambdaHandler(
 
     Example:
         ```python
-        @dataclass
-        class MyRequest(SchemaModel):
+        class MyRequest(PydanticBaseModel):
             name: str
 
-        @dataclass
-        class MyResponse(SchemaModel):
+        class MyResponse(PydanticBaseModel):
             message: str
 
         class MyHandler(LambdaHandler[MyRequest, MyResponse]):
@@ -80,11 +80,11 @@ class LambdaHandler(
         super().__post_init__()
 
     @classmethod
-    def load_input__remote(cls, remote_path: S3URI) -> JSON:
+    def load_input__remote(cls, remote_path: S3Path) -> JSON:
         """Load input data from a remote S3 location.
 
         Args:
-            remote_path (S3URI): The S3 URI to download the input from.
+            remote_path (S3Path): The S3 URI to download the input from.
 
         Returns:
             The JSON content from the S3 object.
@@ -92,12 +92,12 @@ class LambdaHandler(
         return download_to_json_object(remote_path)
 
     @classmethod
-    def write_output__remote(cls, output: JSON, remote_path: S3URI) -> None:
+    def write_output__remote(cls, output: JSON, remote_path: S3Path) -> None:
         """Write output data to a remote S3 location.
 
         Args:
             output (JSON): The JSON content to upload.
-            remote_path (S3URI): The S3 URI to upload the output to.
+            remote_path (S3Path): The S3 URI to upload the output to.
         """
         return upload_json(output, remote_path)
 

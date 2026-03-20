@@ -28,7 +28,7 @@ DUMMY_VARIABLE = 1
                 "handler": "test.aibs_informatics_aws_lambda.common.test_models.mock_handler",
                 "event": {},
             },
-            LambdaHandlerRequest(mock_handler, {}),
+            LambdaHandlerRequest(handler=mock_handler, event={}),
             does_not_raise(),
             id="simple",
         ),

@@ -34,7 +34,7 @@ from aibs_informatics_aws_utils.efs import (
 from aibs_informatics_aws_utils.efs.paths import get_efs_path
 from aibs_informatics_core.env import EnvBase
 from aibs_informatics_core.models.aws.efs import EFSPath
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.data_sync import PrepareBatchDataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
 from aibs_informatics_core.models.demand_execution.resolvables import Resolvable, Uploadable
@@ -350,7 +350,7 @@ class DemandExecutionContextManager:
                 temporary_request_payload_path = temporary_request_payload_root / f"input_{i}/"
             requests.append(
                 PrepareBatchDataSyncRequest(
-                    source_path=S3URI(param.remote_value),
+                    source_path=S3Path(param.remote_value),
                     destination_path=get_efs_path(
                         local_path=Path(param.value),
                         raise_if_unresolved=True,
@@ -392,7 +392,7 @@ class DemandExecutionContextManager:
             requests.append(
                 PrepareBatchDataSyncRequest(
                     source_path=get_efs_path(Path(param.value), True, self.efs_mount_points),
-                    destination_path=S3URI(param.remote_value),
+                    destination_path=S3Path(param.remote_value),
                     retain_source_data=False,
                     require_lock=False,
                     batch_size_bytes_limit=75 * BYTES_PER_GIBIBYTE,  # 75 GiB max

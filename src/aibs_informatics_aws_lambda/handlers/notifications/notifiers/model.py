@@ -3,24 +3,14 @@
 Defines the target, content, and result models for notification delivery.
 """
 
-from dataclasses import dataclass
 from enum import Enum
 from typing import Any, TypeVar
 
-import marshmallow as mm
+from aibs_informatics_core.exceptions import ValidationError
 from aibs_informatics_core.models.aws.sns import SNSTopicArn
-from aibs_informatics_core.models.base import (
-    BooleanField,
-    CustomStringField,
-    EnumField,
-    ListField,
-    RawField,
-    SchemaModel,
-    StringField,
-    custom_field,
-)
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_core.models.email_address import EmailAddress
-from aibs_informatics_core.utils.json import JSON
+from pydantic import JsonValue, model_validator
 
 NOTIFIER_TARGET = TypeVar("NOTIFIER_TARGET", bound="NotifierTarget")
 """Type variable for notifier target types."""
@@ -44,8 +34,7 @@ class NotificationContentType(str, Enum):
     JSON = "json"
 
 
-@dataclass
-class NotificationContent(SchemaModel):
+class NotificationContent(PydanticBaseModel):
     """Content of a notification message.
 
     Attributes:
@@ -54,15 +43,13 @@ class NotificationContent(SchemaModel):
         content_type: The format of the message content.
     """
 
-    subject: str = custom_field(mm_field=StringField())
-    message: str = custom_field(mm_field=StringField())
-    content_type: NotificationContentType = custom_field(
-        mm_field=EnumField(NotificationContentType), default=NotificationContentType.PLAIN_TEXT
-    )
+    subject: str
+    message: str
+    content_type: NotificationContentType = NotificationContentType.PLAIN_TEXT
 
+    @model_validator(mode="before")
     @classmethod
-    @mm.pre_load
-    def _parse_fields(cls, data: dict[str, Any], **kwargs) -> dict[str, Any]:
+    def _parse_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
         for key_alias in MESSAGE_KEY_ALIASES:
             if key_alias in data and "message" not in data:
                 data["message"] = data[key_alias]
@@ -90,8 +77,7 @@ class NotifierType(str, Enum):
 # ----------------------------------------------------------
 
 
-@dataclass
-class NotifierTarget(SchemaModel):
+class NotifierTarget(PydanticBaseModel):
     """Base class for notification delivery targets.
 
     Subclasses define specific target types like email or SNS topics.
@@ -100,7 +86,6 @@ class NotifierTarget(SchemaModel):
     pass
 
 
-@dataclass
 class SESEmailTarget(NotifierTarget):
     """Email delivery target for SES notifications.
 
@@ -108,13 +93,11 @@ class SESEmailTarget(NotifierTarget):
         recipients: List of email addresses to send to.
     """
 
-    recipients: list[EmailAddress] = custom_field(
-        mm_field=ListField(CustomStringField(EmailAddress))
-    )
+    recipients: list[EmailAddress]
 
+    @model_validator(mode="before")
     @classmethod
-    @mm.pre_load
-    def _parse_recipient_fields(cls, data: dict[str, Any], **kwargs) -> dict[str, Any]:
+    def _parse_recipient_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
         recipients = []
 
         for key_alias in ["recipients", "recipient", "addresses", "address"]:
@@ -124,12 +107,11 @@ class SESEmailTarget(NotifierTarget):
                 elif isinstance(value_list, list):
                     recipients.extend(value_list)
                 else:
-                    raise mm.ValidationError("Invalid recipient type")
+                    raise ValidationError("Invalid recipient type")
         data["recipients"] = sorted(set(recipients))
         return data
 
 
-@dataclass
 class SNSTopicTarget(NotifierTarget):
     """SNS topic delivery target for notifications.
 
@@ -137,7 +119,7 @@ class SNSTopicTarget(NotifierTarget):
         topic: The ARN of the SNS topic to publish to.
     """
 
-    topic: SNSTopicArn = custom_field(mm_field=CustomStringField(SNSTopicArn))
+    topic: SNSTopicArn
 
 
 # ----------------------------------------------------------
@@ -145,8 +127,7 @@ class SNSTopicTarget(NotifierTarget):
 # ----------------------------------------------------------
 
 
-@dataclass
-class NotifierResult(SchemaModel):
+class NotifierResult(PydanticBaseModel):
     """Result of a notification delivery attempt.
 
     Attributes:
@@ -155,13 +136,13 @@ class NotifierResult(SchemaModel):
         response: The raw response from the delivery service.
     """
 
-    target: dict | NotifierTarget = custom_field(mm_field=RawField())
-    success: bool = custom_field(mm_field=BooleanField())
-    response: JSON = custom_field(mm_field=RawField())
+    target: dict | NotifierTarget
+    success: bool
+    response: JsonValue
 
+    @model_validator(mode="before")
     @classmethod
-    @mm.post_dump
-    def _serialize_target(cls, data: dict[str, Any], **kwargs) -> dict[str, Any]:
+    def _serialize_target(cls, data: dict[str, Any]) -> dict[str, Any]:
         target = data.pop("target")
         if isinstance(target, NotifierTarget):
             target = target.to_dict()

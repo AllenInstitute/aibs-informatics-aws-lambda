@@ -13,7 +13,7 @@ from typing import TypeVar
 from aibs_informatics_aws_utils.data_sync.file_system import BaseFileSystem, Node, get_file_system
 from aibs_informatics_aws_utils.efs import detect_mount_points, get_local_path
 from aibs_informatics_core.models.aws.efs import EFSPath
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.utils.file_operations import (
     get_path_size_bytes,
     remove_path,
@@ -187,12 +187,12 @@ class RemoveDataPathsHandler(LambdaHandler[RemoveDataPathsRequest, RemoveDataPat
         size_bytes_removed = 0
         paths_removed = []
         for path in request.paths:
-            if isinstance(path, S3URI):
-                # # TODO: add support for S3URI when more guardrails are in place
+            if isinstance(path, S3Path):
+                # # TODO: add support for S3Path when more guardrails are in place
                 # path_stats = get_s3_path_stats(path)
                 # delete_s3_path(path)
                 # size_bytes_removed += path_stats.size_bytes
-                self.logger.warning(f"Skipping S3URI path deletion ({path}). Not supported yet.")
+                self.logger.warning(f"Skipping S3Path path deletion ({path}). Not supported yet.")
             else:
                 if isinstance(path, EFSPath):
                     self.logger.info(f"Converting EFSPath ({path}) to local path")
