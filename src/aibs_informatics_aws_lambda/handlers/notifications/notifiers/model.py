@@ -139,17 +139,6 @@ class NotifierResult(PydanticBaseModel):
         response: The raw response from the delivery service.
     """
 
-    target: dict | NotifierTarget
+    target: SESEmailTarget | SNSTopicTarget | dict
     success: bool
     response: JsonValue
-
-    @model_validator(mode="before")
-    @classmethod
-    def _serialize_target(cls, data: Any) -> Any:
-        if not isinstance(data, dict):
-            return data
-        target = data.pop("target")
-        if isinstance(target, NotifierTarget):
-            target = target.to_dict()
-        data["target"] = target
-        return data
