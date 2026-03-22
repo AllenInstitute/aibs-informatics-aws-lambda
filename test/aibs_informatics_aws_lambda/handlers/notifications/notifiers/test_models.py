@@ -3,6 +3,7 @@ from pytest import mark, param
 
 from aibs_informatics_aws_lambda.handlers.notifications.notifiers.model import (
     NotificationContent,
+    NotifierResult,
     SESEmailTarget,
 )
 from test.base import does_not_raise
@@ -66,6 +67,67 @@ def test__SESEmailTarget__from_dict(value, expected, raise_expectation):
 def test__NotificationContent__from_dict(value, expected, raise_expectation):
     with raise_expectation:
         actual = NotificationContent.from_dict(value)
+
+    if expected:
+        assert actual == expected
+
+
+@mark.parametrize(
+    "value,expected,raise_expectation",
+    [
+        param(
+            {
+                "target": {"recipients": [ADDR1]},
+                "success": True,
+                "response": {"message_id": "123"},
+            },
+            NotifierResult(
+                target=SESEmailTarget(recipients=[EmailAddress(ADDR1)]),
+                success=True,
+                response={"message_id": "123"},
+            ),
+            does_not_raise(),
+            id="simple",
+        ),
+        param(
+            {
+                "target": {"recipients": [ADDR1, ADDR2], "recipient": ADDR3},
+                "success": True,
+                "response": {"message_id": "123"},
+            },
+            NotifierResult(
+                target=SESEmailTarget(
+                    recipients=[
+                        EmailAddress(ADDR1),
+                        EmailAddress(ADDR2),
+                        EmailAddress(ADDR3),
+                    ]
+                ),
+                success=True,
+                response={"message_id": "123"},
+            ),
+            does_not_raise(),
+            id="handles aliases",
+        ),
+        param(
+            {
+                "target": {"random_field": "value"},
+                "success": True,
+                "response": {"message_id": "123"},
+            },
+            NotifierResult(
+                target={"random_field": "value"},
+                success=True,
+                response={"message_id": "123"},
+            ),
+            does_not_raise(),
+            id="handles unknown fields",
+        ),
+    ],
+)
+def test__NotifierResult__from_dict(value, expected, raise_expectation):
+    with raise_expectation:
+        actual = NotifierResult.from_dict(value)
 
     if expected:
         assert actual == expected

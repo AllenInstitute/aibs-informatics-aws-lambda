@@ -62,16 +62,13 @@ pip install aibs-informatics-aws-lambda
 ### Basic Usage
 
 ```python
-from dataclasses import dataclass
-from aibs_informatics_core.models.base import SchemaModel
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 
-@dataclass
-class MyRequest(SchemaModel):
+class MyRequest(PydanticBaseModel):
     name: str
 
-@dataclass
-class MyResponse(SchemaModel):
+class MyResponse(PydanticBaseModel):
     message: str
 
 class MyHandler(LambdaHandler[MyRequest, MyResponse]):

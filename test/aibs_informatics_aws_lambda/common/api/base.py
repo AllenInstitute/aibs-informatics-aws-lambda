@@ -1,8 +1,7 @@
-from dataclasses import dataclass
 from typing import Literal
 
 from aibs_informatics_core.models.api.route import ApiRoute
-from aibs_informatics_core.models.base import SchemaModel
+from aibs_informatics_core.models.base import PydanticBaseModel
 
 from aibs_informatics_aws_lambda.common.api.handler import ApiLambdaHandler
 
@@ -11,15 +10,13 @@ from aibs_informatics_aws_lambda.common.api.handler import ApiLambdaHandler
 # ------------------------------
 
 
-@dataclass
-class HealthCheckRequest(SchemaModel):
+class HealthCheckRequest(PydanticBaseModel):
     """Can be used as a No-op"""
 
     raise_exception: bool = False
 
 
-@dataclass
-class HealthCheckResponse(SchemaModel):
+class HealthCheckResponse(PydanticBaseModel):
     status: Literal["OK"] = "OK"
 
 
@@ -47,15 +44,13 @@ class HealthCheckHandler(
 # ------------------------------
 
 
-@dataclass
-class GetRequest(SchemaModel):
+class GetRequest(PydanticBaseModel):
     """Can be used as a Getter"""
 
     id: str
 
 
-@dataclass
-class GetResponse(SchemaModel):
+class GetResponse(PydanticBaseModel):
     values: list[str]
 
 

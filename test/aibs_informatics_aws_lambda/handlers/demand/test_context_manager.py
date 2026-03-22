@@ -15,7 +15,7 @@ from aibs_informatics_aws_utils.constants.efs import (
 from aibs_informatics_aws_utils.efs import MountPointConfiguration, detect_mount_points
 from aibs_informatics_core.env import EnvBase
 from aibs_informatics_core.models.aws.efs import EFSPath
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.demand_execution import (
     DemandExecution,
     DemandExecutionMetadata,
@@ -48,8 +48,8 @@ ENV_BASE = EnvBase("dev-marmotdev")
 DEMAND_ID = UniqueID.create()
 ANOTHER_DEMAND_ID = UniqueID.create()
 
-S3_URI = S3URI.build(bucket_name="bucket", key="key")
-ANOTHER_S3_URI = S3URI.build(bucket_name="bucket", key="another_key")
+S3_URI = S3Path.build(bucket_name="bucket", key="key")
+ANOTHER_S3_URI = S3Path.build(bucket_name="bucket", key="another_key")
 
 
 EXECUTION_IMAGE = "051791135335.dkr.ecr.us-west-2.amazonaws.com/test_image:latest"
@@ -271,7 +271,7 @@ def test__generate_batch_job_builder__simple(get_or_create_file_system, create_a
                 "C": "c",
                 "D": f"d @ {ANOTHER_S3_URI}-out",
             },
-            output_s3_prefix=S3URI.build("bucket", key="outs/"),
+            output_s3_prefix=S3Path.build("bucket", key="outs/"),
         ),
     )
 
@@ -686,7 +686,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
                 cleanup_inputs=False,
                 cleanup_working_dir=False,
                 input_data_sync_configuration=DataSyncConfiguration(
-                    temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
+                    temporary_request_payload_path=S3Path("s3://bucket/override_prefix")
                 ),
             ),
         )
@@ -751,7 +751,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             self.env_base,
             ContextManagerConfiguration(
                 output_data_sync_configuration=DataSyncConfiguration(
-                    temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
+                    temporary_request_payload_path=S3Path("s3://bucket/override_prefix")
                 )
             ),
         )

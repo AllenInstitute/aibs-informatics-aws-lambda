@@ -10,7 +10,7 @@ from aibs_informatics_aws_utils.constants.lambda_ import (
     AWS_LAMBDA_FUNCTION_HANDLER_STANDARD_KEY,
 )
 from aibs_informatics_aws_utils.s3 import download_to_json_object, upload_json
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.utils.json import JSON, load_json_object
 from aibs_informatics_core.utils.os_operations import get_env_var
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -132,9 +132,9 @@ def handle_cli(args: Sequence[str] | None = None):
 
     if parsed_args.payload is None:
         raise ValueError("Payload could not be resolved by argument or environment variable")
-    if S3URI.is_valid(parsed_args.payload):
+    if S3Path.is_valid(parsed_args.payload):
         logger.info("Payload is an S3 path. downloading to JSON")
-        event = download_to_json_object(S3URI(parsed_args.payload))
+        event = download_to_json_object(S3Path(parsed_args.payload))
     else:
         event = load_json_object(parsed_args.payload)
 
@@ -146,9 +146,9 @@ def handle_cli(args: Sequence[str] | None = None):
     if response_location:
         response = response or {}
         logger.info(f"Response location specified: {response_location}")
-        if S3URI.is_valid(response_location):
+        if S3Path.is_valid(response_location):
             logger.info("Uploading result to S3")
-            upload_json(response, S3URI(response_location))
+            upload_json(response, S3Path(response_location))
         elif not os.path.isdir(response_location) and os.access(
             os.path.dirname(response_location), os.W_OK
         ):

@@ -7,10 +7,10 @@ from aibs_informatics_aws_lambda.handlers.data_sync.model import ListDataPathsRe
 
 
 def test_with_data_path_efs():
-    efs_path = EFSPath("fs-123456789:/efs")
+    efs_path = EFSPath("fs-123456789:/efs/path")
     with_data_path_efs = WithDataPath(path=efs_path)
     assert with_data_path_efs.efs_path == efs_path
-    assert with_data_path_efs.s3_uri is None
+    assert with_data_path_efs.s3_path is None
     assert with_data_path_efs.local_path is None
 
 
@@ -18,7 +18,7 @@ def test_with_data_path_s3():
     s3_path = S3Path("s3://bucket/key")
     with_data_path_s3 = WithDataPath(path=s3_path)
     assert with_data_path_s3.efs_path is None
-    assert with_data_path_s3.s3_uri == s3_path
+    assert with_data_path_s3.s3_path == s3_path
     assert with_data_path_s3.local_path is None
 
 
@@ -26,7 +26,7 @@ def test_with_data_path_local():
     local_path = Path("/local/path")
     with_data_path_local = WithDataPath(path=local_path)
     assert with_data_path_local.efs_path is None
-    assert with_data_path_local.s3_uri is None
+    assert with_data_path_local.s3_path is None
     assert with_data_path_local.local_path == local_path
 
 

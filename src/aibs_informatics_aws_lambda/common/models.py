@@ -5,9 +5,8 @@ Provides models for Lambda context, handler requests, and serialization utilitie
 
 import inspect
 from dataclasses import dataclass, field
-from typing import cast
+from typing import Annotated, cast
 
-import marshmallow as mm
 from aibs_informatics_aws_utils.constants.lambda_ import (
     AWS_LAMBDA_FUNCTION_ARN_KEY,
     AWS_LAMBDA_FUNCTION_MEMORY_SIZE_KEY,
@@ -19,12 +18,13 @@ from aibs_informatics_aws_utils.constants.lambda_ import (
     DEFAULT_AWS_LAMBDA_FUNCTION_NAME,
 )
 from aibs_informatics_aws_utils.core import get_account_id, get_region
-from aibs_informatics_core.models.base import DictField, SchemaModel, custom_field
+from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_core.utils.modules import as_module_type, get_qualified_name
 from aibs_informatics_core.utils.os_operations import get_env_var
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.typing.lambda_client_context import LambdaClientContext
 from aws_lambda_powertools.utilities.typing.lambda_cognito_identity import LambdaCognitoIdentity
+from pydantic import BeforeValidator, PlainSerializer
 
 from aibs_informatics_aws_lambda.common.handler import (
     LambdaEvent,
@@ -91,16 +91,41 @@ class DefaultLambdaContext(LambdaContext):
 def serialize_handler(handler: LambdaHandlerType) -> str:
     """Serialize a Lambda handler to its qualified name.
 
+    For closures (e.g., from ``LambdaHandler.get_handler()``), the function's
+    ``__qualname__`` points to the closure definition site rather than the
+    module-level variable that holds it. This searches ``sys.modules`` for a
+    global variable that references the exact handler object, so that
+    constructor arguments passed to ``get_handler()`` are preserved on
+    round-trip.
+
     Args:
         handler (LambdaHandlerType): The Lambda handler function or class.
 
     Returns:
         The fully qualified module path of the handler.
     """
+    # For closures, try to find a module-level variable referencing this handler
+    if "<locals>" in getattr(handler, "__qualname__", ""):
+        import sys
+
+        for module_name, module in sys.modules.items():
+            if module is None:
+                continue
+            try:
+                module_dict = vars(module)
+            except TypeError:
+                continue
+            for attr_name, attr_value in module_dict.items():
+                if attr_value is handler:
+                    return f"{module_name}.{attr_name}"
+        # Fall back to the originating class if the variable wasn't found
+        handler_class = getattr(handler, "_handler_class", None)
+        if handler_class is not None:
+            return get_qualified_name(handler_class)
     return get_qualified_name(handler)
 
 
-def deserialize_handler(handler: str) -> LambdaHandlerType:
+def deserialize_handler(handler: str | LambdaHandlerType) -> LambdaHandlerType:
     """Deserialize a handler from its qualified name.
 
     Loads a handler from its fully qualified module path. Supports both
@@ -121,6 +146,13 @@ def deserialize_handler(handler: str) -> LambdaHandlerType:
         response = handler(event, context)
         ```
     """
+    if not isinstance(handler, str):
+        if not callable(handler):
+            raise ValueError(
+                f"Invalid handler type: expected a callable or fully qualified handler path "
+                f"string, got {type(handler).__name__}."
+            )
+        return cast(LambdaHandlerType, handler)
     handler_components = handler.split(".")
 
     handler_module = as_module_type(".".join(handler_components[:-1]))
@@ -139,8 +171,7 @@ def deserialize_handler(handler: str) -> LambdaHandlerType:
         )
 
 
-@dataclass
-class LambdaHandlerRequest(SchemaModel):
+class LambdaHandlerRequest(PydanticBaseModel):
     """Request model for dynamic Lambda handler invocation.
 
     Contains the handler reference and event payload for routing
@@ -151,9 +182,9 @@ class LambdaHandlerRequest(SchemaModel):
         event: The event payload to pass to the handler.
     """
 
-    handler: LambdaHandlerType = custom_field(
-        mm_field=mm.fields.Function(
-            lambda obj: serialize_handler(obj.handler), deserialize_handler
-        )
-    )
-    event: LambdaEvent = custom_field(mm_field=DictField())
+    handler: Annotated[
+        LambdaHandlerType,
+        BeforeValidator(deserialize_handler),
+        PlainSerializer(lambda handler: serialize_handler(handler)),
+    ]
+    event: LambdaEvent
