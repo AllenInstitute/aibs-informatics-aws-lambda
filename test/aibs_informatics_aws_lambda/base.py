@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Callable, Optional, Type
+from collections.abc import Callable
+from typing import Optional
 
 from aibs_informatics_core.env import ENV_BASE_KEY
 from aibs_informatics_core.utils.json import JSON
@@ -60,8 +61,8 @@ class LambdaHandlerTestCase(BaseTest):
         self,
         handler: LambdaHandlerType,
         event: LambdaEvent,
-        response: Optional[JSON] = None,
-        context: Optional[LambdaContext] = None,
+        response: JSON | None = None,
+        context: LambdaContext | None = None,
     ):
         actual = handler(event, context or self.context)
         if response is None:
@@ -77,8 +78,8 @@ class LambdaHandlerTestCase(BaseTest):
         self,
         handler: LambdaHandlerType,
         event: LambdaEvent,
-        exception: Type[Exception],
-        context: Optional[LambdaContext] = None,
+        exception: type[Exception],
+        context: LambdaContext | None = None,
     ):
         with self.assertRaises(exception):
             handler(event, context or self.context)

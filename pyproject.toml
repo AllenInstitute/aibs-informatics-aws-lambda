@@ -13,13 +13,13 @@ authors = [{ name = "AIBS Informatics Group", email = "marmot@alleninstitute.onm
 maintainers = [{ name = "AIBS Informatics Group", email = "marmot@alleninstitute.onmicrosoft.com"}]
 description = "Utility library for building validated and typed AWS Lambda functions"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dynamic = [
     "version",
 ]
 dependencies = [
-    "aibs-informatics-aws-utils>=0.0.12,<1",
-    "aibs-informatics-core>=0.2.6,<1",
+    "aibs-informatics-aws-utils~=1.0",
+    "aibs-informatics-core>=1.0.3,<2",
     "aws-lambda-powertools ~= 2.35",
     "pydantic >= 2.0.3, < 3",
     "aws-lambda-typing",

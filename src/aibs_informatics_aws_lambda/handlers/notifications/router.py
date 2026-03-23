@@ -5,7 +5,6 @@ to appropriate delivery channels.
 """
 
 from dataclasses import dataclass, field
-from typing import List
 
 from aibs_informatics_aws_lambda.common.handler import LambdaHandler
 from aibs_informatics_aws_lambda.handlers.notifications.model import (
@@ -39,7 +38,7 @@ class NotificationRouter(LambdaHandler[NotificationRequest, NotificationResponse
         ```
     """
 
-    notifiers: List[Notifier] = field(default_factory=list)
+    notifiers: list[Notifier] = field(default_factory=list)
 
     def __post_init__(self):
         """Initialize the handler with default notifiers if none provided."""
@@ -59,7 +58,7 @@ class NotificationRouter(LambdaHandler[NotificationRequest, NotificationResponse
         Returns:
             Response containing results for each target.
         """
-        results: List[NotifierResult] = []
+        results: list[NotifierResult] = []
         for target in request.targets:
             for notifier in self.notifiers:
                 try:

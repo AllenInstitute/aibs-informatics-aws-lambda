@@ -1,11 +1,12 @@
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Generic, Literal, Optional, TypeVar, Union, cast
+from typing import Generic, Literal, Optional, TypeAlias, TypeVar, cast
 
 from aibs_informatics_aws_utils.s3 import download_to_json_object, upload_json
 from aibs_informatics_core.executors.base import BaseExecutor
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import ModelProtocol
 from aibs_informatics_core.utils.json import JSON
 from aws_lambda_powertools.utilities.batch import (
@@ -24,8 +25,9 @@ from aibs_informatics_aws_lambda.common.base import HandlerMixins
 from aibs_informatics_aws_lambda.common.logging import LoggingMixins
 from aibs_informatics_aws_lambda.common.metrics import MetricsMixins
 
-LambdaEvent = Union[JSON]  # type: ignore # https://github.com/python/mypy/issues/7866
+LambdaEvent: TypeAlias = JSON
 LambdaHandlerType = Callable[[LambdaEvent, LambdaContext], Optional[JSON]]
+
 logger = logging.getLogger(__name__)
 
 REQUEST = TypeVar("REQUEST", bound=ModelProtocol)
@@ -58,12 +60,10 @@ class LambdaHandler(
 
     Example:
         ```python
-        @dataclass
-        class MyRequest(SchemaModel):
+        class MyRequest(PydanticBaseModel):
             name: str
 
-        @dataclass
-        class MyResponse(SchemaModel):
+        class MyResponse(PydanticBaseModel):
             message: str
 
         class MyHandler(LambdaHandler[MyRequest, MyResponse]):
@@ -79,11 +79,11 @@ class LambdaHandler(
         super().__post_init__()
 
     @classmethod
-    def load_input__remote(cls, remote_path: S3URI) -> JSON:
+    def load_input__remote(cls, remote_path: S3Path) -> JSON:
         """Load input data from a remote S3 location.
 
         Args:
-            remote_path (S3URI): The S3 URI to download the input from.
+            remote_path (S3Path): The S3 URI to download the input from.
 
         Returns:
             The JSON content from the S3 object.
@@ -91,12 +91,12 @@ class LambdaHandler(
         return download_to_json_object(remote_path)
 
     @classmethod
-    def write_output__remote(cls, output: JSON, remote_path: S3URI) -> None:
+    def write_output__remote(cls, output: JSON, remote_path: S3Path) -> None:
         """Write output data to a remote S3 location.
 
         Args:
             output (JSON): The JSON content to upload.
-            remote_path (S3URI): The S3 URI to upload the output to.
+            remote_path (S3Path): The S3 URI to upload the output to.
         """
         return upload_json(output, remote_path)
 
@@ -132,7 +132,7 @@ class LambdaHandler(
         logger = cls.get_logger(service=cls.service_name(), add_to_root=False)
 
         @logger.inject_lambda_context(log_event=True)
-        def handler(event: LambdaEvent, context: LambdaContext) -> Optional[JSON]:
+        def handler(event: LambdaEvent, context: LambdaContext) -> JSON | None:
             lambda_handler = cls(*args, **kwargs)  # type: ignore[call-arg]
             logger.info(f"Instantiated {lambda_handler}.")
             lambda_handler.log = logger
@@ -155,6 +155,7 @@ class LambdaHandler(
 
             return None
 
+        handler._handler_class = cls  # type: ignore[attr-defined]
         return handler
 
     @classmethod
@@ -229,7 +230,7 @@ class LambdaHandler(
         logger = cls.get_logger(cls.service_name())
 
         # Create a record handler for each record in batch.
-        def record_handler(record: SQSRecord) -> Optional[JSON]:
+        def record_handler(record: SQSRecord) -> JSON | None:
             if not cls.should_process_sqs_record(record):
                 logger.info(f"SQS record {record} elected not to be processed.")
                 return None
@@ -315,7 +316,7 @@ class LambdaHandler(
         logger = cls.get_logger(cls.service_name())
 
         # Create a record handler for each record in batch.
-        def record_handler(record: DynamoDBRecord) -> Optional[JSON]:
+        def record_handler(record: DynamoDBRecord) -> JSON | None:
             if not cls.should_process_dynamodb_record(record):
                 logger.info(f"DynamoDB record {record} will not be processed.")
                 return None

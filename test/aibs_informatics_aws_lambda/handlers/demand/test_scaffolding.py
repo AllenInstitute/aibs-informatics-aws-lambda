@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest import mock
 
 from aibs_informatics_aws_utils.efs import MountPointConfiguration
@@ -168,8 +168,8 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         "aibs_informatics_aws_lambda.handlers.demand.scaffolding.construct_batch_efs_configuration"
     )
     def test__handle__simple_case(self, mock_construct_batch_efs_configuration) -> None:
-        mock_construct_batch_efs_configuration.side_effect = (
-            lambda *args, **kwargs: BatchEFSConfiguration(
+        mock_construct_batch_efs_configuration.side_effect = lambda *args, **kwargs: (
+            BatchEFSConfiguration(
                 mount_point_config=MountPointConfiguration(
                     file_system=self.get_file_system("fs-123456789012"),
                     access_point=self.get_access_point("fsap-123456789012", "fs-123456789012"),
@@ -271,8 +271,8 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         "aibs_informatics_aws_lambda.handlers.demand.scaffolding.construct_batch_efs_configuration"
     )
     def test__handle__file_system_overrides(self, mock_construct_batch_efs_configuration) -> None:
-        mock_construct_batch_efs_configuration.side_effect = (
-            lambda *args, **kwargs: BatchEFSConfiguration(
+        mock_construct_batch_efs_configuration.side_effect = lambda *args, **kwargs: (
+            BatchEFSConfiguration(
                 mount_point_config=MountPointConfiguration(
                     file_system=self.get_file_system("fs-123456789012"),
                     access_point=self.get_access_point("fsap-123456789012", "fs-123456789012"),
@@ -370,7 +370,7 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
             ),
         ]
 
-    def get_file_system(self, file_system_id: str) -> Dict[str, Any]:
+    def get_file_system(self, file_system_id: str) -> dict[str, Any]:
         return {
             "FileSystemId": file_system_id,  # ID of the EFS file system
             "CreationToken": "string",  # Unique string to ensure idempotent creation
@@ -386,7 +386,7 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
 
     def get_access_point(
         self, access_point_id: str, file_system_id: str, **tags
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "AccessPointId": access_point_id,  # ID of the EFS access point
             "ClientToken": "string",  # Unique string to ensure idempotent creation

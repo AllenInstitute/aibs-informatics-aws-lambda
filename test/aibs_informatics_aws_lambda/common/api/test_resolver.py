@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aws_lambda_powertools.event_handler.api_gateway import Router
 from aws_lambda_powertools.shared.constants import METRICS_NAMESPACE_ENV
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
@@ -139,7 +137,7 @@ class ApiResolverBuilderTests(BaseTest):
         self,
         path: str,
         method: str,
-        query_string_parameters: Optional[str] = None,
+        query_string_parameters: str | None = None,
         body: str = '"{}"',
     ):
         return {

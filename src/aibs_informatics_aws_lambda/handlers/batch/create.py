@@ -6,7 +6,7 @@ job definitions.
 
 import re
 from dataclasses import dataclass
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from aibs_informatics_aws_utils.batch import (
     BatchJobBuilder,
@@ -64,7 +64,7 @@ class DockerImageUri(ValidatedStr):
         return self.get_match_groups()[1]
 
     @property
-    def tag(self) -> Optional[str]:
+    def tag(self) -> str | None:
         """Get the image tag if specified.
 
         Returns:
@@ -73,7 +73,7 @@ class DockerImageUri(ValidatedStr):
         return self.get_match_groups()[2]
 
     @property
-    def sha256(self) -> Optional[str]:
+    def sha256(self) -> str | None:
         """Get the SHA256 digest if specified.
 
         Returns:

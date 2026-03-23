@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Tuple, Union
 from unittest import mock
 
 from aibs_informatics_aws_utils.data_sync.file_system import Node
@@ -391,7 +390,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         actual = PrepareBatchDataSyncHandler.build_destination_path(request, node)
         self.assertEqual(expected, actual)
 
-    def setUpLocalFS(self, *paths: Tuple[Union[Path, str], int]) -> Path:
+    def setUpLocalFS(self, *paths: tuple[Path | str, int]) -> Path:
         root_file_system = self.tmp_path()
         for relative_path, size in paths:
             full_path = root_file_system / relative_path
@@ -608,7 +607,7 @@ class BatchDataSyncHandlerTests(LambdaHandlerTestCase):
         self.mock_sync_operations.assert_called()
         self.assertEqual(self.mock_sync_operations.call_count, 1)
 
-    def setUpLocalFS(self, *paths: Tuple[Union[Path, str], int]) -> Path:
+    def setUpLocalFS(self, *paths: tuple[Path | str, int]) -> Path:
         root_file_system = self.tmp_path()
         for relative_path, size in paths:
             full_path = root_file_system / relative_path
@@ -697,7 +696,7 @@ class BatchDataSyncHandlerTests(LambdaHandlerTestCase):
 def test__PrepareBatchDataSyncHandler_build_destination_path(
     request_obj: PrepareBatchDataSyncRequest,
     node: Node,
-    expected: Union[Path, S3Path],
+    expected: Path | S3Path,
 ):
     actual = PrepareBatchDataSyncHandler.build_destination_path(request_obj, node)
 

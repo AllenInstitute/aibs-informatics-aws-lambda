@@ -23,4 +23,4 @@ assignees: ''
 #### Desktop (please complete the following information):
 - **OS**: [e.g. MacOS 10.15.7, Windows 10]
 - **Package Version** [e.g. 0.0.1 or commit ID]
-- **Python Version** [e.g. python 3.9.16]
+- **Python Version** [e.g. python 3.12.2]

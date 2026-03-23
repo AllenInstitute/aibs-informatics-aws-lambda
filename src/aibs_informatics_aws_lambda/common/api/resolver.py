@@ -8,11 +8,12 @@ __all__ = [
     "ApiResolverBuilder",
 ]
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from traceback import format_exc
 from types import ModuleType
-from typing import Callable, ClassVar, List, Optional, Union
+from typing import ClassVar, Union
 
 from aibs_informatics_core.collections import PostInitMixin
 from aibs_informatics_core.utils.json import JSON, JSONObject
@@ -205,8 +206,8 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
     def add_handlers(
         self,
         target_module: ModuleType,
-        router: Optional[BaseRouter] = None,
-        prefix: Optional[str] = None,
+        router: BaseRouter | None = None,
+        prefix: str | None = None,
     ):
         """Dynamically add all API Lambda handlers from a module.
 
@@ -239,8 +240,8 @@ class ApiResolverBuilder(LoggingMixins, MetricsMixins, PostInitMixin):
 def add_handlers_to_router(
     router: BaseRouter,
     target_module: ModuleType,
-    metrics: Optional[Union[EphemeralMetrics, Metrics]] = None,
-    logger: Optional[Logger] = None,
+    metrics: EphemeralMetrics | Metrics | None = None,
+    logger: Logger | None = None,
 ):
     """Add all API handlers from a module to a router.
 
@@ -261,7 +262,7 @@ def add_handlers_to_router(
         api_handler_class.add_to_router(router, logger=logger, metrics=metrics)
 
 
-def get_target_handler_classes(target_module: ModuleType) -> List[ApiLambdaHandler]:
+def get_target_handler_classes(target_module: ModuleType) -> list[ApiLambdaHandler]:
     """Get all ApiLambdaHandler subclasses in a module.
 
     Recursively loads all modules from the target package and returns
@@ -287,7 +288,7 @@ def get_target_handler_classes(target_module: ModuleType) -> List[ApiLambdaHandl
         *list(loaded_modules.keys()),
     ]
 
-    target_api_handler_classes: List[ApiLambdaHandler] = [
+    target_api_handler_classes: list[ApiLambdaHandler] = [
         api_handler_class
         for api_handler_class in get_all_subclasses(ApiLambdaHandler, True)  # type: ignore[type-abstract]
         if (getattr(api_handler_class, "__module__") in target_module_paths)

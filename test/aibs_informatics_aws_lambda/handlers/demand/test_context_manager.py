@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Union
 
 import boto3
 from aibs_informatics_aws_utils.constants.efs import (
@@ -16,7 +15,7 @@ from aibs_informatics_aws_utils.constants.efs import (
 from aibs_informatics_aws_utils.efs import MountPointConfiguration, detect_mount_points
 from aibs_informatics_core.env import EnvBase
 from aibs_informatics_core.models.aws.efs import EFSPath
-from aibs_informatics_core.models.aws.s3 import S3URI
+from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.demand_execution import (
     DemandExecution,
     DemandExecutionMetadata,
@@ -49,8 +48,8 @@ ENV_BASE = EnvBase("dev-marmotdev")
 DEMAND_ID = UniqueID.create()
 ANOTHER_DEMAND_ID = UniqueID.create()
 
-S3_URI = S3URI.build(bucket_name="bucket", key="key")
-ANOTHER_S3_URI = S3URI.build(bucket_name="bucket", key="another_key")
+S3_URI = S3Path.build(bucket_name="bucket", key="key")
+ANOTHER_S3_URI = S3Path.build(bucket_name="bucket", key="another_key")
 
 
 EXECUTION_IMAGE = "051791135335.dkr.ecr.us-west-2.amazonaws.com/test_image:latest"
@@ -61,13 +60,13 @@ EFS_SCRATCH_MOUNT_PATH = Path("/mnt/efs")
 
 
 def get_any_demand_execution(
-    execution_id: Optional[str] = None,
-    execution_type: Optional[str] = None,
-    execution_image: Optional[str] = None,
-    execution_parameters: Optional[DemandExecutionParameters] = None,
-    execution_metadata: Optional[DemandExecutionMetadata] = None,
-    execution_resource_requirements: Optional[DemandResourceRequirements] = None,
-    execution_platform: Optional[ExecutionPlatform] = None,
+    execution_id: str | None = None,
+    execution_type: str | None = None,
+    execution_image: str | None = None,
+    execution_parameters: DemandExecutionParameters | None = None,
+    execution_metadata: DemandExecutionMetadata | None = None,
+    execution_resource_requirements: DemandResourceRequirements | None = None,
+    execution_platform: ExecutionPlatform | None = None,
 ) -> DemandExecution:
     return DemandExecution(
         execution_id=execution_id or DEMAND_ID,
@@ -97,7 +96,7 @@ def get_or_create_file_system_fixture(efs):
     _cache = {}
 
     def get_or_create_file_system(
-        file_system_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None
+        file_system_name: str | None = None, tags: dict[str, str] | None = None
     ) -> str:
         file_system_name = file_system_name or "test_file_system"
         if file_system_name not in _cache:
@@ -118,7 +117,7 @@ def create_access_point_fixture(efs):
         file_system_id: str,
         access_point_name: str,
         path: str,
-        tags: Optional[Dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
     ):
         tags_list = [{"Key": k, "Value": v} for k, v in (tags or {}).items()]
         tags_list.insert(0, {"Key": "Name", "Value": access_point_name})
@@ -272,7 +271,7 @@ def test__generate_batch_job_builder__simple(get_or_create_file_system, create_a
                 "C": "c",
                 "D": f"d @ {ANOTHER_S3_URI}-out",
             },
-            output_s3_prefix=S3URI.build("bucket", key="outs/"),
+            output_s3_prefix=S3Path.build("bucket", key="outs/"),
         ),
     )
 
@@ -375,7 +374,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
         return boto3.client("efs")
 
     def create_file_system(
-        self, file_system_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None
+        self, file_system_name: str | None = None, tags: dict[str, str] | None = None
     ):
         file_system_name = file_system_name or "fs"
         if file_system_name not in self._file_store_name_id_map:
@@ -391,10 +390,10 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
     def create_access_point(
         self,
         access_point_name: str,
-        access_point_path: Union[Path, str] = Path("/"),
-        file_system_id: Optional[str] = None,
-        file_system_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        access_point_path: Path | str = Path("/"),
+        file_system_id: str | None = None,
+        file_system_name: str | None = None,
+        tags: dict[str, str] | None = None,
     ):
         file_system_id = file_system_id or self.create_file_system(file_system_name)
         access_point_path = Path(access_point_path)
@@ -687,7 +686,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
                 cleanup_inputs=False,
                 cleanup_working_dir=False,
                 input_data_sync_configuration=DataSyncConfiguration(
-                    temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
+                    temporary_request_payload_path=S3Path("s3://bucket/override_prefix")
                 ),
             ),
         )
@@ -752,7 +751,7 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             self.env_base,
             ContextManagerConfiguration(
                 output_data_sync_configuration=DataSyncConfiguration(
-                    temporary_request_payload_path=S3URI("s3://bucket/override_prefix")
+                    temporary_request_payload_path=S3Path("s3://bucket/override_prefix")
                 )
             ),
         )
