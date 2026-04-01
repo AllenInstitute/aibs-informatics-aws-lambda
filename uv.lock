@@ -41,7 +41,7 @@ release = [
 [package.metadata]
 requires-dist = [
     { name = "aibs-informatics-aws-utils", specifier = "~=1.0" },
-    { name = "aibs-informatics-core", specifier = ">=1.0.3,<2" },
+    { name = "aibs-informatics-core", specifier = ">=1.0.5,<2" },
     { name = "aws-lambda-powertools", specifier = "~=2.35" },
     { name = "aws-lambda-typing" },
     { name = "pydantic", specifier = ">=2.0.3,<3" },
@@ -86,7 +86,7 @@ wheels = [
 
 [[package]]
 name = "aibs-informatics-core"
-version = "1.0.3"
+version = "1.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pathlib-abc" },
@@ -99,9 +99,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "typing-inspect" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/37/f6/72b06934f1a44539abb83c9130a31657d3a0bd93e0ddcc5d2d3b7a419a88/aibs_informatics_core-1.0.3.tar.gz", hash = "sha256:d377d5233e4ec1b9823f4ac36286e3fd3bd22f595c89ef52500c0a14ad1a95f6", size = 73087, upload-time = "2026-03-20T19:03:44.163Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/30/ff9fbb53dc8052def5af37bc2dbc515dcde493cae0833c1fe5c1d5e0968d/aibs_informatics_core-1.0.5.tar.gz", hash = "sha256:3cd9f04d8f7f608c5184685af7f887b77f1828bae994cc20acd23524101aeb34", size = 73467, upload-time = "2026-04-01T04:25:36.968Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/f3/0dd2b2e061583a22c7dd387f0a7ba00691938b1777af94490646959d4d6a/aibs_informatics_core-1.0.3-py3-none-any.whl", hash = "sha256:10ceaeb9844fe1fa80211d2dc7d3762f9035f331f86f79252470b74b0698fc04", size = 91563, upload-time = "2026-03-20T19:03:42.704Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/46/286c750f14bf3e63ef2fa84e1db948969ef5fd36aee3b3e763e758c8d60e/aibs_informatics_core-1.0.5-py3-none-any.whl", hash = "sha256:a70c038994125defa68a327d35fa08df936d60d25891e783a5ac58f4ef0bb79d", size = 92027, upload-time = "2026-04-01T04:25:35.691Z" },
 ]
 
 [[package]]
@@ -742,6 +742,7 @@ wheels = [
 name = "griffelib"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/06/eccbd311c9e2b3ca45dbc063b93134c57a1ccc7607c5e545264ad092c4a9/griffelib-2.0.0.tar.gz", hash = "sha256:e504d637a089f5cab9b5daf18f7645970509bf4f53eda8d79ed71cce8bd97934", size = 166312, upload-time = "2026-03-23T21:06:55.954Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/51/c936033e16d12b627ea334aaaaf42229c37620d0f15593456ab69ab48161/griffelib-2.0.0-py3-none-any.whl", hash = "sha256:01284878c966508b6d6f1dbff9b6fa607bc062d8261c5c7253cb285b06422a7f", size = 142004, upload-time = "2026-02-09T19:09:40.561Z" },
 ]
