@@ -1,13 +1,30 @@
+# Builds and publishes Docker image to GitHub Container Registry (ghcr.io)
+#
+# This workflow is gated on successful tests:
+#   - For pushes to main: waits for "Build and Test" workflow to complete successfully
+#   - For version tags (v*): runs directly (assumes tag is cut from tested code)
+#   - For manual dispatch: runs directly (operator takes responsibility)
+#
+# Published images are available at: ghcr.io/<owner>/aibs-informatics-aws-lambda
+
 name: Build and Publish Docker Image
 
 on:
+  # Trigger after the test workflow completes on main branch.
+  # Note: workflow_run triggers on completion (success OR failure), so we check
+  # the conclusion in the job's `if` condition below.
   workflow_run:
     workflows: ["Build and Test"]
     types: [completed]
     branches: [main]
+
+  # Version tags trigger directly (no test gate) - assumes tags are cut from
+  # tested commits on main.
   push:
     tags:
       - 'v*'
+
+  # Allow manual trigger for debugging or re-running failed builds.
   workflow_dispatch:
 
 env:
@@ -19,24 +36,31 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Only run if triggered manually, by tag, or if the test workflow succeeded
+
+    # Gate logic:
+    #   - workflow_run events: only proceed if the triggering workflow succeeded
+    #   - tag pushes / manual dispatch: always proceed (no workflow_run event)
     if: >
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
+
     permissions:
-      contents: read
-      packages: write
+      contents: read      # Required to checkout the repository
+      packages: write     # Required to push to GitHub Container Registry
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Configure SSH agent and git credentials for accessing private
+      # AllenInstitute repositories during the Docker build.
       - name: Set up AllenInstitute Repo Authorization
         uses: ./.github/actions/configure-org-repo-authorization
         with:
           token: ${{ secrets.AI_PACKAGES_TOKEN }}
           ssh_private_key: ${{ secrets.AIBSGITHUB_PRIVATE_KEY }}
 
+      # Buildx enables advanced features like caching and multi-platform builds.
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -47,6 +71,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Generate Docker tags based on git context:
+      #   - "latest" for default branch (main)
+      #   - branch name (e.g., "main")
+      #   - semver tags (e.g., "1.2.3", "1.2")
+      #   - short SHA (e.g., "sha-abc1234")
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -68,6 +97,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Forward SSH agent to builder for private repo access during build
+          # (used by `RUN --mount=type=ssh` in Dockerfile)
           ssh: default=${{ env.SSH_AUTH_SOCK }}
+          # Use GitHub Actions cache for Docker layers to speed up rebuilds
           cache-from: type=gha
           cache-to: type=gha,mode=max
