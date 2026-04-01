@@ -1,0 +1,126 @@
+# Builds and publishes Docker image to GitHub Container Registry (ghcr.io)
+#
+# This workflow is gated on successful tests:
+#   - For pushes to main: waits for "Build and Test" workflow to complete successfully
+#   - For version tags (v*): runs directly (assumes tag is cut from tested code)
+#   - For pull requests: builds only (no push) to validate Dockerfile before merge
+#   - For manual dispatch: runs directly (operator takes responsibility)
+#
+# Published images are available at: ghcr.io/<owner>/aibs-informatics-aws-lambda
+
+name: Build and Publish Docker Image
+
+on:
+  # Trigger after the test workflow completes on main branch.
+  # Note: workflow_run triggers on completion (success OR failure), so we check
+  # the conclusion in the job's `if` condition below.
+  workflow_run:
+    workflows: ["Build and Test"]
+    types: [completed]
+    branches: [main]
+
+  # Version tags trigger directly (no test gate) - assumes tags are cut from
+  # tested commits on main.
+  push:
+    tags:
+      - 'v*'
+
+  # Build (but don't push) on pull requests to validate the Dockerfile.
+  pull_request:
+    branches: [main]
+
+  # Allow manual trigger for debugging or re-running failed builds.
+  workflow_dispatch:
+
+# Prevent out-of-order publishing when multiple workflow_run events complete.
+# If a newer run starts while an older one is in progress, cancel the older one.
+concurrency:
+  group: docker-publish-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Gate logic:
+    #   - workflow_run events: only proceed if the triggering workflow succeeded
+    #   - tag pushes / manual dispatch: always proceed (no workflow_run event)
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    permissions:
+      contents: read      # Required to checkout the repository
+      packages: write     # Required to push to GitHub Container Registry
+
+    steps:
+      # For workflow_run events, checkout the SHA that was actually tested,
+      # not the current HEAD (which may have moved). For other events, use github.sha.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      # Configure SSH agent and git credentials for accessing private
+      # AllenInstitute repositories during the Docker build.
+      # This step is optional - the composite action handles missing secrets gracefully.
+      - name: Set up AllenInstitute Repo Authorization
+        uses: ./.github/actions/configure-org-repo-authorization
+        with:
+          token: ${{ secrets.AI_PACKAGES_TOKEN }}
+          ssh_private_key: ${{ secrets.AIBSGITHUB_PRIVATE_KEY }}
+
+      # Buildx enables advanced features like caching and multi-platform builds.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Skip login for PRs since we won't push the image.
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Generate Docker tags based on git context:
+      #   - "latest" for default branch (main)
+      #   - branch name (e.g., "main")
+      #   - PR number (e.g., "pr-123") - used for build validation only
+      #   - semver tags (e.g., "1.2.3", "1.2")
+      #   - short SHA (e.g., "sha-abc1234")
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      # Build the image; only push for non-PR events.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Forward SSH agent to builder for private repo access during build
+          # (used by `RUN --mount=type=ssh` in Dockerfile). Only set if SSH agent is available.
+          ssh: ${{ env.SSH_AUTH_SOCK && format('default={0}', env.SSH_AUTH_SOCK) || '' }}
+          # Use GitHub Actions cache for Docker layers to speed up rebuilds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
