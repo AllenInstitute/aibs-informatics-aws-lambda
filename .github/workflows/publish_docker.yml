@@ -32,6 +32,12 @@ on:
   # Allow manual trigger for debugging or re-running failed builds.
   workflow_dispatch:
 
+# Prevent out-of-order publishing when multiple workflow_run events complete.
+# If a newer run starts while an older one is in progress, cancel the older one.
+concurrency:
+  group: docker-publish-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -54,8 +60,12 @@ jobs:
       packages: write     # Required to push to GitHub Container Registry
 
     steps:
+      # For workflow_run events, checkout the SHA that was actually tested,
+      # not the current HEAD (which may have moved). For other events, use github.sha.
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       # Configure SSH agent and git credentials for accessing private
       # AllenInstitute repositories during the Docker build.
