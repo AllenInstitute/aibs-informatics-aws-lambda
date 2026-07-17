@@ -1,9 +1,13 @@
+from aibs_informatics_core.exceptions import ValidationError
 from aibs_informatics_core.models.aws.s3 import S3Path
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
 from aibs_informatics_aws_lambda.handlers.demand.model import (
     DemandExecutionCleanupConfigs,
+    DemandFileSystemConfigurations,
+    FileSystemConfiguration,
+    FileSystemSelectionStrategy,
     PrepareBatchDataSyncRequest,
 )
 from test.base import does_not_raise
@@ -166,3 +170,76 @@ def test__DemandExecutionCleanupConfigs__deserialization(
         actual = DemandExecutionCleanupConfigs.from_dict(input_value)
     if expected:
         assert expected == actual
+
+
+def test__DemandFileSystemConfigurations__defaults_preserve_legacy_behavior():
+    configs = DemandFileSystemConfigurations()
+    assert configs.shared == [FileSystemConfiguration()]
+    assert configs.scratch == [FileSystemConfiguration()]
+    assert configs.tmp == []
+    assert configs.selection_strategy == FileSystemSelectionStrategy.RANDOM
+
+
+def test__DemandFileSystemConfigurations__coerces_legacy_singular_shape():
+    configs = DemandFileSystemConfigurations.from_dict(
+        {
+            "shared": {"file_system": "fs-shared"},
+            "scratch": {"file_system": "fs-scratch"},
+            "tmp": {"file_system": "fs-tmp"},
+        }
+    )
+    assert configs.shared == [FileSystemConfiguration(file_system="fs-shared")]
+    assert configs.scratch == [FileSystemConfiguration(file_system="fs-scratch")]
+    assert configs.tmp == [FileSystemConfiguration(file_system="fs-tmp")]
+
+
+def test__DemandFileSystemConfigurations__accepts_null_tmp():
+    configs = DemandFileSystemConfigurations.from_dict(
+        {
+            "shared": {"file_system": "fs-shared"},
+            "scratch": {"file_system": "fs-scratch"},
+            "tmp": None,
+        }
+    )
+    assert configs.tmp == []
+
+
+def test__DemandFileSystemConfigurations__accepts_candidate_lists():
+    configs = DemandFileSystemConfigurations.from_dict(
+        {
+            "shared": [{"file_system": "fs-shared"}],
+            "scratch": [
+                {"file_system": "fs-scratch-1"},
+                {"file_system": "fs-scratch-2"},
+            ],
+            "selection_strategy": "RANDOM",
+        }
+    )
+    assert configs.shared == [FileSystemConfiguration(file_system="fs-shared")]
+    assert configs.scratch == [
+        FileSystemConfiguration(file_system="fs-scratch-1"),
+        FileSystemConfiguration(file_system="fs-scratch-2"),
+    ]
+    assert configs.selection_strategy == FileSystemSelectionStrategy.RANDOM
+
+
+@mark.parametrize("field_name", ["shared", "scratch"])
+def test__DemandFileSystemConfigurations__rejects_empty_required_roles(field_name):
+    with raises(ValidationError):
+        DemandFileSystemConfigurations.from_dict({field_name: []})
+
+
+def test__DemandFileSystemConfigurations__serializes_as_lists():
+    configs = DemandFileSystemConfigurations.from_dict(
+        {
+            "shared": {"file_system": "fs-shared"},
+            "scratch": [{"file_system": "fs-scratch-1"}, {"file_system": "fs-scratch-2"}],
+        }
+    )
+    data = configs.to_dict()
+    assert data["shared"] == [{"file_system": "fs-shared"}]
+    assert data["scratch"] == [
+        {"file_system": "fs-scratch-1"},
+        {"file_system": "fs-scratch-2"},
+    ]
+    assert data["selection_strategy"] == "RANDOM"

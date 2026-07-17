@@ -17,6 +17,7 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
     DemandFileSystemConfigurations,
     EnvFileWriteMode,
     FileSystemConfiguration,
+    FileSystemSelectionStrategy,
     PrepareBatchDataSyncRequest,
     PrepareDemandScaffoldingRequest,
     PrepareDemandScaffoldingResponse,
@@ -24,6 +25,7 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
 from aibs_informatics_aws_lambda.handlers.demand.scaffolding import (
     PrepareDemandScaffoldingHandler,
     construct_batch_efs_configuration,
+    select_file_system,
 )
 from test.aibs_informatics_aws_lambda.base import LambdaHandlerTestCase
 from test.aibs_informatics_aws_lambda.handlers.demand.test_context_manager import (
@@ -400,3 +402,107 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
                 {"Key": "Name", "Value": "value"},
             ],
         }
+
+
+class SelectFileSystemTests(PrepareDemandScaffoldingHandlerTests):
+    """Multi-candidate selection tests.
+
+    Inherits setUp/helpers from PrepareDemandScaffoldingHandlerTests (re-running the
+    inherited single-candidate tests in this class is harmless).
+    """
+
+    def candidates(self, count: int) -> list[FileSystemConfiguration]:
+        return [FileSystemConfiguration(file_system=f"fs-{i:012d}") for i in range(count)]
+
+    def test__select_file_system__raises_on_empty_candidates(self) -> None:
+        with self.assertRaises(ValueError):
+            select_file_system([], FileSystemSelectionStrategy.RANDOM)
+
+    def test__select_file_system__single_candidate_returned_directly(self) -> None:
+        candidates = self.candidates(1)
+        selected = select_file_system(candidates, FileSystemSelectionStrategy.RANDOM)
+        assert selected is candidates[0]
+
+    def test__select_file_system__random_is_deterministic_per_seed(self) -> None:
+        candidates = self.candidates(5)
+        first = select_file_system(
+            candidates, FileSystemSelectionStrategy.RANDOM, seed="exec-123#scratch"
+        )
+        for _ in range(10):
+            assert first == select_file_system(
+                candidates, FileSystemSelectionStrategy.RANDOM, seed="exec-123#scratch"
+            )
+
+    def test__select_file_system__random_spreads_across_seeds(self) -> None:
+        candidates = self.candidates(5)
+        selections = {
+            select_file_system(
+                candidates, FileSystemSelectionStrategy.RANDOM, seed=f"exec-{i}#scratch"
+            ).file_system
+            for i in range(50)
+        }
+        assert len(selections) > 1
+
+    @mock.patch(
+        "aibs_informatics_aws_lambda.handlers.demand.scaffolding.construct_batch_efs_configuration"
+    )
+    def test__handle__selects_one_candidate_per_role_deterministically(
+        self, mock_construct_batch_efs_configuration
+    ) -> None:
+        mock_construct_batch_efs_configuration.side_effect = lambda *args, **kwargs: (
+            BatchEFSConfiguration(
+                mount_point_config=MountPointConfiguration(
+                    file_system=self.get_file_system("fs-123456789012"),
+                    access_point=self.get_access_point("fsap-123456789012", "fs-123456789012"),
+                    mount_point=Path("/opt/efs"),
+                ),
+                read_only=False,
+            )
+        )
+        context_manager = mock.MagicMock()
+        self.mock_DemandExecutionContextManager.return_value = context_manager
+        context_manager.demand_execution = self.demand_execution
+        context_manager.pre_execution_data_sync_requests = []
+        context_manager.post_execution_data_sync_requests = []
+        context_manager.post_execution_remove_data_paths_requests = []
+        batch_job_builder = mock.MagicMock()
+        context_manager.batch_job_builder = batch_job_builder
+        context_manager.batch_job_queue_name = "job_queue_name"
+        batch_job_builder.image = "image"
+        batch_job_builder.job_definition_name = "job_definition_name"
+        batch_job_builder.job_name = "job_name"
+        batch_job_builder.job_definition_tags = {}
+        batch_job_builder.command = ["command"]
+        batch_job_builder.environment = {"key": "value"}
+        batch_job_builder.resource_requirements = []
+        batch_job_builder.mount_points = []
+        batch_job_builder.volumes = []
+        batch_job_builder.privileged = False
+        batch_job_builder.job_role_arn = None
+
+        scratch_candidates = [
+            {"file_system": f"fs-{i:012d}", "container_path": "/opt/efs/scratch"} for i in range(4)
+        ]
+        request = {
+            "demand_execution": self.demand_execution.to_dict(),
+            "file_system_configurations": {
+                "scratch": scratch_candidates,
+                "shared": {"file_system": "fs-999999999999"},
+            },
+        }
+
+        call_args_per_invocation = []
+        for _ in range(2):
+            mock_construct_batch_efs_configuration.reset_mock()
+            self.handler(request, self.context)
+            call_args_per_invocation.append(
+                list(mock_construct_batch_efs_configuration.call_args_list)
+            )
+
+        # Same execution id => identical selections across invocations
+        assert call_args_per_invocation[0] == call_args_per_invocation[1]
+
+        scratch_call, shared_call = call_args_per_invocation[0]
+        selected_scratch_fs = scratch_call.kwargs["file_system"]
+        assert selected_scratch_fs in {c["file_system"] for c in scratch_candidates}
+        assert shared_call.kwargs["file_system"] == "fs-999999999999"

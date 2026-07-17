@@ -10,7 +10,7 @@ from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_core.models.data_sync import DataSyncRequest, PrepareBatchDataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
 from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
@@ -30,18 +30,58 @@ class FileSystemConfiguration(PydanticBaseModel):
     container_path: str | None = None
 
 
+class FileSystemSelectionStrategy(str, Enum):
+    """Strategy for selecting one file system from a list of candidates.
+
+    Attributes:
+        RANDOM: Uniform random selection, seeded with the demand execution ID
+            so that the same execution always resolves to the same candidate.
+    """
+
+    RANDOM = "RANDOM"
+
+
 class DemandFileSystemConfigurations(PydanticBaseModel):
     """Collection of file system configurations for demand execution.
 
+    Each volume role accepts a list of candidate configurations; the scaffolding
+    handler selects exactly one candidate per role (per ``selection_strategy``)
+    for a given demand execution. A single (non-list) configuration is accepted
+    for backwards compatibility and coerced to a one-element list.
+
     Attributes:
-        shared: Configuration for the shared/input volume (read-only).
-        scratch: Configuration for the scratch/working volume (read-write).
-        tmp: Optional configuration for a dedicated tmp volume.
+        shared: Candidate configurations for the shared/input volume (read-only).
+        scratch: Candidate configurations for the scratch/working volume (read-write).
+        tmp: Candidate configurations for a dedicated tmp volume. An empty list
+            means no dedicated tmp volume is used.
+        selection_strategy: Strategy used to select one candidate per role.
     """
 
-    shared: FileSystemConfiguration = Field(default_factory=FileSystemConfiguration)
-    scratch: FileSystemConfiguration = Field(default_factory=FileSystemConfiguration)
-    tmp: FileSystemConfiguration | None = None
+    shared: list[FileSystemConfiguration] = Field(
+        default_factory=lambda: [FileSystemConfiguration()]
+    )
+    scratch: list[FileSystemConfiguration] = Field(
+        default_factory=lambda: [FileSystemConfiguration()]
+    )
+    tmp: list[FileSystemConfiguration] = Field(default_factory=list)
+    selection_strategy: FileSystemSelectionStrategy = FileSystemSelectionStrategy.RANDOM
+
+    @field_validator("shared", "scratch", "tmp", mode="before")
+    @classmethod
+    def _coerce_single_to_list(cls, value):
+        """Coerce a legacy single configuration (or None) into a list."""
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            return [value]
+        return value
+
+    @field_validator("shared", "scratch")
+    @classmethod
+    def _require_non_empty(cls, value, info):
+        if not value:
+            raise ValueError(f"At least one {info.field_name} file system config is required")
+        return value
 
 
 class EnvFileWriteMode(str, Enum):
