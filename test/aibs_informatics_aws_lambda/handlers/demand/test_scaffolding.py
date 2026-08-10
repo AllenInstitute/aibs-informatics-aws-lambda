@@ -372,59 +372,17 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
             ),
         ]
 
-    def get_file_system(self, file_system_id: str) -> dict[str, Any]:
-        return {
-            "FileSystemId": file_system_id,  # ID of the EFS file system
-            "CreationToken": "string",  # Unique string to ensure idempotent creation
-            "PerformanceMode": "generalPurpose",  # 'generalPurpose' or 'maxIO'
-            "Encrypted": True,  # or False
-            "KmsKeyId": "string",  # KMS key ID for encryption
-            "ThroughputMode": "bursting",  # 'provisioned' or 'bursting'
-            "ProvisionedThroughputInMibps": 123.0,  # if 'provisioned' is chosen
-            "Tags": [
-                {"Key": "Name", "Value": "MyEFS"},
-            ],
-        }
-
-    def get_access_point(
-        self, access_point_id: str, file_system_id: str, **tags
-    ) -> dict[str, Any]:
-        return {
-            "AccessPointId": access_point_id,  # ID of the EFS access point
-            "ClientToken": "string",  # Unique string to ensure idempotent creation
-            "FileSystemId": file_system_id,  # ID of the EFS file system
-            "PosixUser": {"Uid": "1000", "Gid": "1000"},
-            "RootDirectory": {
-                "Path": "/",
-                "CreationInfo": {"OwnerUid": "1000", "OwnerGid": "1000", "Permissions": "755"},
-            },
-            "Tags": [
-                {"Key": "Name", "Value": "value"},
-            ],
-        }
-
-
-class SelectFileSystemTests(PrepareDemandScaffoldingHandlerTests):
-    """Multi-candidate selection tests.
-
-    Inherits setUp/helpers from PrepareDemandScaffoldingHandlerTests (re-running the
-    inherited single-candidate tests in this class is harmless).
-    """
-
-    def candidates(self, count: int) -> list[FileSystemConfiguration]:
-        return [FileSystemConfiguration(file_system=f"fs-{i:012d}") for i in range(count)]
-
     def test__select_file_system__raises_on_empty_candidates(self) -> None:
         with self.assertRaises(ValueError):
             select_file_system([], FileSystemSelectionStrategy.RANDOM)
 
     def test__select_file_system__single_candidate_returned_directly(self) -> None:
-        candidates = self.candidates(1)
+        candidates = self.get_candidates(1)
         selected = select_file_system(candidates, FileSystemSelectionStrategy.RANDOM)
         assert selected is candidates[0]
 
     def test__select_file_system__random_is_deterministic_per_seed(self) -> None:
-        candidates = self.candidates(5)
+        candidates = self.get_candidates(5)
         first = select_file_system(
             candidates, FileSystemSelectionStrategy.RANDOM, seed="exec-123#scratch"
         )
@@ -434,7 +392,7 @@ class SelectFileSystemTests(PrepareDemandScaffoldingHandlerTests):
             )
 
     def test__select_file_system__random_spreads_across_seeds(self) -> None:
-        candidates = self.candidates(5)
+        candidates = self.get_candidates(5)
         selections = {
             select_file_system(
                 candidates, FileSystemSelectionStrategy.RANDOM, seed=f"exec-{i}#scratch"
@@ -506,3 +464,37 @@ class SelectFileSystemTests(PrepareDemandScaffoldingHandlerTests):
         selected_scratch_fs = scratch_call.kwargs["file_system"]
         assert selected_scratch_fs in {c["file_system"] for c in scratch_candidates}
         assert shared_call.kwargs["file_system"] == "fs-999999999999"
+
+    def get_candidates(self, count: int) -> list[FileSystemConfiguration]:
+        return [FileSystemConfiguration(file_system=f"fs-{i:012d}") for i in range(count)]
+
+    def get_file_system(self, file_system_id: str) -> dict[str, Any]:
+        return {
+            "FileSystemId": file_system_id,  # ID of the EFS file system
+            "CreationToken": "string",  # Unique string to ensure idempotent creation
+            "PerformanceMode": "generalPurpose",  # 'generalPurpose' or 'maxIO'
+            "Encrypted": True,  # or False
+            "KmsKeyId": "string",  # KMS key ID for encryption
+            "ThroughputMode": "bursting",  # 'provisioned' or 'bursting'
+            "ProvisionedThroughputInMibps": 123.0,  # if 'provisioned' is chosen
+            "Tags": [
+                {"Key": "Name", "Value": "MyEFS"},
+            ],
+        }
+
+    def get_access_point(
+        self, access_point_id: str, file_system_id: str, **tags
+    ) -> dict[str, Any]:
+        return {
+            "AccessPointId": access_point_id,  # ID of the EFS access point
+            "ClientToken": "string",  # Unique string to ensure idempotent creation
+            "FileSystemId": file_system_id,  # ID of the EFS file system
+            "PosixUser": {"Uid": "1000", "Gid": "1000"},
+            "RootDirectory": {
+                "Path": "/",
+                "CreationInfo": {"OwnerUid": "1000", "OwnerGid": "1000", "Permissions": "755"},
+            },
+            "Tags": [
+                {"Key": "Name", "Value": "value"},
+            ],
+        }
