@@ -4,6 +4,7 @@ Provides Lambda handlers for preparing demand execution scaffolding,
 including file system setup and batch job configuration.
 """
 
+import random
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,6 +29,8 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
     CreateDefinitionAndPrepareArgsRequest,
     DemandExecutionCleanupConfigs,
     DemandExecutionSetupConfigs,
+    FileSystemConfiguration,
+    FileSystemSelectionStrategy,
     PrepareDemandScaffoldingRequest,
     PrepareDemandScaffoldingResponse,
 )
@@ -66,39 +69,62 @@ class PrepareDemandScaffoldingHandler(
             Response containing the updated demand execution and
             setup/cleanup configurations.
         """
+        file_system_configurations = request.file_system_configurations
+        selection_strategy = file_system_configurations.selection_strategy
+        # Seed selection with the execution id so that resubmissions of the same demand
+        # execution resolve to the same file systems (working dir, cache and cleanup paths
+        # stay consistent across retries). The seed is salted per role so that shared/
+        # scratch/tmp selections are independent of each other.
+        execution_id = request.demand_execution.execution_id
+
+        scratch_fs_config = select_file_system(
+            file_system_configurations.scratch,
+            selection_strategy=selection_strategy,
+            seed=f"{execution_id}#scratch",
+        )
         scratch_vol_configuration = construct_batch_efs_configuration(
             env_base=self.env_base,
-            file_system=request.file_system_configurations.scratch.file_system,
-            access_point=request.file_system_configurations.scratch.access_point
-            if request.file_system_configurations.scratch.access_point
+            file_system=scratch_fs_config.file_system,
+            access_point=scratch_fs_config.access_point
+            if scratch_fs_config.access_point
             else EFS_SCRATCH_ACCESS_POINT_NAME,
-            container_path=request.file_system_configurations.scratch.container_path
-            if request.file_system_configurations.scratch.container_path
+            container_path=scratch_fs_config.container_path
+            if scratch_fs_config.container_path
             else f"/opt/efs{EFS_SCRATCH_PATH}",
             read_only=False,
         )
 
+        shared_fs_config = select_file_system(
+            file_system_configurations.shared,
+            selection_strategy=selection_strategy,
+            seed=f"{execution_id}#shared",
+        )
         shared_vol_configuration = construct_batch_efs_configuration(
             env_base=self.env_base,
-            file_system=request.file_system_configurations.shared.file_system,
-            access_point=request.file_system_configurations.shared.access_point
-            if request.file_system_configurations.shared.access_point
+            file_system=shared_fs_config.file_system,
+            access_point=shared_fs_config.access_point
+            if shared_fs_config.access_point
             else EFS_SHARED_ACCESS_POINT_NAME,
-            container_path=request.file_system_configurations.shared.container_path
-            if request.file_system_configurations.shared.container_path
+            container_path=shared_fs_config.container_path
+            if shared_fs_config.container_path
             else f"/opt/efs{EFS_SHARED_PATH}",
             read_only=True,
         )
 
-        if request.file_system_configurations.tmp is not None:
+        if file_system_configurations.tmp:
+            tmp_fs_config = select_file_system(
+                file_system_configurations.tmp,
+                selection_strategy=selection_strategy,
+                seed=f"{execution_id}#tmp",
+            )
             tmp_vol_configuration = construct_batch_efs_configuration(
                 env_base=self.env_base,
-                file_system=request.file_system_configurations.tmp.file_system,
-                access_point=request.file_system_configurations.tmp.access_point
-                if request.file_system_configurations.tmp.access_point
+                file_system=tmp_fs_config.file_system,
+                access_point=tmp_fs_config.access_point
+                if tmp_fs_config.access_point
                 else EFS_TMP_ACCESS_POINT_NAME,
-                container_path=request.file_system_configurations.tmp.container_path
-                if request.file_system_configurations.tmp.container_path
+                container_path=tmp_fs_config.container_path
+                if tmp_fs_config.container_path
                 else f"/opt/efs{EFS_TMP_PATH}",
                 read_only=False,
             )
@@ -160,6 +186,44 @@ class PrepareDemandScaffoldingHandler(
         """
         working_path = context_manager.container_working_path  # noqa: F841
         # working_path.mkdir(parents=True, exist_ok=True)
+
+
+def select_file_system(
+    file_system_configurations: list[FileSystemConfiguration],
+    selection_strategy: FileSystemSelectionStrategy,
+    seed: str | int | None = None,
+) -> FileSystemConfiguration:
+    """Select one file system configuration from a list of candidates.
+
+    Supported strategies:
+        RANDOM: Uniform random choice over the candidates. When ``seed`` is provided,
+            a dedicated ``random.Random(seed)`` instance is used so the choice is
+            deterministic for that seed (callers pass the demand execution id, making
+            placement stable across resubmissions of the same execution). A dedicated
+            instance also keeps selections for different roles (shared/scratch/tmp)
+            independent of global random state.
+
+    Args:
+        file_system_configurations (list[FileSystemConfiguration]): Candidate configs.
+        selection_strategy (FileSystemSelectionStrategy): Strategy to select with.
+        seed (str | int | None): Optional seed for deterministic selection.
+
+    Returns:
+        The selected file system configuration.
+
+    Raises:
+        ValueError: If no candidates are provided or the strategy is unknown.
+    """
+    if len(file_system_configurations) == 0:
+        raise ValueError("No file system configurations provided")
+    if len(file_system_configurations) == 1:
+        return file_system_configurations[0]
+
+    if selection_strategy == FileSystemSelectionStrategy.RANDOM:
+        rng = random.Random(seed) if seed is not None else random.Random()
+        return rng.choice(file_system_configurations)
+
+    raise ValueError(f"Unknown selection strategy: {selection_strategy}")
 
 
 def construct_batch_efs_configuration(
