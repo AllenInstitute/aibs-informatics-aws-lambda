@@ -373,7 +373,7 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
         ]
 
     def test__select_file_system__raises_on_empty_candidates(self) -> None:
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "No file system configurations provided"):
             select_file_system([], FileSystemSelectionStrategy.RANDOM)
 
     def test__select_file_system__single_candidate_returned_directly(self) -> None:

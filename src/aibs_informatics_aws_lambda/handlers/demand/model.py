@@ -5,12 +5,13 @@ execution scaffolding and management.
 """
 
 from enum import Enum
+from typing import Any
 
 from aibs_informatics_core.models.aws.s3 import S3Path
 from aibs_informatics_core.models.base import PydanticBaseModel
 from aibs_informatics_core.models.data_sync import DataSyncRequest, PrepareBatchDataSyncRequest
 from aibs_informatics_core.models.demand_execution import DemandExecution
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 
 from aibs_informatics_aws_lambda.handlers.batch.model import CreateDefinitionAndPrepareArgsRequest
 from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
@@ -68,7 +69,7 @@ class DemandFileSystemConfigurations(PydanticBaseModel):
 
     @field_validator("shared", "scratch", "tmp", mode="before")
     @classmethod
-    def _coerce_single_to_list(cls, value):
+    def _coerce_single_to_list(cls, value: Any) -> list[Any]:
         """Coerce a legacy single configuration (or None) into a list."""
         if value is None:
             return []
@@ -78,7 +79,9 @@ class DemandFileSystemConfigurations(PydanticBaseModel):
 
     @field_validator("shared", "scratch")
     @classmethod
-    def _require_non_empty(cls, value, info):
+    def _require_non_empty(
+        cls, value: list[FileSystemConfiguration], info: ValidationInfo
+    ) -> list[FileSystemConfiguration]:
         if not value:
             raise ValueError(f"At least one {info.field_name} file system config is required")
         return value

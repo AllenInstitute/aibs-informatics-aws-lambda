@@ -225,7 +225,9 @@ def test__DemandFileSystemConfigurations__accepts_candidate_lists():
 
 @mark.parametrize("field_name", ["shared", "scratch"])
 def test__DemandFileSystemConfigurations__rejects_empty_required_roles(field_name):
-    with raises(ValidationError):
+    with raises(
+        ValidationError, match=f"At least one {field_name} file system config is required"
+    ):
         DemandFileSystemConfigurations.from_dict({field_name: []})
 
 
