@@ -18,6 +18,13 @@ dynamic = [
     "version",
 ]
 dependencies = [
+    # TODO(OCSDV-452): raise these two floors to the R2 / R1 releases once they
+    # publish -- `aibs-informatics-aws-utils>=1.0.3,<2` and
+    # `aibs-informatics-core>=1.0.7,<2` -- and drop the [tool.uv.sources] block
+    # below. The current bounds would happily resolve an older aws-utils/core
+    # lacking DataSyncFilterConfig and the filter-aware FileSystem, and fail at
+    # import time inside a Batch job. The floors cannot be raised yet: neither
+    # version exists, so uv could not resolve the branch pins below against them.
     "aibs-informatics-aws-utils~=1.0",
     "aibs-informatics-core>=1.0.5,<2",
     "aws-lambda-powertools ~= 2.35",
@@ -75,6 +82,30 @@ Repository = "https://github.com/AllenInstitute/aibs-informatics-aws-lambda/"
 # -----------------------------------------------------------------------------
 
 [tool.uv]
+
+# TEMPORARY -- REMOVE BEFORE MERGE (OCSDV-452)
+# ---------------------------------------------------------------------------
+# This repo's changes depend on two unpublished releases:
+#   R1 aibs-informatics-core   -- DataSyncFilterConfig, DataSyncTask.filter_config
+#                                 /filter_root, DataSyncConfig.delete
+#   R2 aibs-informatics-aws-utils -- filter-aware FileSystem.from_path/refresh,
+#                                 total_objects_seen, filter-threading in
+#                                 DataSyncOperations
+# Until both publish, resolve them from the branches the R1/R2 work lives on so
+# CI can run.
+#
+# Note both overrides are required. `tool.uv.sources` applies only to this
+# workspace root and is NOT inherited from a git dependency, so pinning
+# aws-utils alone would still resolve core from PyPI and fail at import.
+#
+# `tool.uv.sources` is uv-only metadata: setuptools ignores it, so the published
+# wheel still carries the plain requirements above.
+#
+# Once R1 and R2 publish: delete this block, raise the floors above, and re-run
+# `uv lock`.
+[tool.uv.sources]
+aibs-informatics-core = { git = "https://github.com/AllenInstitute/aibs-informatics-core.git", branch = "feature/OCSDV-453-demand-execution-filters" }
+aibs-informatics-aws-utils = { git = "https://github.com/AllenInstitute/aibs-informatics-aws-utils.git", branch = "feature/OCSDV-452-sync-filters" }
 
 # -----------------------------------------------------------------------------
 ##  Pyright Configurations

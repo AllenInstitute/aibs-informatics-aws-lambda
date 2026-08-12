@@ -40,8 +40,8 @@ release = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aibs-informatics-aws-utils", specifier = "~=1.0" },
-    { name = "aibs-informatics-core", specifier = ">=1.0.5,<2" },
+    { name = "aibs-informatics-aws-utils", git = "https://github.com/AllenInstitute/aibs-informatics-aws-utils.git?branch=feature%2FOCSDV-452-sync-filters" },
+    { name = "aibs-informatics-core", git = "https://github.com/AllenInstitute/aibs-informatics-core.git?branch=feature%2FOCSDV-453-demand-execution-filters" },
     { name = "aws-lambda-powertools", specifier = "~=2.35" },
     { name = "aws-lambda-typing" },
     { name = "pydantic", specifier = ">=2.0.3,<3" },
@@ -72,22 +72,18 @@ release = [
 
 [[package]]
 name = "aibs-informatics-aws-utils"
-version = "1.0.0"
-source = { registry = "https://pypi.org/simple" }
+version = "1.0.2"
+source = { git = "https://github.com/AllenInstitute/aibs-informatics-aws-utils.git?branch=feature%2FOCSDV-452-sync-filters#3cf5ef3a1cec63eeca8be8dd8f85ded36b7c1542" }
 dependencies = [
     { name = "aibs-informatics-core" },
     { name = "boto3" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/34/b8/cc8d193d7f573d1a59d8eaedf488811a3466cb71bd8b557176656e5fc397/aibs_informatics_aws_utils-1.0.0.tar.gz", hash = "sha256:95e5887f42caed51d0361ab5b34070614f10025c99e21d5d766c003fcf17ec19", size = 84691, upload-time = "2026-03-19T21:04:53.234Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/b9/ef29b26a47a6d2c25b74db943bf32e2fd38ac5a9b63eaf63e5cf8b0e744a/aibs_informatics_aws_utils-1.0.0-py3-none-any.whl", hash = "sha256:30c3fbb6a61c067c39e185ff7b8bf71df7df89de3de324885df0001bcb6a1113", size = 97846, upload-time = "2026-03-19T21:04:51.817Z" },
-]
 
 [[package]]
 name = "aibs-informatics-core"
-version = "1.0.5"
-source = { registry = "https://pypi.org/simple" }
+version = "1.0.6"
+source = { git = "https://github.com/AllenInstitute/aibs-informatics-core.git?branch=feature%2FOCSDV-453-demand-execution-filters#d621cd20deaeb5fea6e5f09f7ff5d434293a2e11" }
 dependencies = [
     { name = "pathlib-abc" },
     { name = "pydantic" },
@@ -98,10 +94,6 @@ dependencies = [
     { name = "stringcase" },
     { name = "typing-extensions" },
     { name = "typing-inspect" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/30/ff9fbb53dc8052def5af37bc2dbc515dcde493cae0833c1fe5c1d5e0968d/aibs_informatics_core-1.0.5.tar.gz", hash = "sha256:3cd9f04d8f7f608c5184685af7f887b77f1828bae994cc20acd23524101aeb34", size = 73467, upload-time = "2026-04-01T04:25:36.968Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c6/46/286c750f14bf3e63ef2fa84e1db948969ef5fd36aee3b3e763e758c8d60e/aibs_informatics_core-1.0.5-py3-none-any.whl", hash = "sha256:a70c038994125defa68a327d35fa08df936d60d25891e783a5ac58f4ef0bb79d", size = 92027, upload-time = "2026-04-01T04:25:35.691Z" },
 ]
 
 [[package]]
