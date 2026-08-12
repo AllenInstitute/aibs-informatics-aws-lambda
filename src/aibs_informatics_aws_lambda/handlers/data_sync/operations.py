@@ -209,11 +209,12 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
                 f"Syncing content from {_.source_path} to {_.destination_path}"
             )
             try:
-                result = sync_operations.sync(
-                    source_path=_.source_path,
-                    destination_path=_.destination_path,
-                    source_path_prefix=_.source_path_prefix,
-                )
+                # Delegate to sync_task rather than enumerating task fields here:
+                # DataSyncRequest *is* a DataSyncTask, and hand-listing the fields
+                # silently dropped filter_config/filter_root -- which would have
+                # made filtering a no-op for the entire distributed workflow, since
+                # this handler is what executes the sub-requests prepare emits.
+                result = sync_operations.sync_task(_)
                 if result.bytes_transferred is not None:
                     batch_result.add_bytes_transferred(result.bytes_transferred)
                 if result.files_transferred is not None:
@@ -259,11 +260,35 @@ class PrepareBatchDataSyncHandler(
             Response containing prepared batch requests.
         """
         self.logger.info("Preparing S3 Batch Sync Requests")
+
+        # The root that filter patterns anchor to. Sub-requests below are rooted at
+        # sub-prefixes of this path and re-list from their own root, so patterns
+        # written against the original root would silently stop matching unless
+        # every sub-request carries this along explicitly. Honor an inbound
+        # filter_root if one was set, so the tree we bin on and the sub-requests we
+        # emit anchor identically.
+        filter_root = request.filter_root or str(request.source_path)
+
+        # Build the tree WITH filters applied. This is not an optimization: an
+        # unfiltered tree makes partition() bin on total bytes, so a request for 5%
+        # of a large prefix yields bins sized for 100% and every batch job runs
+        # nearly empty -- forfeiting the speedup this workflow exists to provide.
         root: S3FileSystem | LocalFileSystem
         if isinstance(request.source_path, S3Path):
-            root = S3FileSystem.from_path(request.source_path)
+            root = S3FileSystem.from_path(
+                request.source_path,
+                filter_config=request.filter_config,
+                filter_root=filter_root,
+            )
         else:
-            root = LocalFileSystem.from_path(request.source_path)
+            root = LocalFileSystem.from_path(
+                request.source_path,
+                filter_config=request.filter_config,
+                filter_root=filter_root,
+            )
+
+        self.validate_filters_matched(request, root)
+
         batch_size_bytes_limit = request.batch_size_bytes_limit or self.DEFAULT_SOFT_MAX_BYTES
 
         ## We will use a revised version of the bin packing problem:
@@ -280,13 +305,22 @@ class PrepareBatchDataSyncHandler(
         for node_batch in node_batches:
             data_sync_requests: list[DataSyncRequest] = []
             for node in sorted(node_batch):
+                # NOTE: fields are enumerated by hand -- anything added to
+                #       DataSyncRequest must be added here too or it is silently
+                #       dropped from every sub-request.
                 data_sync_requests.append(
                     DataSyncRequest(
                         source_path=self.build_source_path(request, node),
                         destination_path=self.build_destination_path(request, node),
                         source_path_prefix=request.source_path_prefix,
+                        # Every sub-request carries the ORIGINAL patterns and root,
+                        # unconditionally. No branching on what a given node matched:
+                        # one shape, one code path.
+                        filter_config=request.filter_config,
+                        filter_root=filter_root,
                         max_concurrency=request.max_concurrency,
                         retain_source_data=request.retain_source_data,
+                        delete=request.delete,
                         require_lock=request.require_lock,
                         force=request.force,
                         size_only=request.size_only,
@@ -314,6 +348,45 @@ class PrepareBatchDataSyncHandler(
             return PrepareBatchDataSyncResponse(requests=new_batch_data_sync_requests)
         else:
             return PrepareBatchDataSyncResponse(requests=batch_data_sync_requests)
+
+    def validate_filters_matched(
+        self, request: PrepareBatchDataSyncRequest, root: S3FileSystem | LocalFileSystem
+    ) -> None:
+        """Fail loudly when the source held objects but the filters kept none.
+
+        A typo'd pattern is the likeliest user error here, and it is otherwise
+        invisible: the prepare step would emit zero sub-requests, every Batch job
+        would succeed with nothing to do, and the caller would get a green
+        execution and an empty destination. Checking here means we fail before any
+        Batch job launches rather than after the whole fan-out reports success.
+
+        An empty source is deliberately NOT this error -- that is the pre-existing
+        "missing source" case, left to the sync operations to report.
+
+        Args:
+            request: The originating prepare request.
+            root: The refreshed, filter-applied file system.
+
+        Raises:
+            ValueError: If the source was non-empty, the filters kept nothing, and
+                ``fail_if_missing`` is set.
+        """
+        if root.kept_objects or not root.total_objects_seen:
+            return
+
+        filter_config = request.filter_config
+        filter_root = request.filter_root or request.source_path
+        message = (
+            f"Filters matched none of the {root.total_objects_seen} object(s) under "
+            f"{request.source_path}. "
+            f"include={filter_config.include if filter_config else None}, "
+            f"exclude={filter_config.exclude if filter_config else None} "
+            f"(regex, matched with fullmatch relative to {filter_root})."
+        )
+
+        if request.fail_if_missing:
+            raise ValueError(message)
+        self.logger.warning(message)
 
     @classmethod
     def build_source_path(cls, request: PrepareBatchDataSyncRequest, node: Node) -> S3Path | Path:

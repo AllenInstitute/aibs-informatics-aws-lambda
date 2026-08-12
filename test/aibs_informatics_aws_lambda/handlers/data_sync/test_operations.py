@@ -1,9 +1,10 @@
 from pathlib import Path
+from typing import cast
 from unittest import mock
 
 from aibs_informatics_aws_utils.data_sync.file_system import Node
 from aibs_informatics_core.models.aws.s3 import S3Path
-from aibs_informatics_core.models.data_sync import DataSyncResult
+from aibs_informatics_core.models.data_sync import DataSyncFilterConfig, DataSyncResult
 from aibs_informatics_core.utils.time import BEGINNING_OF_TIME
 from pytest import mark, param
 
@@ -196,6 +197,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
                         DataSyncRequest(
                             source_path=source_path,
                             destination_path=destination_path,
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                         )
@@ -230,6 +232,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
                         DataSyncRequest(
                             source_path=source_path,
                             destination_path=destination_path,
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                             size_only=True,
@@ -263,6 +266,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
             DataSyncRequest(
                 source_path=source_path,
                 destination_path=destination_path,
+                filter_root=str(source_path),
                 max_concurrency=10,
                 retain_source_data=True,
             ).to_dict()
@@ -303,6 +307,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
                         DataSyncRequest(
                             source_path=source_path / "c",
                             destination_path=destination_path + "c",
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                         )
@@ -313,12 +318,14 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
                         DataSyncRequest(
                             source_path=source_path / "a",
                             destination_path=destination_path + "a",
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                         ),
                         DataSyncRequest(
                             source_path=source_path / "b",
                             destination_path=destination_path + "b",
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                         ),
@@ -351,6 +358,7 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
                         DataSyncRequest(
                             source_path=source_path / "c",
                             destination_path=destination_path / "c",
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                         )
@@ -361,12 +369,14 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
                         DataSyncRequest(
                             source_path=source_path / "a",
                             destination_path=destination_path / "a",
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                         ),
                         DataSyncRequest(
                             source_path=source_path / "b",
                             destination_path=destination_path / "b",
+                            filter_root=str(source_path),
                             max_concurrency=10,
                             retain_source_data=True,
                         ),
@@ -390,6 +400,250 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         actual = PrepareBatchDataSyncHandler.build_destination_path(request, node)
         self.assertEqual(expected, actual)
 
+    # -----------------------------------------------------------------------
+    # Filtering (OCSDV-452)
+    # -----------------------------------------------------------------------
+
+    def setUpFilterableFS(self) -> Path:
+        """Two samples, each one large .bam (10B) plus one small .txt (1B).
+
+        Total is 22 bytes; the .bam-only subset is 20. With a 10 byte batch limit
+        that difference is what separates binning on kept bytes from binning on
+        total bytes -- see the partition test below.
+        """
+        return self.setUpLocalFS(
+            ("sampleA/reads.bam", 10),
+            ("sampleA/notes.txt", 1),
+            ("sampleB/reads.bam", 10),
+            ("sampleB/notes.txt", 1),
+        )
+
+    def test__handle__partition_bins_on_kept_bytes_not_total(self):
+        """Filters must be applied while building the tree, not after.
+
+        Unfiltered, every sample directory (11B) exceeds the 10B limit, so the
+        partition descends to individual files and emits one sub-request per
+        file. Filtered, each sample directory holds only its 10B .bam and fits,
+        so the partition stops at the directory. Binning on total bytes would
+        produce the unfiltered shape and every batch job would run near-empty.
+        """
+        source_path = self.setUpFilterableFS()
+        destination_path = S3Path.build(bucket_name="bucket", key="key/")
+
+        def sub_request_sources(filter_config: DataSyncFilterConfig | None) -> list[str]:
+            request = PrepareBatchDataSyncRequest(
+                source_path=source_path,
+                destination_path=destination_path,
+                batch_size_bytes_limit=10,
+                filter_config=filter_config,
+            )
+            response = PrepareBatchDataSyncResponse.from_dict(
+                self.handler(request.to_dict(), self.context)
+            )
+            return sorted(
+                str(r.source_path)
+                for batch in response.requests
+                for r in cast(list[DataSyncRequest], batch.requests)
+            )
+
+        self.assertEqual(
+            sub_request_sources(None),
+            [
+                f"{source_path}/sampleA/notes.txt",
+                f"{source_path}/sampleA/reads.bam",
+                f"{source_path}/sampleB/notes.txt",
+                f"{source_path}/sampleB/reads.bam",
+            ],
+        )
+        self.assertEqual(
+            sub_request_sources(DataSyncFilterConfig(include=r".*\.bam")),
+            [f"{source_path}/sampleA", f"{source_path}/sampleB"],
+        )
+
+    def test__handle__every_sub_request_carries_patterns_and_original_filter_root(self):
+        """Design decision 2: identical shape on every sub-request.
+
+        Each sub-request is rooted at a sub-prefix and re-lists from there, so
+        without the original root riding along, a pattern written against the
+        original root stops matching. No node is special-cased on what it
+        matched -- all carry the same patterns, root, and delete flag.
+        """
+        source_path = self.setUpFilterableFS()
+        # Both .bam files are kept (20B), which exceeds the 10B limit and so
+        # forces a split into per-sample sub-prefixes -- the case where anchoring
+        # actually matters.
+        filter_config = DataSyncFilterConfig(include=r".*\.bam")
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
+            batch_size_bytes_limit=10,
+            filter_config=filter_config,
+            delete=False,
+        )
+
+        response = PrepareBatchDataSyncResponse.from_dict(
+            self.handler(request.to_dict(), self.context)
+        )
+        sub_requests = [
+            r for batch in response.requests for r in cast(list[DataSyncRequest], batch.requests)
+        ]
+
+        self.assertEqual(
+            sorted(str(r.source_path) for r in sub_requests),
+            [f"{source_path}/sampleA", f"{source_path}/sampleB"],
+        )
+        for sub_request in sub_requests:
+            # Rooted at a sub-prefix ...
+            self.assertNotEqual(str(sub_request.source_path), str(source_path))
+            # ... but anchored to the ORIGINAL root, with the original patterns.
+            self.assertEqual(sub_request.filter_root, str(source_path))
+            self.assertEqual(sub_request.filter_config, filter_config)
+            self.assertEqual(sub_request.delete, False)
+
+    def test__handle__inbound_filter_root_is_preserved(self):
+        """An explicitly supplied filter_root wins over the source path.
+
+        The tree we bin on and the sub-requests we emit must anchor identically,
+        so an inbound root has to reach both.
+        """
+        source_path = self.setUpFilterableFS()
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
+            batch_size_bytes_limit=10,
+            filter_config=DataSyncFilterConfig(include=r".*"),
+            filter_root=str(source_path.parent),
+        )
+
+        response = PrepareBatchDataSyncResponse.from_dict(
+            self.handler(request.to_dict(), self.context)
+        )
+        sub_requests = [
+            r for batch in response.requests for r in cast(list[DataSyncRequest], batch.requests)
+        ]
+
+        self.assertTrue(sub_requests)
+        for sub_request in sub_requests:
+            self.assertEqual(sub_request.filter_root, str(source_path.parent))
+
+    def test__handle__zero_matches__raises_and_names_patterns(self):
+        """Design decision 5 -- fail before any Batch job launches.
+
+        A typo'd pattern otherwise yields a green execution over an empty input
+        set, so the message has to name the patterns that produced it.
+        """
+        source_path = self.setUpFilterableFS()
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
+            batch_size_bytes_limit=10,
+            filter_config=DataSyncFilterConfig(include=r".*\.cram"),
+            fail_if_missing=True,
+        )
+
+        with self.assertRaisesRegex(ValueError, r"\.cram"):
+            self.handler(request.to_dict(), self.context)
+
+        # Nothing was staged for upload before the failure.
+        self.mock_upload_content.assert_not_called()
+
+    def test__handle__zero_matches__warns_when_not_fail_if_missing(self):
+        """fail_if_missing is the gate -- without it, a zero match only warns.
+
+        The tree is empty, so the partition yields the (empty) root and a single
+        sub-request covering it. That sub-request still carries the filters, so
+        the downstream sync matches nothing too and transfers nothing.
+        """
+        source_path = self.setUpFilterableFS()
+        filter_config = DataSyncFilterConfig(include=r".*\.cram")
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
+            batch_size_bytes_limit=10,
+            filter_config=filter_config,
+            fail_if_missing=False,
+        )
+
+        response = PrepareBatchDataSyncResponse.from_dict(
+            self.handler(request.to_dict(), self.context)
+        )
+
+        sub_requests = [
+            r for batch in response.requests for r in cast(list[DataSyncRequest], batch.requests)
+        ]
+        self.assertEqual([str(r.source_path) for r in sub_requests], [str(source_path)])
+        self.assertEqual(sub_requests[0].filter_config, filter_config)
+        self.assertEqual(sub_requests[0].filter_root, str(source_path))
+
+    def test__handle__empty_source__is_not_a_zero_match_failure(self):
+        """An empty source is the pre-existing "missing source" case, not this one."""
+        source_path = self.tmp_path() / "empty"
+        source_path.mkdir(parents=True, exist_ok=True)
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
+            batch_size_bytes_limit=10,
+            filter_config=DataSyncFilterConfig(include=r".*\.bam"),
+            fail_if_missing=True,
+        )
+
+        response = PrepareBatchDataSyncResponse.from_dict(
+            self.handler(request.to_dict(), self.context)
+        )
+        self.assertEqual(len(response.requests), 1)
+
+    def test__handle__response_round_trips_through_dict_preserving_filters(self):
+        """The seam the Step Functions Map state crosses.
+
+        The prepare handler's response is serialized to JSON, handed to a Map
+        state, and each item deserialized back into a request inside a separate
+        Batch job. Ordinary unit tests hold the objects in memory and never
+        exercise that boundary -- so a field that serializes lossily would look
+        fine everywhere except production.
+        """
+        source_path = self.setUpFilterableFS()
+        # Both list-valued, and sized so the response spans more than one
+        # sub-request -- the Map state fans out over exactly this list.
+        filter_config = DataSyncFilterConfig(include=[r".*\.bam"], exclude=[r".*/notes\.txt"])
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
+            batch_size_bytes_limit=10,
+            filter_config=filter_config,
+        )
+
+        response = PrepareBatchDataSyncResponse.from_dict(
+            self.handler(request.to_dict(), self.context)
+        )
+
+        serialized = response.to_dict()
+        restored = PrepareBatchDataSyncResponse.from_dict(serialized)
+
+        self.assertEqual(restored, response)
+
+        # Assert on the serialized form too: from_dict alone would re-default a
+        # dropped field back to something that compares equal to an unset one.
+        serialized_sub_requests = [
+            r
+            for batch in cast(list[dict], serialized["requests"])
+            for r in cast(list[dict], batch["requests"])
+        ]
+        self.assertEqual(len(serialized_sub_requests), 2)
+        for serialized_sub_request in serialized_sub_requests:
+            self.assertEqual(
+                serialized_sub_request["filter_config"],
+                {"include": [r".*\.bam"], "exclude": [r".*/notes\.txt"]},
+            )
+            self.assertEqual(serialized_sub_request["filter_root"], str(source_path))
+
+        restored_sub_requests = [
+            r for batch in restored.requests for r in cast(list[DataSyncRequest], batch.requests)
+        ]
+        self.assertTrue(restored_sub_requests)
+        for restored_sub_request in restored_sub_requests:
+            self.assertEqual(restored_sub_request.filter_config, filter_config)
+            self.assertEqual(restored_sub_request.filter_root, str(source_path))
+
     def setUpLocalFS(self, *paths: tuple[Path | str, int]) -> Path:
         root_file_system = self.tmp_path()
         for relative_path, size in paths:
@@ -406,7 +660,7 @@ class BatchDataSyncHandlerTests(LambdaHandlerTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.mock_sync_operations = self.create_patch(
-            "aibs_informatics_aws_lambda.handlers.data_sync.operations.DataSyncOperations.sync"
+            "aibs_informatics_aws_lambda.handlers.data_sync.operations.DataSyncOperations.sync_task"
         )
         self.mock_download_to_json = self.create_patch(
             "aibs_informatics_aws_lambda.handlers.data_sync.operations.download_to_json"
@@ -606,6 +860,32 @@ class BatchDataSyncHandlerTests(LambdaHandlerTestCase):
         self.mock_download_to_json.assert_called_once_with(s3_path)
         self.mock_sync_operations.assert_called()
         self.assertEqual(self.mock_sync_operations.call_count, 1)
+
+    def test__handle__forwards_filters_to_sync(self):
+        """This handler executes the sub-requests prepare emits.
+
+        It used to enumerate task fields by hand when calling into the sync
+        operations, which would have dropped filter_config/filter_root and made
+        filtering a silent no-op across the whole distributed workflow.
+        """
+        filter_config = DataSyncFilterConfig(include=r".*\.bam")
+        request = DataSyncRequest(
+            source_path=Path("/src/sampleA"),
+            destination_path=Path("/dst/sampleA"),
+            filter_config=filter_config,
+            filter_root="/src",
+        )
+
+        self.mock_sync_operations.return_value = DataSyncResult(
+            files_transferred=1, bytes_transferred=3
+        )
+
+        self.handler(BatchDataSyncRequest(requests=[request]).to_dict(), self.context)
+
+        self.mock_sync_operations.assert_called_once()
+        (task,) = self.mock_sync_operations.call_args.args
+        self.assertEqual(task.filter_config, filter_config)
+        self.assertEqual(task.filter_root, "/src")
 
     def setUpLocalFS(self, *paths: tuple[Path | str, int]) -> Path:
         root_file_system = self.tmp_path()
