@@ -201,6 +201,117 @@ def test__update_demand_execution_parameter_inputs__isolates_inputs(
     assert job_inputs[0].value.endswith(f"/{DEMAND_ID}/X")
 
 
+def test__update_demand_execution_parameter_inputs__preserves_filters(
+    get_or_create_file_system, create_access_point
+):
+    fs_id = get_or_create_file_system("fs")
+    ap_id = create_access_point(fs_id, "ap", "/opt/efs")
+
+    efs_mount_point_config = MountPointConfiguration.build(
+        "/mnt/efs", file_system=fs_id, access_point=ap_id
+    )
+
+    demand_execution = get_any_demand_execution(
+        execution_parameters=DemandExecutionParameters(
+            command=["cmd"],
+            inputs=["X"],
+            params={
+                "X": {
+                    "local": "X",
+                    "remote": S3_URI / "in",
+                    "include": [r".*\.txt"],
+                    "exclude": [r".*\.bam"],
+                }
+            },
+            output_s3_prefix=S3_URI,
+        )
+    )
+
+    demand_execution = update_demand_execution_parameter_inputs(
+        demand_execution=demand_execution,
+        container_shared_path=efs_mount_point_config.mount_point,
+        container_working_path=efs_mount_point_config.mount_point,
+    )
+
+    job_inputs = demand_execution.execution_parameters.downloadable_job_param_inputs
+
+    assert len(job_inputs) == 1
+    assert job_inputs[0].value.startswith(efs_mount_point_config.mount_point.as_posix())
+    assert job_inputs[0].include == [r".*\.txt"]
+    assert job_inputs[0].exclude == [r".*\.bam"]
+
+
+def test__update_demand_execution_parameter_inputs__isolates_inputs__preserves_filters(
+    get_or_create_file_system, create_access_point
+):
+    fs_id = get_or_create_file_system("fs")
+    ap_id = create_access_point(fs_id, "ap", "/opt/efs")
+
+    efs_mount_point_config = MountPointConfiguration.build(
+        "/mnt/efs", file_system=fs_id, access_point=ap_id
+    )
+
+    demand_execution = get_any_demand_execution(
+        execution_parameters=DemandExecutionParameters(
+            command=["cmd"],
+            inputs=["X"],
+            params={
+                "X": {
+                    "local": "X",
+                    "remote": S3_URI / "in",
+                    "exclude": [r".*\.bam"],
+                }
+            },
+            output_s3_prefix=S3_URI,
+        )
+    )
+
+    demand_execution = update_demand_execution_parameter_inputs(
+        demand_execution,
+        container_shared_path=efs_mount_point_config.mount_point,
+        container_working_path=Path(f"/opt/tmp/{demand_execution.execution_id}"),
+        isolate_inputs=True,
+    )
+
+    job_inputs = demand_execution.execution_parameters.downloadable_job_param_inputs
+
+    assert len(job_inputs) == 1
+    assert job_inputs[0].value.endswith(f"/{DEMAND_ID}/X")
+    assert job_inputs[0].include is None
+    assert job_inputs[0].exclude == [r".*\.bam"]
+
+
+def test__update_demand_execution_parameter_inputs__unfiltered_inputs_have_no_filters(
+    get_or_create_file_system, create_access_point
+):
+    fs_id = get_or_create_file_system("fs")
+    ap_id = create_access_point(fs_id, "ap", "/opt/efs")
+
+    efs_mount_point_config = MountPointConfiguration.build(
+        "/mnt/efs", file_system=fs_id, access_point=ap_id
+    )
+
+    demand_execution = get_any_demand_execution(
+        execution_parameters=DemandExecutionParameters(
+            command=["cmd"],
+            inputs=["X"],
+            params={"X": S3_URI / "in"},
+            output_s3_prefix=S3_URI,
+        )
+    )
+
+    demand_execution = update_demand_execution_parameter_inputs(
+        demand_execution=demand_execution,
+        container_shared_path=efs_mount_point_config.mount_point,
+        container_working_path=efs_mount_point_config.mount_point,
+    )
+
+    job_inputs = demand_execution.execution_parameters.downloadable_job_param_inputs
+
+    assert len(job_inputs) == 1
+    assert job_inputs[0].filter_config is None
+
+
 def test__BatchEFSConfiguration__build__works(get_or_create_file_system, create_access_point):
     fs_id = get_or_create_file_system("fs")
     ap_id = create_access_point(fs_id, "access_point", "/opt/efs")
@@ -709,6 +820,95 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             actual_dict.get("temporary_request_payload_path"),
         )
 
+    def test__pre_execution_data_sync_requests__filtered_input_carries_filters_and_no_delete(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd"],
+                inputs=["X"],
+                params={
+                    "X": {
+                        "local": "X",
+                        "remote": S3_URI,
+                        "include": [r".*\.txt"],
+                        "exclude": [r".*\.bam"],
+                    }
+                },
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=False, cleanup_inputs=False, cleanup_working_dir=False
+            ),
+        )
+        actual = decm.pre_execution_data_sync_requests
+
+        self.assertEqual(len(actual), 1)
+        self.assertIsNotNone(actual[0].filter_config)
+        assert actual[0].filter_config is not None  # for type narrowing
+        self.assertEqual(actual[0].filter_config.include, [r".*\.txt"])
+        self.assertEqual(actual[0].filter_config.exclude, [r".*\.bam"])
+        # Input destinations are shared/cached across executions, so a filtered sync must never
+        # mirror -- otherwise it would delete the files that its own filters exclude.
+        self.assertFalse(actual[0].delete)
+
+    def test__pre_execution_data_sync_requests__filtered_isolated_input_carries_filters(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd"],
+                inputs=["X"],
+                params={
+                    "X": {
+                        "local": "X",
+                        "remote": S3_URI,
+                        "exclude": [r".*\.bam"],
+                    }
+                },
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=True, cleanup_inputs=False, cleanup_working_dir=False
+            ),
+        )
+        actual = decm.pre_execution_data_sync_requests
+
+        self.assertEqual(len(actual), 1)
+        self.assertEqual(
+            actual[0].destination_path,
+            EFSPath(f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/X"),
+        )
+        assert actual[0].filter_config is not None
+        self.assertIsNone(actual[0].filter_config.include)
+        self.assertEqual(actual[0].filter_config.exclude, [r".*\.bam"])
+        self.assertFalse(actual[0].delete)
+
+    def test__pre_execution_data_sync_requests__unfiltered_input_has_no_filter_config(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmd"], inputs=["X"], params={"X": S3_URI}
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(
+            demand_execution,
+            self.env_base,
+            ContextManagerConfiguration(
+                isolate_inputs=False, cleanup_inputs=False, cleanup_working_dir=False
+            ),
+        )
+        actual = decm.pre_execution_data_sync_requests
+
+        self.assertEqual(len(actual), 1)
+        self.assertIsNone(actual[0].filter_config)
+        # delete=False is set unconditionally, not just for filtered inputs: the shared input
+        # destination is a cross-execution cache and these syncs only ever add to it. Pinned
+        # here because it is a behavior change on the DEFAULT path -- the sync layer's own
+        # default is delete=True -- and nothing else in the suite would catch a regression.
+        self.assertFalse(actual[0].delete)
+
     def test__post_execution_data_sync_requests__no_outputs_generate_empty_list(self):
         demand_execution = get_any_demand_execution(
             execution_parameters=DemandExecutionParameters(
@@ -772,6 +972,51 @@ class DemandExecutionContextManagerTests(AwsBaseTest, Helpers):
             expected["temporary_request_payload_path"],
             actual_dict.get("temporary_request_payload_path"),
         )
+
+    def test__post_execution_data_sync_requests__filtered_output_carries_filters(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmdx"],
+                outputs=["X"],
+                params={
+                    "X": {
+                        "local": "outs",
+                        "remote": S3_URI / "outs",
+                        "include": [r".*\.txt"],
+                        "exclude": [r".*\.tmp"],
+                    }
+                },
+                output_s3_prefix=S3_URI,
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(demand_execution, self.env_base)
+        actual = decm.post_execution_data_sync_requests
+
+        self.assertEqual(len(actual), 1)
+        self.assertEqual(
+            actual[0].source_path,
+            EFSPath(f"{self.gwo_file_system_id}:/scratch/{demand_execution.execution_id}/outs"),
+        )
+        assert actual[0].filter_config is not None
+        self.assertEqual(actual[0].filter_config.include, [r".*\.txt"])
+        self.assertEqual(actual[0].filter_config.exclude, [r".*\.tmp"])
+        # Outputs deliberately keep delete at its default of True, unlike inputs, so the S3
+        # destination is mirrored to the filtered subset -- an excluded object already at the
+        # destination is DELETED. Pinned so the asymmetry with the input path is a visible,
+        # deliberate choice rather than an unnoticed default. See the property's docstring.
+        self.assertTrue(actual[0].delete)
+
+    def test__post_execution_data_sync_requests__unfiltered_output_has_no_filter_config(self):
+        demand_execution = get_any_demand_execution(
+            execution_parameters=DemandExecutionParameters(
+                command=["cmdx"], outputs=["X"], params={"X": "outs"}, output_s3_prefix=S3_URI
+            )
+        )
+        decm = DemandExecutionContextManager.from_demand_execution(demand_execution, self.env_base)
+        actual = decm.post_execution_data_sync_requests
+
+        self.assertEqual(len(actual), 1)
+        self.assertIsNone(actual[0].filter_config)
 
     def test__post_execution_remove_data_paths_requests__no_cleanup_data(self):
         demand_execution = get_any_demand_execution(
