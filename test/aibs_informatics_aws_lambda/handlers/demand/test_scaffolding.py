@@ -161,7 +161,11 @@ class PrepareDemandScaffoldingHandlerTests(LambdaHandlerTestCase):
             {
                 "containerPath": container_path,
                 "readOnly": False,
-                "sourceVolume": "fs-123456789012-opt-efs-vol",
+                # Pins the volume naming scheme: the mount path basename plus a hash
+                # over (file system, access point, mount path). Deliberately short --
+                # this name ends up inside an efs-utils TLS state path that openssl
+                # caps at 256 bytes. See aibs_informatics_aws_lambda.common.naming.
+                "sourceVolume": "efs-af859703",
             },
         )
         self.assertEqual(result.read_only, read_only)

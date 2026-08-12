@@ -31,6 +31,7 @@ from aibs_informatics_core.utils.hashing import uuid_str
 from moto import mock_efs, mock_sts
 from pytest import fixture
 
+from aibs_informatics_aws_lambda.common.naming import EFS_VOLUME_NAME_MAX_LENGTH
 from aibs_informatics_aws_lambda.handlers.demand.context_manager import (
     BatchEFSConfiguration,
     DemandExecutionContextManager,
@@ -209,10 +210,17 @@ def test__BatchEFSConfiguration__build__works(get_or_create_file_system, create_
         access_point=ap_id, mount_path="/mnt/efs"
     )
 
-    expected_volume_name = "fs-mnt-efs-vol"
+    # The volume name leads with the mount path basename and ends in a hash over the
+    # file system / access point / mount path. The hash cannot be hardcoded here because
+    # moto generates the ids, so assert the shape and the invariants instead. The name
+    # must stay short: it ends up inside an efs-utils TLS state path that openssl caps
+    # at 256 bytes. See aibs_informatics_aws_lambda.common.naming.
+    volume_name = batch_efs_configuration.volume["name"]
+    assert volume_name.startswith("efs-")
+    assert len(volume_name) <= EFS_VOLUME_NAME_MAX_LENGTH
 
     expected_volume = {
-        "name": expected_volume_name,
+        "name": volume_name,
         "efsVolumeConfiguration": {
             "fileSystemId": fs_id,
             "rootDirectory": "/",
@@ -226,7 +234,9 @@ def test__BatchEFSConfiguration__build__works(get_or_create_file_system, create_
     expected_mount_point = {
         "containerPath": "/mnt/efs",
         "readOnly": False,
-        "sourceVolume": expected_volume_name,
+        # The mount point must reference the volume by exactly the name the volume was
+        # registered under, or ECS rejects the job definition.
+        "sourceVolume": volume_name,
     }
 
     assert batch_efs_configuration.mount_path == Path("/mnt/efs")

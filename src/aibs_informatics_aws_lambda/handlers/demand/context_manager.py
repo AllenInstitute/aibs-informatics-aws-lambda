@@ -42,6 +42,10 @@ from aibs_informatics_core.utils.hashing import sha256_hexdigest
 from aibs_informatics_core.utils.os_operations import write_env_file
 from aibs_informatics_core.utils.units import BYTES_PER_GIBIBYTE
 
+from aibs_informatics_aws_lambda.common.naming import (
+    build_efs_volume_name,
+    check_ecs_volume_component_budget,
+)
 from aibs_informatics_aws_lambda.handlers.data_sync.model import RemoveDataPathsRequest
 from aibs_informatics_aws_lambda.handlers.demand.model import (
     ContextManagerConfiguration,
@@ -94,12 +98,16 @@ class BatchEFSConfiguration:
 
     def __post_init__(self) -> None:
         file_system = self.mount_point_config.file_system
-        name_or_id = file_system.get("Name", file_system["FileSystemId"])
-        volume_name = "-".join(
-            [
-                f"{name_or_id}",
-                f"{str(self.mount_path).strip('/').replace('/', '-')}-vol",
-            ]
+        access_point = self.mount_point_config.access_point
+        # This name is not merely cosmetic: ECS embeds it in the docker volume name,
+        # which efs-utils turns into a TLS state directory path that openssl must fit
+        # in a 256 byte buffer. Spelling out the file system name and the full dashed
+        # mount path (e.g. "dev-de-core-opt-fsap-0acb9f234e1b57786-scratch-vol", 50
+        # chars) overran that and broke container startup. See common.naming.
+        volume_name = build_efs_volume_name(
+            mount_path=self.mount_path,
+            file_system_id=file_system["FileSystemId"],
+            access_point_id=access_point["AccessPointId"] if access_point else None,
         )
 
         efs_volume_configuration: EFSVolumeConfigurationTypeDef = {
@@ -799,11 +807,21 @@ def generate_batch_job_builder(  # noqa: C901
         vol_configurations.append(BatchEFSConfiguration(tmp_mount_point, read_only=False))
     logger.info("Constructing BatchJobBuilder instance...")
     assert demand_execution.execution_platform.aws_batch is not None
+
+    job_definition_name = env_base.get_job_name(
+        demand_execution.execution_type, demand_execution.get_execution_hash(False)
+    )
+    # Fail here rather than minutes later at container start. The job definition name
+    # carries the caller's execution_type, so an over-long one would otherwise surface
+    # as an efs-utils "File name too long" mount failure naming nothing responsible.
+    check_ecs_volume_component_budget(
+        job_definition_name=job_definition_name,
+        volume_names=[str(_.volume["name"]) for _ in vol_configurations],
+    )
+
     return BatchJobBuilder(
         image=demand_execution.execution_image,
-        job_definition_name=env_base.get_job_name(
-            demand_execution.execution_type, demand_execution.get_execution_hash(False)
-        ),
+        job_definition_name=job_definition_name,
         job_name=env_base.get_job_name(
             demand_execution.execution_type, demand_execution.get_execution_hash(True)
         ),
