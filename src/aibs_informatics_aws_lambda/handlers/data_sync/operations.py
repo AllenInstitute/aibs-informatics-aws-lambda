@@ -202,19 +202,17 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
         batch_result = BatchDataSyncResult()
         response = BatchDataSyncResponse(result=batch_result, failed_requests=[])
 
-        for i, _ in enumerate(batch_requests):
-            sync_operations = DataSyncOperations(_)
+        for i, sync_request in enumerate(batch_requests):
+            sync_operations = DataSyncOperations(sync_request)
             self.logger.info(
                 f"[{i + 1}/{len(batch_requests)}] "
-                f"Syncing content from {_.source_path} to {_.destination_path}"
+                f"Syncing content from {sync_request.source_path} "
+                f"to {sync_request.destination_path}"
             )
             try:
-                # Delegate to sync_task rather than enumerating task fields here:
-                # DataSyncRequest *is* a DataSyncTask, and hand-listing the fields
-                # silently dropped filter_config/filter_root -- which would have
-                # made filtering a no-op for the entire distributed workflow, since
-                # this handler is what executes the sub-requests prepare emits.
-                result = sync_operations.sync_task(_)
+                # Delegate to sync_task instead of hand-listing fields, so
+                # filter_config/filter_root don't get silently dropped.
+                result = sync_operations.sync_task(sync_request)
                 if result.bytes_transferred is not None:
                     batch_result.add_bytes_transferred(result.bytes_transferred)
                 if result.files_transferred is not None:
@@ -225,9 +223,10 @@ class BatchDataSyncHandler(LambdaHandler[BatchDataSyncRequest, BatchDataSyncResp
                     result.add_bytes_transferred(result.bytes_transferred)
             except Exception as e:
                 batch_result.increment_failed_requests_count()
-                response.add_failed_request(_)
+                response.add_failed_request(sync_request)
                 self.logger.error(
-                    f"Failed to sync content from {_.source_path} to {_.destination_path}"
+                    f"Failed to sync content from {sync_request.source_path} "
+                    f"to {sync_request.destination_path}"
                 )
                 self.logger.error(e)
                 if not request.allow_partial_failure:
@@ -313,9 +312,6 @@ class PrepareBatchDataSyncHandler(
                         source_path=self.build_source_path(request, node),
                         destination_path=self.build_destination_path(request, node),
                         source_path_prefix=request.source_path_prefix,
-                        # Every sub-request carries the ORIGINAL patterns and root,
-                        # unconditionally. No branching on what a given node matched:
-                        # one shape, one code path.
                         filter_config=request.filter_config,
                         filter_root=filter_root,
                         max_concurrency=request.max_concurrency,

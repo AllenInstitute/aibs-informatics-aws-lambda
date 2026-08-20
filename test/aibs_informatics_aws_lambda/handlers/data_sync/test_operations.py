@@ -418,6 +418,33 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
             ("sampleB/notes.txt", 1),
         )
 
+    def prepare_sub_requests(
+        self,
+        source_path: Path,
+        destination_path: S3Path,
+        filter_config: DataSyncFilterConfig | None,
+        batch_size_bytes_limit: int = 10,
+        **kwargs,
+    ) -> list[DataSyncRequest]:
+        """Run the handler and return the flattened sub-requests it emitted."""
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=destination_path,
+            batch_size_bytes_limit=batch_size_bytes_limit,
+            filter_config=filter_config,
+            **kwargs,
+        )
+        response = PrepareBatchDataSyncResponse.from_dict(
+            self.handler(request.to_dict(), self.context)
+        )
+        return [
+            r for batch in response.requests for r in cast(list[DataSyncRequest], batch.requests)
+        ]
+
+    def sub_request_sources(self, *args, **kwargs) -> list[str]:
+        """The sorted source paths of the sub-requests the handler emitted."""
+        return sorted(str(r.source_path) for r in self.prepare_sub_requests(*args, **kwargs))
+
     def test__handle__partition_bins_on_kept_bytes_not_total(self):
         """Filters must be applied while building the tree, not after.
 
@@ -430,24 +457,8 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         source_path = self.setUpFilterableFS()
         destination_path = S3Path.build(bucket_name="bucket", key="key/")
 
-        def sub_request_sources(filter_config: DataSyncFilterConfig | None) -> list[str]:
-            request = PrepareBatchDataSyncRequest(
-                source_path=source_path,
-                destination_path=destination_path,
-                batch_size_bytes_limit=10,
-                filter_config=filter_config,
-            )
-            response = PrepareBatchDataSyncResponse.from_dict(
-                self.handler(request.to_dict(), self.context)
-            )
-            return sorted(
-                str(r.source_path)
-                for batch in response.requests
-                for r in cast(list[DataSyncRequest], batch.requests)
-            )
-
         self.assertEqual(
-            sub_request_sources(None),
+            self.sub_request_sources(source_path, destination_path, None),
             [
                 f"{source_path}/sampleA/notes.txt",
                 f"{source_path}/sampleA/reads.bam",
@@ -456,7 +467,9 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
             ],
         )
         self.assertEqual(
-            sub_request_sources(DataSyncFilterConfig(include=r".*\.bam")),
+            self.sub_request_sources(
+                source_path, destination_path, DataSyncFilterConfig(include=r".*\.bam")
+            ),
             [f"{source_path}/sampleA", f"{source_path}/sampleB"],
         )
 
@@ -473,20 +486,12 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         # forces a split into per-sample sub-prefixes -- the case where anchoring
         # actually matters.
         filter_config = DataSyncFilterConfig(include=r".*\.bam")
-        request = PrepareBatchDataSyncRequest(
-            source_path=source_path,
-            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
-            batch_size_bytes_limit=10,
-            filter_config=filter_config,
+        sub_requests = self.prepare_sub_requests(
+            source_path,
+            S3Path.build(bucket_name="bucket", key="key/"),
+            filter_config,
             delete=False,
         )
-
-        response = PrepareBatchDataSyncResponse.from_dict(
-            self.handler(request.to_dict(), self.context)
-        )
-        sub_requests = [
-            r for batch in response.requests for r in cast(list[DataSyncRequest], batch.requests)
-        ]
 
         self.assertEqual(
             sorted(str(r.source_path) for r in sub_requests),
@@ -507,20 +512,16 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         so an inbound root has to reach both.
         """
         source_path = self.setUpFilterableFS()
-        request = PrepareBatchDataSyncRequest(
-            source_path=source_path,
-            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
-            batch_size_bytes_limit=10,
-            filter_config=DataSyncFilterConfig(include=r".*"),
+        sub_requests = self.prepare_sub_requests(
+            source_path,
+            S3Path.build(bucket_name="bucket", key="key/"),
+            # Anchored at the parent, so it only matches if the tree was built
+            # against filter_root. Against source_path it matches nothing and the
+            # handler raises on zero matches -- which is what makes this a real
+            # anchoring assertion rather than just a propagation one.
+            DataSyncFilterConfig(include=rf"{source_path.name}/.*\.bam"),
             filter_root=str(source_path.parent),
         )
-
-        response = PrepareBatchDataSyncResponse.from_dict(
-            self.handler(request.to_dict(), self.context)
-        )
-        sub_requests = [
-            r for batch in response.requests for r in cast(list[DataSyncRequest], batch.requests)
-        ]
 
         self.assertTrue(sub_requests)
         for sub_request in sub_requests:
@@ -556,21 +557,12 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         """
         source_path = self.setUpFilterableFS()
         filter_config = DataSyncFilterConfig(include=r".*\.cram")
-        request = PrepareBatchDataSyncRequest(
-            source_path=source_path,
-            destination_path=S3Path.build(bucket_name="bucket", key="key/"),
-            batch_size_bytes_limit=10,
-            filter_config=filter_config,
+        sub_requests = self.prepare_sub_requests(
+            source_path,
+            S3Path.build(bucket_name="bucket", key="key/"),
+            filter_config,
             fail_if_missing=False,
         )
-
-        response = PrepareBatchDataSyncResponse.from_dict(
-            self.handler(request.to_dict(), self.context)
-        )
-
-        sub_requests = [
-            r for batch in response.requests for r in cast(list[DataSyncRequest], batch.requests)
-        ]
         self.assertEqual([str(r.source_path) for r in sub_requests], [str(source_path)])
         self.assertEqual(sub_requests[0].filter_config, filter_config)
         self.assertEqual(sub_requests[0].filter_root, str(source_path))
