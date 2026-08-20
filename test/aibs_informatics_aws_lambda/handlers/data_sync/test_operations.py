@@ -567,6 +567,52 @@ class PrepareBatchDataSyncHandlerTests(LambdaHandlerTestCase):
         self.assertEqual(sub_requests[0].filter_config, filter_config)
         self.assertEqual(sub_requests[0].filter_root, str(source_path))
 
+    def test__handle__filtered_local_to_local__raises_before_emitting_requests(self):
+        """Fail once here rather than N times inside the fan-out.
+
+        sync_local_to_local cannot apply filters and raises when given any, so
+        emitting sub-requests for one would just distribute the same failure across
+        every Batch job.
+        """
+        source_path = self.setUpFilterableFS()
+        destination_path = self.tmp_path() / "destination"
+        request = PrepareBatchDataSyncRequest(
+            source_path=source_path,
+            destination_path=destination_path,
+            batch_size_bytes_limit=10,
+            filter_config=DataSyncFilterConfig(include=r".*\.bam"),
+        )
+
+        with self.assertRaisesRegex(ValueError, "not supported for local -> local"):
+            self.handler(request.to_dict(), self.context)
+
+        self.mock_upload_content.assert_not_called()
+
+    def test__handle__unfiltered_local_to_local__is_allowed(self):
+        source_path = self.setUpFilterableFS()
+        destination_path = self.tmp_path() / "destination"
+
+        self.assertEqual(
+            self.sub_request_sources(source_path, destination_path, None),
+            [
+                f"{source_path}/sampleA/notes.txt",
+                f"{source_path}/sampleA/reads.bam",
+                f"{source_path}/sampleB/notes.txt",
+                f"{source_path}/sampleB/reads.bam",
+            ],
+        )
+
+    def test__handle__filtered_local_to_s3__is_allowed(self):
+        source_path = self.setUpFilterableFS()
+
+        sub_requests = self.prepare_sub_requests(
+            source_path,
+            S3Path.build(bucket_name="bucket", key="key/"),
+            DataSyncFilterConfig(include=r".*\.bam"),
+        )
+
+        self.assertTrue(sub_requests)
+
     def test__handle__empty_source__is_not_a_zero_match_failure(self):
         """An empty source is the pre-existing "missing source" case, not this one."""
         source_path = self.tmp_path() / "empty"

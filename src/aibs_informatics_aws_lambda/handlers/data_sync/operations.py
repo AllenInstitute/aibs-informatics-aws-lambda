@@ -260,6 +260,8 @@ class PrepareBatchDataSyncHandler(
         """
         self.logger.info("Preparing S3 Batch Sync Requests")
 
+        self.validate_filters_supported(request)
+
         # The root that filter patterns anchor to. Sub-requests below are rooted at
         # sub-prefixes of this path and re-list from their own root, so patterns
         # written against the original root would silently stop matching unless
@@ -344,6 +346,32 @@ class PrepareBatchDataSyncHandler(
             return PrepareBatchDataSyncResponse(requests=new_batch_data_sync_requests)
         else:
             return PrepareBatchDataSyncResponse(requests=batch_data_sync_requests)
+
+    def validate_filters_supported(self, request: PrepareBatchDataSyncRequest) -> None:
+        """Reject a filtered local -> local request before any sub-requests are emitted.
+
+        `DataSyncOperations.sync_local_to_local` cannot apply filters and raises when
+        given any, so without this the fan-out would emit N sub-requests that each fail
+        the same way inside their own Batch job. Checking here fails once, immediately,
+        and names the reason.
+
+        Args:
+            request: The originating prepare request.
+
+        Raises:
+            ValueError: If filters were supplied for a local -> local sync.
+        """
+        filter_config = request.filter_config
+        if filter_config is None or not (filter_config.include or filter_config.exclude):
+            return
+        if isinstance(request.source_path, S3Path) or isinstance(request.destination_path, S3Path):
+            return
+        raise ValueError(
+            f"Include/exclude filters are not supported for local -> local sync "
+            f"({request.source_path} -> {request.destination_path}). "
+            f"Got include={filter_config.include}, exclude={filter_config.exclude}. "
+            f"Remove the filters or route the transfer through S3."
+        )
 
     def validate_filters_matched(
         self, request: PrepareBatchDataSyncRequest, root: S3FileSystem | LocalFileSystem
