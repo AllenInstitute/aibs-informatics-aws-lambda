@@ -321,11 +321,7 @@ def test__BatchEFSConfiguration__build__works(get_or_create_file_system, create_
         access_point=ap_id, mount_path="/mnt/efs"
     )
 
-    # The volume name leads with the mount path basename and ends in a hash over the
-    # file system / access point / mount path. The hash cannot be hardcoded here because
-    # moto generates the ids, so assert the shape and the invariants instead. The name
-    # must stay short: it ends up inside an efs-utils TLS state path that openssl caps
-    # at 256 bytes. See aibs_informatics_aws_lambda.common.naming.
+    # moto generates the ids the hash is built over, so assert the shape, not a literal.
     volume_name = batch_efs_configuration.volume["name"]
     assert volume_name.startswith("efs-")
     assert len(volume_name) <= EFS_VOLUME_NAME_MAX_LENGTH

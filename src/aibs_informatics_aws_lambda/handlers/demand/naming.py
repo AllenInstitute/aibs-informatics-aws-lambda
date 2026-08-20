@@ -3,7 +3,7 @@
 The names here are consumed by machinery far downstream of where we construct them,
 and that machinery has limits we do not control. The generic "shorten a string to a
 budget" primitive lives in
-:func:`aibs_informatics_core.utils.tools.strtools.condense_str`; this module holds the
+`aibs_informatics_core.utils.tools.strtools.condense_str`; this module holds the
 AWS Batch and EFS specific arithmetic that decides what those budgets are.
 
 An AWS Batch job definition name becomes the ECS task family, which the ECS agent
@@ -19,14 +19,25 @@ stack buffer (``BSIZE`` in ``apps/lib/apps.c``)::
     /var/run/efs/<state dir>/database/index.txt        must be <= 246 chars
 
 Working backwards through that chain gives the budget in
-:data:`ECS_VOLUME_COMPONENT_BUDGET`. Exceeding it does not fail at registration --
-it fails minutes later when the container tries to start, as::
+`ECS_VOLUME_COMPONENT_BUDGET`::
+
+    openssl BSIZE guard      strlen(dbfile) + len("new") + 6 < 256  -> dbfile <= 246
+    dbfile                   "/var/run/efs/" (13) + state_dir + "/database/index.txt" (19)
+                                                              -> state_dir <= 214
+    state_dir                fs id (20) + "." + "var.lib.ecs.volumes." (20)
+                             + ecs_volume_name + "." + tls port (5) + "+" (1)
+                                                              -> ecs_volume_name <= 166
+    ecs_volume_name          "ecs-" (4) + family + "-" + revision + "-" + volume + "-"
+                             + 20 hex                         -> family+rev+volume <= 139
+
+Exceeding it does not fail at registration -- it fails minutes later when the
+container tries to start, as::
 
     CannotStartContainerError: ... Failed to create self-signed client-side
     certificate ... File name too long
 
 which points at none of the code that actually chose the name. These helpers keep
-names inside the budget, and :func:`check_ecs_volume_component_budget` turns an
+names inside the budget, and `check_ecs_volume_component_budget` turns an
 overrun into an immediate, legible error instead.
 """
 
@@ -44,17 +55,7 @@ from aibs_informatics_core.utils.hashing import sha256_hexdigest
 from aibs_informatics_core.utils.tools.strtools import condense_str
 
 #: Combined budget, in characters, for ``task family + revision + volume name``.
-#:
-#: Derived from the chain in the module docstring::
-#:
-#:     openssl BSIZE guard      strlen(dbfile) + len("new") + 6 < 256  -> dbfile <= 246
-#:     dbfile                   "/var/run/efs/" (13) + state_dir + "/database/index.txt" (19)
-#:                                                                  -> state_dir <= 214
-#:     state_dir                fs id (20) + "." + "var.lib.ecs.volumes." (20)
-#:                              + ecs_volume_name + "." + tls port (5) + "+" (1)
-#:                                                                  -> ecs_volume_name <= 166
-#:     ecs_volume_name          "ecs-" (4) + family + "-" + revision + "-" + volume + "-"
-#:                              + 20 hex                            -> family+rev+volume <= 139
+#: Derived in the module docstring.
 ECS_VOLUME_COMPONENT_BUDGET = 139
 
 #: Hex characters of hash appended when a value has to be shortened. 8 hex chars is
@@ -62,7 +63,7 @@ ECS_VOLUME_COMPONENT_BUDGET = 139
 DEFAULT_HASH_LENGTH = 8
 
 #: Default cap for an EFS volume name. Leaves the bulk of
-#: :data:`ECS_VOLUME_COMPONENT_BUDGET` to the job definition name, which carries the
+#: `ECS_VOLUME_COMPONENT_BUDGET` to the job definition name, which carries the
 #: caller's execution type and a 64 character hash.
 EFS_VOLUME_NAME_MAX_LENGTH = 24
 
@@ -102,8 +103,11 @@ def build_efs_volume_name(
     label = Path(str(mount_path)).name or file_system_id
 
     # Sanitize to ECS's allowed character set before measuring, so the length we
-    # enforce is the length ECS will actually see.
-    label = "".join(c if (c.isalnum() or c in "_-") else "-" for c in label).strip("-")
+    # enforce is the length ECS will actually see. `str.isalnum` is Unicode-aware and
+    # would pass through characters ECS rejects, so the check is ASCII-only.
+    label = "".join(
+        c if ((c.isascii() and c.isalnum()) or c in "_-") else "-" for c in label
+    ).strip("-")
     if not label:
         label = "vol"
 
@@ -134,12 +138,14 @@ def check_ecs_volume_component_budget(
         max_revision_digits: Digits to reserve for the job definition revision. The
             default of 3 keeps the check valid into the hundreds of revisions; reserving
             too few would let a name pass at revision 9 and fail at revision 10.
-        budget: Combined character budget. See :data:`ECS_VOLUME_COMPONENT_BUDGET`.
+        budget: Combined character budget. See `ECS_VOLUME_COMPONENT_BUDGET`.
 
     Raises:
         ValueError: If the longest volume name combined with the job definition name
             exceeds the budget.
     """
+    # No volumes means no EFS mount, so nothing derives an efs-utils path and the
+    # budget does not apply -- even to an over-long job definition name.
     if not volume_names:
         return
     longest = max(volume_names, key=len)

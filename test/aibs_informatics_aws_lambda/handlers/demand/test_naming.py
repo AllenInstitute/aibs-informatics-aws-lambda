@@ -18,6 +18,13 @@ class TestBuildEfsVolumeName:
         )
         assert name.startswith("scratch-")
 
+    def test__non_ascii_basename_is_sanitized(self):
+        # str.isalnum() is Unicode-aware, so an accented basename would otherwise
+        # survive sanitization and produce a name ECS rejects.
+        name = build_efs_volume_name("/opt/fsap-0acb/donn\u00e9es", self.FS, self.AP_SCRATCH)
+        assert name.isascii()
+        assert all(c.isalnum() or c in "_-" for c in name)
+
     def test__fits_the_default_budget(self):
         name = build_efs_volume_name(
             "/opt/fsap-0acb9f234e1b57786/scratch", self.FS, self.AP_SCRATCH

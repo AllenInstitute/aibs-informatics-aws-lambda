@@ -99,11 +99,8 @@ class BatchEFSConfiguration:
     def __post_init__(self) -> None:
         file_system = self.mount_point_config.file_system
         access_point = self.mount_point_config.access_point
-        # This name is not merely cosmetic: ECS embeds it in the docker volume name,
-        # which efs-utils turns into a TLS state directory path that openssl must fit
-        # in a 256 byte buffer. Spelling out the file system name and the full dashed
-        # mount path (e.g. "dev-de-core-opt-fsap-0acb9f234e1b57786-scratch-vol", 50
-        # chars) overran that and broke container startup. See handlers.demand.naming.
+        # volume_name must fit a 256 byte openssl buffer downstream in efs-utils;
+        # see handlers.demand.naming.
         volume_name = build_efs_volume_name(
             mount_path=self.mount_path,
             file_system_id=file_system["FileSystemId"],
@@ -574,9 +571,6 @@ def update_demand_execution_parameter_inputs(
             local = container_shared_path / sha256_hexdigest(param.remote_value)
             logger.info(f"Using shared volume for input {param.name}. Local path: {local}")
 
-        # Carry the param's include/exclude forward. Only the local path is being rewritten
-        # here, so rebuilding the Resolvable without the filters would silently drop them
-        # before they ever reach the pre-execution data sync requests.
         new_resolvable = Resolvable(
             local=local.as_posix(),
             remote=param.remote_value,
@@ -626,9 +620,6 @@ def update_demand_execution_parameter_outputs(
     demand_execution = demand_execution.copy()
     execution_params = demand_execution.execution_parameters
     updated_params = {
-        # Carry the param's include/exclude forward, for the same reason as the input rewrite:
-        # dropping them here would leave post_execution_data_sync_requests with nothing to
-        # apply, since it reads the filters back off these params.
         param.name: Uploadable(
             local=(container_working_path / param.value).as_posix(),
             remote=param.remote_value,
@@ -863,7 +854,11 @@ def generate_batch_job_builder(  # noqa: C901
     if tmp_mount_point:
         vol_configurations.append(BatchEFSConfiguration(tmp_mount_point, read_only=False))
     logger.info("Constructing BatchJobBuilder instance...")
-    assert demand_execution.execution_platform.aws_batch is not None
+    if demand_execution.execution_platform.aws_batch is None:
+        raise ValueError(
+            "Demand execution has no aws_batch execution platform configuration: "
+            f"{demand_execution.execution_platform}"
+        )
 
     job_definition_name = env_base.get_job_name(
         demand_execution.execution_type, demand_execution.get_execution_hash(False)
