@@ -29,6 +29,7 @@ from test.base import does_not_raise
             {
                 "data_sync_requests": [
                     {
+                        "delete": True,
                         "destination_path": "s3://bucket/dst",
                         "fail_if_missing": True,
                         "force": False,
@@ -59,6 +60,7 @@ from test.base import does_not_raise
             {
                 "data_sync_requests": [
                     {
+                        "delete": True,
                         "destination_path": "s3://bucket/dst",
                         "fail_if_missing": True,
                         "force": False,
