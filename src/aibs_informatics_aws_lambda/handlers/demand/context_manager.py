@@ -47,6 +47,10 @@ from aibs_informatics_aws_lambda.handlers.demand.model import (
     ContextManagerConfiguration,
     EnvFileWriteMode,
 )
+from aibs_informatics_aws_lambda.handlers.demand.naming import (
+    build_efs_volume_name,
+    check_ecs_volume_component_budget,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from mypy_boto3_batch.type_defs import (
@@ -94,12 +98,13 @@ class BatchEFSConfiguration:
 
     def __post_init__(self) -> None:
         file_system = self.mount_point_config.file_system
-        name_or_id = file_system.get("Name", file_system["FileSystemId"])
-        volume_name = "-".join(
-            [
-                f"{name_or_id}",
-                f"{str(self.mount_path).strip('/').replace('/', '-')}-vol",
-            ]
+        access_point = self.mount_point_config.access_point
+        # volume_name must fit a 256 byte openssl buffer downstream in efs-utils;
+        # see handlers.demand.naming.
+        volume_name = build_efs_volume_name(
+            mount_path=self.mount_path,
+            file_system_id=file_system["FileSystemId"],
+            access_point_id=access_point["AccessPointId"] if access_point else None,
         )
 
         efs_volume_configuration: EFSVolumeConfigurationTypeDef = {
@@ -333,7 +338,19 @@ class DemandExecutionContextManager:
         """Generate data sync requests for pre-execution input staging.
 
         Creates requests to sync input data from S3 to EFS before
-        the batch job runs.
+        the batch job runs. Per-param include/exclude filters are carried through, bounding
+        what this execution transfers.
+
+        Note:
+            Filters bound what is *transferred*, not what is present at the destination. On the
+            shared (non-isolated) input path the destination is keyed on
+            ``sha256(remote_value)`` alone -- see
+            :func:`update_demand_execution_parameter_inputs` -- so the key does not vary with
+            the filters. Two executions filtering the same remote differently therefore share a
+            directory, and since these syncs never delete (see ``delete`` below) a filtered
+            execution can find a superset already staged by an earlier one. Incorporating the
+            filters into that key is a known deferred gap (OCSDV-452); exposure is limited
+            because ``ContextManagerConfiguration.isolate_inputs`` defaults to True.
 
         Returns:
             List of data sync requests for input data.
@@ -362,6 +379,14 @@ class DemandExecutionContextManager:
                     temporary_request_payload_path=temporary_request_payload_path,
                     size_only=self.configuration.input_data_sync_configuration.size_only,
                     force=self.configuration.input_data_sync_configuration.force,
+                    filter_config=param.filter_config,
+                    # Input destinations are shared and cached across executions (see
+                    # update_demand_execution_parameter_inputs). `delete` is the caller's gate on
+                    # the destructive interaction between filters and mirroring: with delete=True
+                    # a filtered sync treats everything the filters exclude as unexpected at the
+                    # destination and removes it, which would evict another execution's cached
+                    # copy of the same input. We only ever add to that destination.
+                    delete=False,
                 )
             )
         logger.info(
@@ -374,7 +399,24 @@ class DemandExecutionContextManager:
         """Generate data sync requests for post-execution output upload.
 
         Creates requests to sync output data from EFS to S3 after
-        the batch job completes.
+        the batch job completes. Per-param include/exclude filters are carried through so that
+        only the requested subset of each output is uploaded.
+
+        Warning:
+            On outputs, filtering means "do not upload", NOT "keep locally". These requests set
+            retain_source_data=False, so sync_local_to_s3 ends by calling remove_path on the
+            source, and cleanup_working_dir defaults to True, which removes the whole working
+            directory afterwards. Excluded outputs are therefore still deleted from EFS.
+            Filters are not a way to hold data back on the file system.
+
+        Warning:
+            Unlike the input path, these requests leave ``delete`` at its default of True, so
+            the destination is mirrored to the *filtered* subset. An object already present at
+            the output prefix that the filters exclude is treated as unexpected and **deleted
+            from S3** (``sync_paths`` diffs the destination listing against what was actually
+            transferred). An exclude pattern therefore means "do not upload this, and remove it
+            from the destination if it is already there" -- not merely "skip it". This matters
+            when an output prefix is reused across runs or shared with another producer.
 
         Returns:
             List of data sync requests for output data.
@@ -399,6 +441,7 @@ class DemandExecutionContextManager:
                     temporary_request_payload_path=temporary_request_payload_path,
                     size_only=self.configuration.output_data_sync_configuration.size_only,
                     force=self.configuration.output_data_sync_configuration.force,
+                    filter_config=param.filter_config,
                 )
             )
         logger.info(
@@ -492,6 +535,9 @@ def update_demand_execution_parameter_inputs(
 
     PATTERN: {MOUNT_PATH}/{SHA256_HASH(PARAM_REMOTE_VALUE)}
 
+    Only the local path is rewritten -- any include/exclude filters on the input params are
+    preserved so that they can be applied by the pre-execution data sync.
+
     Example:
         Given volume:
             - mount path (/opt/efs/shared)
@@ -525,7 +571,12 @@ def update_demand_execution_parameter_inputs(
             local = container_shared_path / sha256_hexdigest(param.remote_value)
             logger.info(f"Using shared volume for input {param.name}. Local path: {local}")
 
-        new_resolvable = Resolvable(local=local.as_posix(), remote=param.remote_value)
+        new_resolvable = Resolvable(
+            local=local.as_posix(),
+            remote=param.remote_value,
+            include=param.include,
+            exclude=param.exclude,
+        )
         updated_params[param.name] = new_resolvable
 
     execution_params.update_params(**updated_params)
@@ -542,6 +593,9 @@ def update_demand_execution_parameter_outputs(
     path.
 
     PATTERN: {CONTAINER_WORKING_PATH}/{PARAM_VALUE}
+
+    Only the local path is rewritten -- any include/exclude filters on the output params are
+    preserved so that they can be applied by the post-execution data sync.
 
     Example:
         Given volume:
@@ -569,6 +623,8 @@ def update_demand_execution_parameter_outputs(
         param.name: Uploadable(
             local=(container_working_path / param.value).as_posix(),
             remote=param.remote_value,
+            include=param.include,
+            exclude=param.exclude,
         )
         for param in execution_params.uploadable_job_param_outputs
     }
@@ -798,12 +854,26 @@ def generate_batch_job_builder(  # noqa: C901
     if tmp_mount_point:
         vol_configurations.append(BatchEFSConfiguration(tmp_mount_point, read_only=False))
     logger.info("Constructing BatchJobBuilder instance...")
-    assert demand_execution.execution_platform.aws_batch is not None
+    if demand_execution.execution_platform.aws_batch is None:
+        raise ValueError(
+            "Demand execution has no aws_batch execution platform configuration: "
+            f"{demand_execution.execution_platform}"
+        )
+
+    job_definition_name = env_base.get_job_name(
+        demand_execution.execution_type, demand_execution.get_execution_hash(False)
+    )
+    # Fail here rather than minutes later at container start. The job definition name
+    # carries the caller's execution_type, so an over-long one would otherwise surface
+    # as an efs-utils "File name too long" mount failure naming nothing responsible.
+    check_ecs_volume_component_budget(
+        job_definition_name=job_definition_name,
+        volume_names=[str(_.volume["name"]) for _ in vol_configurations],
+    )
+
     return BatchJobBuilder(
         image=demand_execution.execution_image,
-        job_definition_name=env_base.get_job_name(
-            demand_execution.execution_type, demand_execution.get_execution_hash(False)
-        ),
+        job_definition_name=job_definition_name,
         job_name=env_base.get_job_name(
             demand_execution.execution_type, demand_execution.get_execution_hash(True)
         ),
